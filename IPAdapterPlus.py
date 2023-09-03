@@ -219,7 +219,7 @@ class IPAdapterApply:
         self.dtype = model.model.diffusion_model.dtype
         self.device = comfy.model_management.get_torch_device()
         self.weight = weight
-        print(self.dtype)
+        
         clip_embeddings = clip_vision_output.image_embeds.to(self.device, dtype=self.dtype)
         clip_embeddings_dim = clip_embeddings.shape[-1]
 
