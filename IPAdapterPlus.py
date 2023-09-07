@@ -3,10 +3,10 @@ import os
 
 import comfy.utils
 import comfy.model_management
+from comfy.clip_vision import ClipVisionModel
 
 from torch import nn
 import torch.nn.functional as F
-from transformers import CLIPVisionModelWithProjection
 
 from .resampler import Resampler
 
@@ -75,12 +75,10 @@ def attention(q, k, v, extra_options):
     return out
 
 class IPAdapter(nn.Module):
-    def __init__(self, ipadapter_model, clip_embeddings, cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4):
+    def __init__(self, ipadapter_model, cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4):
         super().__init__()
 
         self.ipadapter_model = ipadapter_model
-        self.clip_embeddings = clip_embeddings
-
         self.clip_embeddings_dim = clip_embeddings_dim
         self.cross_attention_dim = self.ipadapter_model["ip_adapter"]["1.to_k_ip.weight"].shape[1]
         self.clip_extra_context_tokens = clip_extra_context_tokens
@@ -100,9 +98,9 @@ class IPAdapter(nn.Module):
         return image_proj_model
 
     @torch.inference_mode()
-    def get_image_embeds(self, clip_image_embeds):
-        image_prompt_embeds = self.image_proj_model(clip_image_embeds)
-        uncond_image_prompt_embeds = self.image_proj_model(torch.zeros_like(clip_image_embeds))
+    def get_image_embeds(self, clip_embed, clip_embed_zeroed):
+        image_prompt_embeds = self.image_proj_model(clip_embed)
+        uncond_image_prompt_embeds = self.image_proj_model(clip_embed_zeroed)
         return image_prompt_embeds, uncond_image_prompt_embeds
 
 class IPAdapterPlus(IPAdapter):
@@ -120,10 +118,9 @@ class IPAdapterPlus(IPAdapter):
         return image_proj_model
 
     @torch.inference_mode()
-    def get_image_embeds(self, clip_image_embeds):
-        image_prompt_embeds = self.image_proj_model(clip_image_embeds)
-        uncond_clip_image_embeds = self.clip_vision(torch.zeros_like(self.clip_embeddings), output_hidden_states=True).hidden_states[-2]
-        uncond_image_prompt_embeds = self.image_proj_model(uncond_clip_image_embeds)
+    def get_image_embeds(self, clip_embed, clip_embed_zeroed):
+        image_prompt_embeds = self.image_proj_model(clip_embed)
+        uncond_image_prompt_embeds = self.image_proj_model(clip_embed_zeroed)
         return image_prompt_embeds, uncond_image_prompt_embeds
 
 class CrossAttentionPatch:
@@ -175,6 +172,21 @@ class CrossAttentionPatch:
 
         return out.to(dtype=org_dtype)
 
+class IPAdapterCLIPVisionEncode:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": { "clip_vision": ("CLIP_VISION",),
+                              "image": ("IMAGE",)
+                             }}
+    RETURN_TYPES = ("CLIP_VISION_OUTPUT",)
+    FUNCTION = "encode"
+
+    CATEGORY = "ipadapter"
+
+    def encode(self, clip_vision, image):
+        output = clip_vision.encode_image_IPAdapter(image)
+        return (output,)
+
 class IPAdapterModelLoader:
     @classmethod
     def INPUT_TYPES(s):
@@ -183,7 +195,7 @@ class IPAdapterModelLoader:
     RETURN_TYPES = ("IPADAPTER",)
     FUNCTION = "load_ipadapter_model"
 
-    CATEGORY = "loaders"
+    CATEGORY = "ipadapter"
 
     def load_ipadapter_model(self, ipadapter_file):
         ckpt_path = os.path.join(MODELS_DIR, ipadapter_file)
@@ -213,49 +225,58 @@ class IPAdapterApply:
 
     RETURN_TYPES = ("MODEL",)
     FUNCTION = "apply_ipadapter"
-    CATEGORY = "conditioning/ipadapter"
+    CATEGORY = "ipadapter"
 
     def apply_ipadapter(self, model, ipadapter, clip_vision_output, weight, mask=None):
         self.dtype = model.model.diffusion_model.dtype
         self.device = comfy.model_management.get_torch_device()
         self.weight = weight
-        
-        clip_embeddings = clip_vision_output.image_embeds.to(self.device, dtype=self.dtype)
-        clip_embeddings_dim = clip_embeddings.shape[-1]
+
+        # check if we are using the 'CLIP Vision Encode IPAdapter' node
+        self.is_ipadapter_encode = type(clip_vision_output) is tuple
+
+        if self.is_ipadapter_encode:
+            clip_embed, clip_embed_zeroed = clip_vision_output
+        else:
+            clip_embed = clip_vision_output.image_embeds
+            clip_embed_zeroed = torch.zeros_like(clip_embed)
 
         self.is_plus = "latents" in ipadapter["image_proj"]
         cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
 
         if self.is_plus:
-            clip_extra_context_tokens = ipadapter["image_proj"]["latents"].shape[1]
+            # IPAdapter Plus requires the IPAdapter Encoder
+            if not self.is_ipadapter_encode:
+                raise Exception("IPAdapter Plus requires 'CLIP Vision Encode (IPAdapter)' node")
+
+            clip_extra_context_tokens = 16
+            clip_embed = clip_embed.hidden_states[-2]
         else:
-            clip_extra_context_tokens = 4 # ipadapter["image_proj"]["proj.weight"].shape[0] <-- doesn't work?
+            # if we come 'CLIP Vision Encode IPAdapter' we need to extract the image_embeds
+            if self.is_ipadapter_encode:
+                clip_embed = clip_embed.image_embeds
+
+            clip_embed_zeroed = torch.zeros_like(clip_embed)
+            clip_extra_context_tokens = 4
+        
+        clip_embeddings_dim = clip_embed.shape[-1]
 
         self.is_sdxl = cross_attention_dim == 2048
 
-        if self.is_plus:
-            self.ipadapter = IPAdapterPlus(
-                ipadapter,
-                clip_embeddings,
-                cross_attention_dim=cross_attention_dim,
-                clip_embeddings_dim=clip_embeddings_dim,
-                clip_extra_context_tokens=clip_extra_context_tokens
-            )
-        else:
-            self.ipadapter = IPAdapter(
-                ipadapter,
-                clip_embeddings,
-                cross_attention_dim=cross_attention_dim,
-                clip_embeddings_dim=clip_embeddings_dim,
-                clip_extra_context_tokens=clip_extra_context_tokens
-            )            
+        IPA = IPAdapterPlus if self.is_plus else IPAdapter
+
+        self.ipadapter = IPA(
+            ipadapter,
+            cross_attention_dim=cross_attention_dim,
+            clip_embeddings_dim=clip_embeddings_dim,
+            clip_extra_context_tokens=clip_extra_context_tokens
+        )
         
         self.ipadapter.to(self.device, dtype=self.dtype)
 
-        self.image_prompt_embeds, self.uncond_image_prompt_embeds = self.ipadapter.get_image_embeds(clip_embeddings)
+        self.image_prompt_embeds, self.uncond_image_prompt_embeds = self.ipadapter.get_image_embeds(clip_embed.to(self.device, self.dtype), clip_embed_zeroed.to(self.device, self.dtype))
         self.image_prompt_embeds = self.image_prompt_embeds.to(self.device, dtype=self.dtype)
         self.uncond_image_prompt_embeds = self.uncond_image_prompt_embeds.to(self.device, dtype=self.dtype)
-        self.cond_uncond_image_emb = None
 
         work_model = model.clone()
 
@@ -294,46 +315,38 @@ class IPAdapterApply:
 
         return (work_model,)
 
-    def patch_forward(self, number):
-        device = self.device.type
-        def forward(n, context_attn2, value_attn2, extra_options):
-            org_dtype = n.dtype
-            with torch.autocast(device, dtype=self.dtype):
-                q = n
-                k = context_attn2
-                v = value_attn2
-                b, _, _ = q.shape
 
-                if self.cond_uncond_image_emb is None or self.cond_uncond_image_emb.shape[0] != b:
-                    self.cond_uncond_image_emb = torch.cat([self.uncond_image_prompt_embeds.repeat(b//2, 1, 1), self.image_prompt_embeds.repeat(b//2, 1, 1)], dim=0)
+#class IPAClipVisionModel(ClipVisionModel):
+# from: https://github.com/comfyanonymous/ComfyUI/blob/f88f7f413afbe04b42c4422e9deedbaa3269ce76/comfy/clip_vision.py#L39
+def encode_image_IPAdapter(self, image):
+    img = torch.clip((255. * image), 0, 255).round().int()
+    img = list(map(lambda a: a, img))
+    inputs = self.processor(images=img, return_tensors="pt")
+    comfy.model_management.load_model_gpu(self.patcher)
+    pixel_values = inputs['pixel_values'].to(self.load_device)
 
-                # k, v for ip_adapter
-                ip_k = self.ipadapter.ip_layers.to_kvs[number*2](self.cond_uncond_image_emb)
-                ip_v = self.ipadapter.ip_layers.to_kvs[number*2+1](self.cond_uncond_image_emb)
+    if self.dtype != torch.float32:
+        precision_scope = torch.autocast
+    else:
+        precision_scope = lambda a, b: contextlib.nullcontext(a)
 
-                q, k, v, ip_k, ip_v = map(
-                    lambda t: t.view(b, -1, extra_options["n_heads"], extra_options["dim_head"]).transpose(1, 2),
-                    (q, k, v, ip_k, ip_v),
-                )
+    with precision_scope(comfy.model_management.get_autocast_device(self.load_device), torch.float32):
+        outputs = self.model(pixel_values=pixel_values, output_hidden_states=True)
+        outputs_zeroed = self.model(torch.zeros_like(pixel_values), output_hidden_states=True).hidden_states[-2]
 
-                out = nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=None, dropout_p=0.0, is_causal=False)
-                out = out.transpose(1, 2).reshape(b, -1, extra_options["n_heads"] * extra_options["dim_head"])
+    return outputs, outputs_zeroed
 
-                # output of ip_adapter
-                ip_out = nn.functional.scaled_dot_product_attention(q, ip_k, ip_v, attn_mask=None, dropout_p=0.0, is_causal=False)
-                ip_out = ip_out.transpose(1, 2).reshape(b, -1, extra_options["n_heads"] * extra_options["dim_head"])
-
-                out = out + ip_out * self.weight
-
-            return out.to(dtype=org_dtype)
-        return forward
+# Bad developer, bad!
+ClipVisionModel.encode_image_IPAdapter = encode_image_IPAdapter
 
 NODE_CLASS_MAPPINGS = {
     "IPAdapterModelLoader": IPAdapterModelLoader,
     "IPAdapterApply": IPAdapterApply,
+    "IPAdapterCLIPVisionEncode": IPAdapterCLIPVisionEncode,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterModelLoader": "Load IPAdapter Model",
     "IPAdapterApply": "Apply IPAdapter",
+    "IPAdapterCLIPVisionEncode": "CLIP Vision Encode (IPAdapter)"
 }
