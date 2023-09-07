@@ -1,5 +1,3 @@
-**ALPHA STAGE! Not production ready!**
-
 # ComfyUI_IPAdapter_Plus
 ComfyUI reference implementation for [IPAdapter](https://github.com/tencent-ailab/IP-Adapter/tree/6fb9d3554a5c774f41e187e8fdbc7b9a1db8c2e3) models.
 
@@ -30,3 +28,9 @@ Additionally you need the clip vision models:
 - SDXL: [pytorch_model.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/image_encoder/pytorch_model.bin)
 
 You can rename them to something easier to remember (eg: `ip-adapter_sd15-image-encoder.bin`) and place them under `ComfyUI/models/clip_vision/`.
+
+## How to use
+
+There are two workflows included in this repo.
+
+**IMPORTANT:** To use the *IPAdapter Plus* model you must use the new `CLIP Vision Encode (IPAdapter)` node (the workflow is [Plus_workflow.json](./Plus_workflow.json)). The non-plus version works with both the standard `CLIP Vision Encode` and the new one.
