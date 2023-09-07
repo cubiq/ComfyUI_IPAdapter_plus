@@ -13,7 +13,7 @@ Example workflow
 
 Download or git clone this repository inside `ComfyUI/custom_nodes/` directory.
 
-The pre-trained models are available on [huggingface](https://huggingface.co/h94/IP-Adapter), download and place them in the `ComfyUI/custom_nodes/ComfyUI_IPAdapter_Plus/models` directory.
+The pre-trained models are available on [huggingface](https://huggingface.co/h94/IP-Adapter), download and place them in the `ComfyUI/custom_nodes/ComfyUI_IPAdapter_plus/models` directory.
 
 For SD1.5 you need:
 
