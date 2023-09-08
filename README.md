@@ -31,9 +31,9 @@ You can rename them to something easier to remember (eg: `ip-adapter_sd15-image-
 
 ## How to use
 
-There are two basic workflows included in this repo and a few examples in the [example](./examples/) directory.
+There's a basic workflow included in this repo and a few examples in the [example](./examples/) directory.
 
-**IMPORTANT:** To use the *IPAdapter Plus* models (base and face) you must use the new `CLIP Vision Encode (IPAdapter)` node (the workflow is [Plus_workflow.json](./Plus_workflow.json)). The non-plus version works with both the standard `CLIP Vision Encode` and the new one.
+**IMPORTANT:** To use the *IPAdapter Plus* models (base and face) you must use the new `CLIP Vision Encode (IPAdapter)` node. The non-plus version works with both the standard `CLIP Vision Encode` and the new one.
 
 ### IPAdapter + Canny ControlNet
 
@@ -43,6 +43,14 @@ The model is very effective when paired with a ControlNet. In the example below 
 
 ### IPAdapter Face
 
-An interesting model for a kind of "face swap" effect. [The workflow is provided](./examples/face.json).
+IPAdapter offers an interesting model for a kind of "face swap" effect. [The workflow is provided](./examples/face.json).
 
-<img src="./examples/face_swap.jpg" width="100%" alt="canny controlnet" />
+<img src="./examples/face_swap.jpg" width="100%" alt="face swap" />
+
+### Masking
+
+Masking in img2img generally works but I find inpainting to be far more effective. The [inpainting workflow](./examples/inpainting.json) uses the face model together with an inpainting checkpoint.
+
+<img src="./examples/inpainting.jpg" width="100%" alt="inpainting" />
+
+**Important:** when masking the *IPAdapter Apply* node be sure that the mask is of the same size of the latent.

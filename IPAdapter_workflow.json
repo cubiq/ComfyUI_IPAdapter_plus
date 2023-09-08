@@ -1,285 +1,7 @@
 {
-  "last_node_id": 19,
-  "last_link_id": 30,
+  "last_node_id": 33,
+  "last_link_id": 70,
   "nodes": [
-    {
-      "id": 12,
-      "type": "VAEDecode",
-      "pos": [
-        1430,
-        320
-      ],
-      "size": {
-        "0": 140,
-        "1": 50
-      },
-      "flags": {},
-      "order": 10,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "samples",
-          "type": "LATENT",
-          "link": 12
-        },
-        {
-          "name": "vae",
-          "type": "VAE",
-          "link": 13
-        }
-      ],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            14
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "VAEDecode"
-      }
-    },
-    {
-      "id": 13,
-      "type": "PreviewImage",
-      "pos": [
-        1430,
-        420
-      ],
-      "size": {
-        "0": 323.45098876953125,
-        "1": 356.3552551269531
-      },
-      "flags": {},
-      "order": 11,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 14
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "PreviewImage"
-      }
-    },
-    {
-      "id": 17,
-      "type": "IPAdapterApply",
-      "pos": [
-        790,
-        150
-      ],
-      "size": [
-        210,
-        98
-      ],
-      "flags": {},
-      "order": 8,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 30
-        },
-        {
-          "name": "ipadapter",
-          "type": "IPADAPTER",
-          "link": 27
-        },
-        {
-          "name": "clip_vision_output",
-          "type": "CLIP_VISION_OUTPUT",
-          "link": 28
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            29
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterApply"
-      },
-      "widgets_values": [
-        1
-      ]
-    },
-    {
-      "id": 6,
-      "type": "LoadImage",
-      "pos": [
-        120,
-        200
-      ],
-      "size": [
-        220,
-        300
-      ],
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            2
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "example.png",
-        "image"
-      ]
-    },
-    {
-      "id": 2,
-      "type": "CLIPVisionEncode",
-      "pos": [
-        450,
-        170
-      ],
-      "size": [
-        250,
-        50
-      ],
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "clip_vision",
-          "type": "CLIP_VISION",
-          "link": 1
-        },
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 2
-        }
-      ],
-      "outputs": [
-        {
-          "name": "CLIP_VISION_OUTPUT",
-          "type": "CLIP_VISION_OUTPUT",
-          "links": [
-            28
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CLIPVisionEncode"
-      }
-    },
-    {
-      "id": 3,
-      "type": "IPAdapterModelLoader",
-      "pos": [
-        430,
-        60
-      ],
-      "size": [
-        270,
-        60
-      ],
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IPADAPTER",
-          "type": "IPADAPTER",
-          "links": [
-            27
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterModelLoader"
-      },
-      "widgets_values": [
-        "ip-adapter_sd15.bin"
-      ]
-    },
-    {
-      "id": 7,
-      "type": "CheckpointLoaderSimple",
-      "pos": [
-        380,
-        310
-      ],
-      "size": {
-        "0": 315,
-        "1": 98
-      },
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            30
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "CLIP",
-          "type": "CLIP",
-          "links": [
-            6,
-            7
-          ],
-          "shape": 3,
-          "slot_index": 1
-        },
-        {
-          "name": "VAE",
-          "type": "VAE",
-          "links": [
-            13
-          ],
-          "shape": 3,
-          "slot_index": 2
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CheckpointLoaderSimple"
-      },
-      "widgets_values": [
-        "v1-5-pruned-emaonly.safetensors"
-      ]
-    },
     {
       "id": 8,
       "type": "CLIPTextEncode",
@@ -363,36 +85,83 @@
       "bgcolor": "#533"
     },
     {
-      "id": 11,
-      "type": "EmptyLatentImage",
+      "id": 12,
+      "type": "VAEDecode",
       "pos": [
-        790,
-        560
+        1430,
+        320
       ],
-      "size": [
-        210,
-        110
-      ],
+      "size": {
+        "0": 140,
+        "1": 50
+      },
       "flags": {},
-      "order": 3,
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 12
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 13
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            31
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      }
+    },
+    {
+      "id": 6,
+      "type": "LoadImage",
+      "pos": [
+        120,
+        200
+      ],
+      "size": {
+        "0": 220,
+        "1": 314
+      },
+      "flags": {},
+      "order": 0,
       "mode": 0,
       "outputs": [
         {
-          "name": "LATENT",
-          "type": "LATENT",
+          "name": "IMAGE",
+          "type": "IMAGE",
           "links": [
-            11
+            70
           ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null,
           "shape": 3
         }
       ],
       "properties": {
-        "Node name for S&R": "EmptyLatentImage"
+        "Node name for S&R": "LoadImage"
       },
       "widgets_values": [
-        512,
-        512,
-        1
+        "example.png",
+        "image"
       ]
     },
     {
@@ -413,7 +182,7 @@
         {
           "name": "model",
           "type": "MODEL",
-          "link": 29
+          "link": 44
         },
         {
           "name": "positive",
@@ -447,13 +216,93 @@
         "Node name for S&R": "KSampler"
       },
       "widgets_values": [
-        11,
+        12,
         "fixed",
         20,
         7,
         "dpmpp_2m",
         "karras",
         1
+      ]
+    },
+    {
+      "id": 31,
+      "type": "IPAdapterApply",
+      "pos": [
+        757,
+        120
+      ],
+      "size": {
+        "0": 315,
+        "1": 118
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 43
+        },
+        {
+          "name": "ipadapter",
+          "type": "IPADAPTER",
+          "link": 45
+        },
+        {
+          "name": "clip_vision_output",
+          "type": "CLIP_VISION_OUTPUT",
+          "link": 68
+        },
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            44
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterApply"
+      },
+      "widgets_values": [
+        1
+      ]
+    },
+    {
+      "id": 20,
+      "type": "SaveImage",
+      "pos": [
+        1430,
+        420
+      ],
+      "size": {
+        "0": 526.6748046875,
+        "1": 579.490478515625
+      },
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 31
+        }
+      ],
+      "properties": {},
+      "widgets_values": [
+        "ComfyUI"
       ]
     },
     {
@@ -468,14 +317,14 @@
         "1": 58
       },
       "flags": {},
-      "order": 0,
+      "order": 1,
       "mode": 0,
       "outputs": [
         {
           "name": "CLIP_VISION",
           "type": "CLIP_VISION",
           "links": [
-            1
+            69
           ],
           "shape": 3,
           "slot_index": 0
@@ -487,25 +336,166 @@
       "widgets_values": [
         "IP-Adapter_sd15_pytorch_model.bin"
       ]
+    },
+    {
+      "id": 33,
+      "type": "IPAdapterCLIPVisionEncode",
+      "pos": [
+        443,
+        178
+      ],
+      "size": {
+        "0": 253.60000610351562,
+        "1": 50
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip_vision",
+          "type": "CLIP_VISION",
+          "link": 69
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 70
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CLIP_VISION_OUTPUT",
+          "type": "CLIP_VISION_OUTPUT",
+          "links": [
+            68
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterCLIPVisionEncode"
+      }
+    },
+    {
+      "id": 11,
+      "type": "EmptyLatentImage",
+      "pos": [
+        790,
+        560
+      ],
+      "size": {
+        "0": 210,
+        "1": 110
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            11
+          ],
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "EmptyLatentImage"
+      },
+      "widgets_values": [
+        512,
+        512,
+        1
+      ]
+    },
+    {
+      "id": 7,
+      "type": "CheckpointLoaderSimple",
+      "pos": [
+        387,
+        295
+      ],
+      "size": {
+        "0": 315,
+        "1": 98
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            43
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            6,
+            7
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            13
+          ],
+          "shape": 3,
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CheckpointLoaderSimple"
+      },
+      "widgets_values": [
+        "v1-5-pruned-emaonly.safetensors"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "IPAdapterModelLoader",
+      "pos": [
+        430,
+        60
+      ],
+      "size": {
+        "0": 270,
+        "1": 60
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IPADAPTER",
+          "type": "IPADAPTER",
+          "links": [
+            45
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterModelLoader"
+      },
+      "widgets_values": [
+        "ip-adapter_sd15.bin"
+      ]
     }
   ],
   "links": [
-    [
-      1,
-      1,
-      0,
-      2,
-      0,
-      "CLIP_VISION"
-    ],
-    [
-      2,
-      6,
-      0,
-      2,
-      1,
-      "IMAGE"
-    ],
     [
       6,
       7,
@@ -547,14 +537,6 @@
       "VAE"
     ],
     [
-      14,
-      12,
-      0,
-      13,
-      0,
-      "IMAGE"
-    ],
-    [
       20,
       8,
       0,
@@ -571,36 +553,60 @@
       "CONDITIONING"
     ],
     [
-      27,
-      3,
+      31,
+      12,
       0,
-      17,
-      1,
-      "IPADAPTER"
+      20,
+      0,
+      "IMAGE"
     ],
     [
-      28,
-      2,
+      43,
+      7,
       0,
-      17,
-      2,
-      "CLIP_VISION_OUTPUT"
+      31,
+      0,
+      "MODEL"
     ],
     [
-      29,
-      17,
+      44,
+      31,
       0,
       10,
       0,
       "MODEL"
     ],
     [
-      30,
-      7,
+      45,
+      3,
       0,
-      17,
+      31,
+      1,
+      "IPADAPTER"
+    ],
+    [
+      68,
+      33,
       0,
-      "MODEL"
+      31,
+      2,
+      "CLIP_VISION_OUTPUT"
+    ],
+    [
+      69,
+      1,
+      0,
+      33,
+      0,
+      "CLIP_VISION"
+    ],
+    [
+      70,
+      6,
+      0,
+      33,
+      1,
+      "IMAGE"
     ]
   ],
   "groups": [],

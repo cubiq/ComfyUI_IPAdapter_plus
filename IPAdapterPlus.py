@@ -117,12 +117,6 @@ class IPAdapterPlus(IPAdapter):
         )
         return image_proj_model
 
-    @torch.inference_mode()
-    def get_image_embeds(self, clip_embed, clip_embed_zeroed):
-        image_prompt_embeds = self.image_proj_model(clip_embed)
-        uncond_image_prompt_embeds = self.image_proj_model(clip_embed_zeroed)
-        return image_prompt_embeds, uncond_image_prompt_embeds
-
 class CrossAttentionPatch:
     # forward for patching
     def __init__(self, weight, ipadapter, dtype, number, cond, uncond, mask=None):
@@ -252,7 +246,7 @@ class IPAdapterApply:
             clip_extra_context_tokens = 16
             clip_embed = clip_embed.hidden_states[-2]
         else:
-            # if we come 'CLIP Vision Encode IPAdapter' we need to extract the image_embeds
+            # if we come from 'CLIP Vision Encode IPAdapter' we need to extract the image_embeds
             if self.is_ipadapter_encode:
                 clip_embed = clip_embed.image_embeds
 
@@ -287,7 +281,7 @@ class IPAdapterApply:
             "dtype": self.dtype,
             "cond": self.image_prompt_embeds,
             "uncond": self.uncond_image_prompt_embeds,
-            "mask": mask if mask is None else mask.to(self.device)
+            "mask": mask if mask is None else mask.to(self.device, dtype=self.dtype)
         }
 
         if not self.is_sdxl:
@@ -316,7 +310,6 @@ class IPAdapterApply:
         return (work_model,)
 
 
-#class IPAClipVisionModel(ClipVisionModel):
 # from: https://github.com/comfyanonymous/ComfyUI/blob/f88f7f413afbe04b42c4422e9deedbaa3269ce76/comfy/clip_vision.py#L39
 def encode_image_IPAdapter(self, image):
     img = torch.clip((255. * image), 0, 255).round().int()
