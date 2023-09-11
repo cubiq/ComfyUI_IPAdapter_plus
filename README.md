@@ -1,9 +1,13 @@
 # ComfyUI_IPAdapter_Plus
 ComfyUI reference implementation for [IPAdapter](https://github.com/tencent-ailab/IP-Adapter/tree/6fb9d3554a5c774f41e187e8fdbc7b9a1db8c2e3) models.
 
-The code is mostly taken from the original IPAdapter repository and [laksjdjf's](https://github.com/laksjdjf/IPAdapter-ComfyUI/tree/main) implementation, all credit goes to them. I just made the extension closer to ComfyUI philosophy.
+The code is mostly taken from the original IPAdapter repository and [laksjdjf's](https://github.com/laksjdjf/IPAdapter-ComfyUI/tree/main) implementation. I just made the extension closer to how ComfyUI makes things.
 
-Example workflow
+## Updates
+
+**2023/9/11**: The code has been rewritten to take advantage of the new ComfyUI updates regarding clip vision. Expect lower memory usage.
+
+## Example workflow
 
 ![IPAdapter Example workflow](./ipadapter_workflow.png)
 
@@ -33,7 +37,11 @@ You can rename them to something easier to remember (eg: `ip-adapter_sd15-image-
 
 There's a basic workflow included in this repo and a few examples in the [example](./examples/) directory.
 
-**IMPORTANT:** To use the *IPAdapter Plus* models (base and face) you must use the new `CLIP Vision Encode (IPAdapter)` node. The non-plus version works with both the standard `CLIP Vision Encode` and the new one.
+**IMPORTANT:** Remember to use the `CLIP Vision Encode (IPAdapter)` node (and not the standard one included with ComfyUI). Also be sure to **select the model of the same kind (1.5 vs XL)**, there are 3 of them: clip vision, IPApdapter and the main checkpoint.
+
+### Samplers
+
+Weirdly enough all **dpmpp_2m** (including _sde) samplers seem to perfom a little worse with IPAdapter and they generally need 5-10 more steps than usual. **ddmin** and **euler** seem to be pretty good.
 
 ### IPAdapter + Canny ControlNet
 
