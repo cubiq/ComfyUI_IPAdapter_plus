@@ -1,6 +1,6 @@
 {
-  "last_node_id": 12,
-  "last_link_id": 13,
+  "last_node_id": 23,
+  "last_link_id": 37,
   "nodes": [
     {
       "id": 4,
@@ -32,120 +32,6 @@
       },
       "widgets_values": [
         "IP-Adapter_sd15_pytorch_model.bin"
-      ]
-    },
-    {
-      "id": 1,
-      "type": "CheckpointLoaderSimple",
-      "pos": [
-        290,
-        280
-      ],
-      "size": {
-        "0": 300,
-        "1": 100
-      },
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            4
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "CLIP",
-          "type": "CLIP",
-          "links": [
-            5,
-            6
-          ],
-          "shape": 3,
-          "slot_index": 1
-        },
-        {
-          "name": "VAE",
-          "type": "VAE",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CheckpointLoaderSimple"
-      },
-      "widgets_values": [
-        "absolutereality_v181.safetensors"
-      ]
-    },
-    {
-      "id": 10,
-      "type": "EmptyLatentImage",
-      "pos": [
-        650,
-        590
-      ],
-      "size": {
-        "0": 210,
-        "1": 110
-      },
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "LATENT",
-          "type": "LATENT",
-          "links": [
-            10
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "EmptyLatentImage"
-      },
-      "widgets_values": [
-        512,
-        512,
-        1
-      ]
-    },
-    {
-      "id": 3,
-      "type": "IPAdapterModelLoader",
-      "pos": [
-        290,
-        60
-      ],
-      "size": {
-        "0": 300,
-        "1": 60
-      },
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IPADAPTER",
-          "type": "IPADAPTER",
-          "links": [
-            1
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterModelLoader"
-      },
-      "widgets_values": [
-        "ip-adapter_sd15.bin"
       ]
     },
     {
@@ -190,47 +76,6 @@
       "bgcolor": "#533"
     },
     {
-      "id": 7,
-      "type": "CLIPTextEncode",
-      "pos": [
-        650,
-        250
-      ],
-      "size": {
-        "0": 210,
-        "1": 120
-      },
-      "flags": {},
-      "order": 6,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "clip",
-          "type": "CLIP",
-          "link": 5
-        }
-      ],
-      "outputs": [
-        {
-          "name": "CONDITIONING",
-          "type": "CONDITIONING",
-          "links": [
-            8
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CLIPTextEncode"
-      },
-      "widgets_values": [
-        "beautiful renaissance girl, detailed"
-      ],
-      "color": "#232",
-      "bgcolor": "#353"
-    },
-    {
       "id": 11,
       "type": "VAEDecode",
       "pos": [
@@ -242,7 +87,7 @@
         "1": 50
       },
       "flags": {},
-      "order": 10,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
@@ -272,38 +117,6 @@
       }
     },
     {
-      "id": 2,
-      "type": "VAELoader",
-      "pos": [
-        940,
-        480
-      ],
-      "size": {
-        "0": 300,
-        "1": 60
-      },
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "VAE",
-          "type": "VAE",
-          "links": [
-            12
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "VAELoader"
-      },
-      "widgets_values": [
-        "vae-ft-mse-840000-ema-pruned.safetensors"
-      ]
-    },
-    {
       "id": 12,
       "type": "SaveImage",
       "pos": [
@@ -315,7 +128,7 @@
         "1": 450
       },
       "flags": {},
-      "order": 11,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
@@ -327,6 +140,86 @@
       "properties": {},
       "widgets_values": [
         "IPAdapter"
+      ]
+    },
+    {
+      "id": 7,
+      "type": "CLIPTextEncode",
+      "pos": [
+        650,
+        250
+      ],
+      "size": {
+        "0": 210,
+        "1": 120
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            25
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "closeup photo of a renaissance astronaut "
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 14,
+      "type": "LoadImage",
+      "pos": [
+        40,
+        60
+      ],
+      "size": {
+        "0": 220,
+        "1": 320
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            28
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "venere.jpg",
+        "image"
       ]
     },
     {
@@ -357,7 +250,7 @@
         {
           "name": "image",
           "type": "IMAGE",
-          "link": 3
+          "link": 28
         },
         {
           "name": "model",
@@ -380,47 +273,89 @@
         "Node name for S&R": "IPAdapterApply"
       },
       "widgets_values": [
-        1,
+        0.8,
         0
       ]
     },
     {
-      "id": 6,
-      "type": "LoadImage",
+      "id": 2,
+      "type": "VAELoader",
       "pos": [
-        40,
-        60
+        290,
+        430
       ],
       "size": {
-        "0": 220,
-        "1": 320
+        "0": 300,
+        "1": 60
       },
       "flags": {},
-      "order": 5,
+      "order": 2,
       "mode": 0,
       "outputs": [
         {
-          "name": "IMAGE",
-          "type": "IMAGE",
+          "name": "VAE",
+          "type": "VAE",
           "links": [
-            3
+            12,
+            30
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "vae-ft-mse-840000-ema-pruned.safetensors"
+      ]
+    },
+    {
+      "id": 1,
+      "type": "CheckpointLoaderSimple",
+      "pos": [
+        290,
+        280
+      ],
+      "size": {
+        "0": 300,
+        "1": 100
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            4
           ],
           "shape": 3,
           "slot_index": 0
         },
         {
-          "name": "MASK",
-          "type": "MASK",
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            5,
+            6
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
           "links": null,
           "shape": 3
         }
       ],
       "properties": {
-        "Node name for S&R": "LoadImage"
+        "Node name for S&R": "CheckpointLoaderSimple"
       },
       "widgets_values": [
-        "venere.jpg",
-        "image"
+        "absolutereality_v181INPAINTING.safetensors"
       ]
     },
     {
@@ -435,7 +370,7 @@
         "1": 262
       },
       "flags": {},
-      "order": 9,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
@@ -446,7 +381,7 @@
         {
           "name": "positive",
           "type": "CONDITIONING",
-          "link": 8
+          "link": 25
         },
         {
           "name": "negative",
@@ -456,7 +391,7 @@
         {
           "name": "latent_image",
           "type": "LATENT",
-          "link": 10
+          "link": 32
         }
       ],
       "outputs": [
@@ -474,13 +409,136 @@
         "Node name for S&R": "KSampler"
       },
       "widgets_values": [
-        0,
+        34,
         "fixed",
-        25,
+        35,
         6,
         "ddim",
         "ddim_uniform",
         1
+      ]
+    },
+    {
+      "id": 3,
+      "type": "IPAdapterModelLoader",
+      "pos": [
+        290,
+        60
+      ],
+      "size": {
+        "0": 300,
+        "1": 60
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IPADAPTER",
+          "type": "IPADAPTER",
+          "links": [
+            1
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterModelLoader"
+      },
+      "widgets_values": [
+        "ip-adapter-plus_sd15.bin"
+      ]
+    },
+    {
+      "id": 20,
+      "type": "VAEEncodeForInpaint",
+      "pos": [
+        650,
+        590
+      ],
+      "size": [
+        230,
+        100
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pixels",
+          "type": "IMAGE",
+          "link": 29
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 30
+        },
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 37
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            32
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEEncodeForInpaint"
+      },
+      "widgets_values": [
+        12
+      ]
+    },
+    {
+      "id": 19,
+      "type": "LoadImage",
+      "pos": [
+        370,
+        600
+      ],
+      "size": {
+        "0": 220,
+        "1": 320
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            29
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            37
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "clipspace/clipspace-mask-8127362.png [input]",
+        "image"
       ]
     }
   ],
@@ -502,14 +560,6 @@
       "CLIP_VISION"
     ],
     [
-      3,
-      6,
-      0,
-      5,
-      2,
-      "IMAGE"
-    ],
-    [
       4,
       1,
       0,
@@ -542,28 +592,12 @@
       "MODEL"
     ],
     [
-      8,
-      7,
-      0,
-      9,
-      1,
-      "CONDITIONING"
-    ],
-    [
       9,
       8,
       0,
       9,
       2,
       "CONDITIONING"
-    ],
-    [
-      10,
-      10,
-      0,
-      9,
-      3,
-      "LATENT"
     ],
     [
       11,
@@ -588,6 +622,54 @@
       12,
       0,
       "IMAGE"
+    ],
+    [
+      25,
+      7,
+      0,
+      9,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      28,
+      14,
+      0,
+      5,
+      2,
+      "IMAGE"
+    ],
+    [
+      29,
+      19,
+      0,
+      20,
+      0,
+      "IMAGE"
+    ],
+    [
+      30,
+      2,
+      0,
+      20,
+      1,
+      "VAE"
+    ],
+    [
+      32,
+      20,
+      0,
+      9,
+      3,
+      "LATENT"
+    ],
+    [
+      37,
+      19,
+      1,
+      20,
+      2,
+      "MASK"
     ]
   ],
   "groups": [],

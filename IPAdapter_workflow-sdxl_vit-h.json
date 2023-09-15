@@ -3,162 +3,16 @@
   "last_link_id": 13,
   "nodes": [
     {
-      "id": 4,
-      "type": "CLIPVisionLoader",
-      "pos": [
-        290,
-        170
-      ],
-      "size": {
-        "0": 300,
-        "1": 60
-      },
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "CLIP_VISION",
-          "type": "CLIP_VISION",
-          "links": [
-            2
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CLIPVisionLoader"
-      },
-      "widgets_values": [
-        "IP-Adapter_sd15_pytorch_model.bin"
-      ]
-    },
-    {
-      "id": 1,
-      "type": "CheckpointLoaderSimple",
-      "pos": [
-        290,
-        280
-      ],
-      "size": {
-        "0": 300,
-        "1": 100
-      },
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            4
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "CLIP",
-          "type": "CLIP",
-          "links": [
-            5,
-            6
-          ],
-          "shape": 3,
-          "slot_index": 1
-        },
-        {
-          "name": "VAE",
-          "type": "VAE",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CheckpointLoaderSimple"
-      },
-      "widgets_values": [
-        "absolutereality_v181.safetensors"
-      ]
-    },
-    {
-      "id": 10,
-      "type": "EmptyLatentImage",
-      "pos": [
-        650,
-        590
-      ],
-      "size": {
-        "0": 210,
-        "1": 110
-      },
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "LATENT",
-          "type": "LATENT",
-          "links": [
-            10
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "EmptyLatentImage"
-      },
-      "widgets_values": [
-        512,
-        512,
-        1
-      ]
-    },
-    {
-      "id": 3,
-      "type": "IPAdapterModelLoader",
-      "pos": [
-        290,
-        60
-      ],
-      "size": {
-        "0": 300,
-        "1": 60
-      },
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IPADAPTER",
-          "type": "IPADAPTER",
-          "links": [
-            1
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterModelLoader"
-      },
-      "widgets_values": [
-        "ip-adapter_sd15.bin"
-      ]
-    },
-    {
       "id": 8,
       "type": "CLIPTextEncode",
       "pos": [
         650,
         420
       ],
-      "size": {
-        "0": 210,
-        "1": 120
-      },
+      "size": [
+        210,
+        120
+      ],
       "flags": {},
       "order": 7,
       "mode": 0,
@@ -196,10 +50,10 @@
         650,
         250
       ],
-      "size": {
-        "0": 210,
-        "1": 120
-      },
+      "size": [
+        210,
+        120
+      ],
       "flags": {},
       "order": 6,
       "mode": 0,
@@ -237,10 +91,10 @@
         1300,
         170
       ],
-      "size": {
-        "0": 140,
-        "1": 50
-      },
+      "size": [
+        140,
+        50
+      ],
       "flags": {},
       "order": 10,
       "mode": 0,
@@ -272,48 +126,16 @@
       }
     },
     {
-      "id": 2,
-      "type": "VAELoader",
-      "pos": [
-        940,
-        480
-      ],
-      "size": {
-        "0": 300,
-        "1": 60
-      },
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "VAE",
-          "type": "VAE",
-          "links": [
-            12
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "VAELoader"
-      },
-      "widgets_values": [
-        "vae-ft-mse-840000-ema-pruned.safetensors"
-      ]
-    },
-    {
       "id": 12,
       "type": "SaveImage",
       "pos": [
         1300,
         270
       ],
-      "size": {
-        "0": 400,
-        "1": 450
-      },
+      "size": [
+        400,
+        450
+      ],
       "flags": {},
       "order": 11,
       "mode": 0,
@@ -330,16 +152,233 @@
       ]
     },
     {
+      "id": 6,
+      "type": "LoadImage",
+      "pos": [
+        40,
+        60
+      ],
+      "size": [
+        220,
+        320
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            3
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "venere.jpg",
+        "image"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "IPAdapterModelLoader",
+      "pos": [
+        290,
+        60
+      ],
+      "size": [
+        300,
+        60
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IPADAPTER",
+          "type": "IPADAPTER",
+          "links": [
+            1
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterModelLoader"
+      },
+      "widgets_values": [
+        "ip-adapter_sdxl_vit-h.bin"
+      ]
+    },
+    {
+      "id": 1,
+      "type": "CheckpointLoaderSimple",
+      "pos": [
+        290,
+        280
+      ],
+      "size": [
+        300,
+        100
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            4
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            5,
+            6
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CheckpointLoaderSimple"
+      },
+      "widgets_values": [
+        "sd_xl_base_1.0.safetensors"
+      ]
+    },
+    {
+      "id": 2,
+      "type": "VAELoader",
+      "pos": [
+        940,
+        480
+      ],
+      "size": [
+        300,
+        60
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            12
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "sdxl_vae.safetensors"
+      ]
+    },
+    {
+      "id": 10,
+      "type": "EmptyLatentImage",
+      "pos": [
+        650,
+        590
+      ],
+      "size": [
+        210,
+        110
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            10
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "EmptyLatentImage"
+      },
+      "widgets_values": [
+        1024,
+        1024,
+        1
+      ]
+    },
+    {
+      "id": 4,
+      "type": "CLIPVisionLoader",
+      "pos": [
+        290,
+        170
+      ],
+      "size": [
+        300,
+        60
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "CLIP_VISION",
+          "type": "CLIP_VISION",
+          "links": [
+            2
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPVisionLoader"
+      },
+      "widgets_values": [
+        "IP-Adapter_sd15_pytorch_model.bin"
+      ]
+    },
+    {
       "id": 5,
       "type": "IPAdapterApply",
       "pos": [
         650,
         60
       ],
-      "size": {
-        "0": 210,
-        "1": 142
-      },
+      "size": [
+        210,
+        140
+      ],
       "flags": {},
       "order": 8,
       "mode": 0,
@@ -380,47 +419,8 @@
         "Node name for S&R": "IPAdapterApply"
       },
       "widgets_values": [
-        1,
+        0.8,
         0
-      ]
-    },
-    {
-      "id": 6,
-      "type": "LoadImage",
-      "pos": [
-        40,
-        60
-      ],
-      "size": {
-        "0": 220,
-        "1": 320
-      },
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            3
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "venere.jpg",
-        "image"
       ]
     },
     {
@@ -477,7 +477,7 @@
         0,
         "fixed",
         25,
-        6,
+        5,
         "ddim",
         "ddim_uniform",
         1

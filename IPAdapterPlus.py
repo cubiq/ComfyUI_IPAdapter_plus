@@ -8,6 +8,7 @@ from comfy.clip_vision import ClipVisionModel
 
 from torch import nn
 import torch.nn.functional as F
+import torchvision.transforms as TT
 
 from .resampler import Resampler
 
@@ -16,8 +17,6 @@ MODELS_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "models")
 # attention_channels
 SD_V12_CHANNELS = [320] * 4 + [640] * 4 + [1280] * 4 + [1280] * 6 + [640] * 6 + [320] * 6 + [1280] * 2
 SD_XL_CHANNELS = [640] * 8 + [1280] * 40 + [1280] * 60 + [640] * 12 + [1280] * 20
-
-MAX_NOISE = 5.0
 
 def get_filename_list(path):
     return [f for f in os.listdir(path) if f.endswith('.bin')]
@@ -77,20 +76,38 @@ def attention(q, k, v, extra_options):
         out = out.transpose(1, 2).reshape(b, -1, extra_options["n_heads"] * extra_options["dim_head"])
     return out
 
-def encode_zero_image(clip_vision, noise=0):
-    image = torch.zeros( [1, 3, 224, 224] )
+# TODO: still have to find the best way to add noise to the uncod image
+def image_add_noise(image, noise):
+    image = image.permute([0,3,1,2])
+    transforms = TT.Compose([
+        TT.CenterCrop(min(image.shape[2], image.shape[3])),
+        TT.Resize((28, 28), antialias=True),
+        #TT.Resize((224, 224), interpolation=TT.InterpolationMode.NEAREST, antialias=True),
+        #TT.ColorJitter(contrast=(0.75,0.75)),
+        #TT.ElasticTransform(alpha=75.0, sigma=noise+.25),
+        TT.RandomVerticalFlip(p=1.0),
+        TT.RandomHorizontalFlip(p=1.0),
+    ])
+    torch.manual_seed(0) # use a fixed random for reproducible results
+    image = transforms(image)
+    image = image.permute([0,2,3,1])
+    image = image + ((1.9-1.9*noise) * torch.randn_like(image) + 0.1)
+    return image
+
+def encode_neg_image(clip_vision, image=None, noise=0):
+    if noise > 0 and image is not None:
+        image = image_add_noise(image, noise)
+
+    if image is None:
+        image = torch.zeros( [1, 3, 224, 224] )
+
     img = torch.clip((255. * image), 0, 255).round().int()
     img = list(map(lambda a: a, img))
     inputs = clip_vision.processor(images=img, return_tensors="pt")
     comfy.model_management.load_model_gpu(clip_vision.patcher)
     pixel_values = inputs['pixel_values'].to(clip_vision.load_device)
     
-    if noise > 0:
-        min_noise = -noise
-        max_noise = noise
-        torch.manual_seed(0) # fixed seed for reproducible results
-        pixel_values = (max_noise - min_noise) * torch.rand_like(pixel_values) + min_noise
-    else:
+    if noise == 0:
         pixel_values = torch.zeros_like(pixel_values)
 
     if clip_vision.dtype != torch.float32:
@@ -116,17 +133,16 @@ class IPAdapter(nn.Module):
     def __init__(self, ipadapter_model, cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4):
         super().__init__()
 
-        self.ipadapter_model = ipadapter_model
         self.clip_embeddings_dim = clip_embeddings_dim
-        self.cross_attention_dim = self.ipadapter_model["ip_adapter"]["1.to_k_ip.weight"].shape[1]
+        self.cross_attention_dim = ipadapter_model["ip_adapter"]["1.to_k_ip.weight"].shape[1]
         self.clip_extra_context_tokens = clip_extra_context_tokens
 
         self.image_proj_model = self.init_proj()
 
-        self.image_proj_model.load_state_dict(self.ipadapter_model["image_proj"])
+        self.image_proj_model.load_state_dict(ipadapter_model["image_proj"])
         self.ip_layers = To_KV(cross_attention_dim)
-        self.ip_layers.load_state_dict(self.ipadapter_model["ip_adapter"])
-    
+        self.ip_layers.load_state_dict(ipadapter_model["ip_adapter"])
+
     def init_proj(self):
         image_proj_model = ImageProjModel(
             cross_attention_dim=self.cross_attention_dim,
@@ -192,33 +208,10 @@ class CrossAttentionPatch:
                 ip_v = ipadapter.ip_layers.to_kvs[self.number*2+1](uncond_cond)
 
                 ip_out = attention(q, ip_k, ip_v, extra_options)
-                
-                if mask is not None:
-                    mask_size = mask.shape[0] * mask.shape[1]
-                    down_sample_rate = int((mask_size // 64 // out.shape[1]) ** (1/2))
-                    mask_downsample = torch.nn.functional.interpolate(mask.unsqueeze(0).unsqueeze(0), scale_factor= 1/8/down_sample_rate, mode="nearest").squeeze(0)
-                    mask_downsample = mask_downsample.view(1,-1, 1).repeat(out.shape[0], 1, out.shape[2])
-                    ip_out = ip_out * mask_downsample
 
                 out = out + ip_out * weight
 
         return out.to(dtype=org_dtype)
-
-class IPAdapterCLIPVisionEncode:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {"required": { "clip_vision": ("CLIP_VISION",),
-                              "image": ("IMAGE",)
-                             }}
-    RETURN_TYPES = ("CLIP_VISION_OUTPUT",)
-    FUNCTION = "encode"
-
-    CATEGORY = "ipadapter"
-
-    def encode(self, clip_vision, image):
-        output = clip_vision.encode_image(image)
-
-        return ((output, clip_vision), )
 
 class IPAdapterModelLoader:
     @classmethod
@@ -246,63 +239,44 @@ class IPAdapterApply:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "model": ("MODEL", ),
                 "ipadapter": ("IPADAPTER", ),
-                "clip_vision_output": ("CLIP_VISION_OUTPUT", ),
+                "clip_vision": ("CLIP_VISION",),
+                "image": ("IMAGE",),
+                "model": ("MODEL", ),
                 "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.1 }),
+                "noise": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01 })
             },
-            "hidden": {
-                "noise": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.05 }),
-            },
-            "optional": {
-                "mask": ("MASK",),
-            }
         }
 
-    RETURN_TYPES = ("MODEL",)
+    RETURN_TYPES = ("MODEL", )
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
     uncond_hidden_states = None
 
-    def apply_ipadapter(self, model, ipadapter, clip_vision_output, weight, noise=0, mask=None):
+    def apply_ipadapter(self, ipadapter, clip_vision, image, model, weight, noise):
         self.dtype = model.model.diffusion_model.dtype
         self.device = comfy.model_management.get_torch_device()
         self.weight = weight
 
-        # check if we are using the 'CLIP Vision Encode IPAdapter' node
-        self.is_ipadapter_encode = type(clip_vision_output) is tuple
-        if self.is_ipadapter_encode:
-            clip_embed, clip_vision_model = clip_vision_output
-        else:
-            clip_embed = clip_vision_output.image_embeds
+        cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
+        self.is_sdxl = cross_attention_dim == 2048
 
+        clip_embed = clip_vision.encode_image(image)
         self.is_plus = "latents" in ipadapter["image_proj"]
         if self.is_plus:
-            # IPAdapter Plus requires the IPAdapter Encoder
-            if not self.is_ipadapter_encode:
-                raise Exception("IPAdapter Plus requires 'CLIP Vision Encode (IPAdapter)' node")
-
-            clip_embed = clip_embed.penultimate_hidden_states
-            clip_embed_zeroed = encode_zero_image(clip_vision_model, noise).penultimate_hidden_states
-
             clip_extra_context_tokens = 16
+            clip_embed = clip_embed.penultimate_hidden_states
+            clip_embed_zeroed = encode_neg_image(clip_vision, image=image, noise=noise).penultimate_hidden_states
         else:
-            if self.is_ipadapter_encode:
-                clip_embed = clip_embed.image_embeds
-
+            clip_extra_context_tokens = 4
+            clip_embed = clip_embed.image_embeds
             if noise > 0:
-                noise = MAX_NOISE * noise
-                clip_embed_zeroed = encode_zero_image(clip_vision_model, noise).image_embeds
+                clip_embed_zeroed = encode_neg_image(clip_vision, image=image, noise=noise).image_embeds
             else:
                 clip_embed_zeroed = torch.zeros_like(clip_embed)
 
-            clip_extra_context_tokens = 4
-
         clip_embeddings_dim = clip_embed.shape[-1]
-        cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
-
-        self.is_sdxl = cross_attention_dim == 2048
 
         IPA = IPAdapterPlus if self.is_plus else IPAdapter
 
@@ -328,7 +302,6 @@ class IPAdapterApply:
             "dtype": self.dtype,
             "cond": image_prompt_embeds,
             "uncond": uncond_image_prompt_embeds,
-            "mask": mask if mask is None else mask.to(self.device, dtype=self.dtype)
         }
 
         if not self.is_sdxl:
@@ -354,16 +327,14 @@ class IPAdapterApply:
                 set_model_patch_replace(work_model, patch_kwargs, ("midlle", 0, index))
                 patch_kwargs["number"] += 1
 
-        return (work_model,)
+        return (work_model, )
 
 NODE_CLASS_MAPPINGS = {
     "IPAdapterModelLoader": IPAdapterModelLoader,
     "IPAdapterApply": IPAdapterApply,
-    "IPAdapterCLIPVisionEncode": IPAdapterCLIPVisionEncode,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterModelLoader": "Load IPAdapter Model",
     "IPAdapterApply": "Apply IPAdapter",
-    "IPAdapterCLIPVisionEncode": "CLIP Vision Encode (IPAdapter)"
 }
