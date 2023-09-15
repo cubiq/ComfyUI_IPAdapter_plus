@@ -88,6 +88,6 @@ The most effective way to apply the IPAdapter to a region is by an [inpainting w
 
 ## Credits
 
-- [IPAdapter](ttps://github.com/tencent-ailab/IP-Adapter/)
+- [IPAdapter](https://github.com/tencent-ailab/IP-Adapter/)
 - [laksjdjf](https://github.com/laksjdjf/IPAdapter-ComfyUI/)
 - [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
