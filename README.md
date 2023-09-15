@@ -1,7 +1,7 @@
-# ComfyUI_IPAdapter_Plus
-ComfyUI reference implementation for [IPAdapter](https://github.com/tencent-ailab/IP-Adapter/) models.
+# ComfyUI IPAdapter plus
+[ComfyUI](https://github.com/comfyanonymous/ComfyUI) reference implementation for [IPAdapter](https://github.com/tencent-ailab/IP-Adapter/) models.
 
-The difference of this extension and other IPAdapter implementations is that I try to follow as close as possible the ComfyUI way of doing things. This should result in faster, more reliable code.
+This IPAdapter implementation follows as close as possible the ComfyUI way of doing things. This should result in a faster, more reliable code.
 
 ## Updates
 
@@ -27,7 +27,7 @@ For SD1.5 you need:
 
 For SDXL you need:
 - [ip-adapter_sdxl.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl.bin)
-- [ip-adapter_sdxl_vit-h.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.bin) **This model requires the use of the SD1.5 encoder despite being for SDXL**
+- [ip-adapter_sdxl_vit-h.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.bin) **This model requires the use of the SD1.5 encoder despite being for SDXL checkpoints**
 
 Additionally you need the image encoders to be placed in the `ComfyUI/models/clip_vision/` directory:
 
@@ -36,15 +36,15 @@ Additionally you need the image encoders to be placed in the `ComfyUI/models/cli
 
 You can rename them to something easier to remember or put them into a sub-directory.
 
-## What it is
+## What is it?
 
-The IPAdapter are very powerful moderls for image to image conditioning. Given a reference image you can do image variations augmented by text prompt, control net and masks.
+The IPAdapter are very powerful moderls for image to image conditioning. Given a reference image you can do image variations augmented by text prompt, controlnets and masks. Very useful to create image variations and "face swaps".
 
 ## How to use
 
-There's a basic workflow included in this repo and a few examples in the [example](./examples/) directory. Usually it's a good idea to lower the `weight` to at least `0.8`.
+There's a basic workflow included in this repo and a few examples in the [examples](./examples/) directory. Usually it's a good idea to lower the `weight` to at least `0.8`.
 
-The `noise` paramenter is an exclusive experimental exploitation of the IPAdapter models. You can set it to even just `0.01` for an arguably better result. **Please report your experience with the noise option**!
+The `noise` paramenter is an exclusive experimental exploitation of the IPAdapter models. You can set it as low as `0.01` for an arguably better result. **Please report your experience with the noise option**!
 
 <details>
 <summary>Nerd-explain of the noise option</summary>
@@ -56,7 +56,6 @@ I made quite a few tests and I was not sure if it was worth it to include this f
 Basically the IPAdapter sends two pictures for the conditioning, one is the reference the other --that you don't see-- is an empty image that could be considered like a negative conditioning.
 
 What I'm doing is to send a very noisy image instead of an empty one. The `noise` parameter determines the amount of noise. A value of `0.01` adds a lot of noise and creates an image close to the original created by the IPAdapter (a very noisy image being intelligible could be considered like an empty image); a value of `1.0` removes most of noise so the image gets conditioned more.
-
 </details>
 
 ### KSampler configuration suggestions
@@ -66,6 +65,8 @@ Weirdly enough all `dpmpp_2m` (including `_sde`) samplers seem to perfom poorly 
 The model tends to burn the images a little. If needed lower the CFG scale.
 
 It generally requires a few more steps than usual, if the result is underwhelming try to add 10+ steps.
+
+Generally speaking I find the SDXL models a bit disappointing. The 1.5 are pretty good, especially the Plus.
 
 ### IPAdapter + ControlNet
 
@@ -81,7 +82,7 @@ IPAdapter offers an interesting model for a kind of "face swap" effect. [The wor
 
 ### Masking
 
-The most effect way to apply the IPAdapter to a region is by [inpainting workflow](./examples/inpainting.json). Remeber to use a specific checkpoint for inpainting otherwise it won't work. Even if you are inpainting a face I fince that the IPAdapter-Plus (not the face one), works best.
+The most effective way to apply the IPAdapter to a region is by an [inpainting workflow](./examples/inpainting.json). Remeber to use a specific checkpoint for inpainting otherwise it won't work. Even if you are inpainting a face I find that the *IPAdapter-Plus* (not the *face* one), works best.
 
 <img src="./examples/inpainting.jpg" width="100%" alt="inpainting" />
 
