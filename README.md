@@ -47,7 +47,7 @@ There's a basic workflow included in this repo and a few examples in the [exampl
 The `noise` paramenter is an exclusive experimental exploitation of the IPAdapter models. You can set it as low as `0.01` for an arguably better result. **Please report your experience with the noise option**!
 
 <details>
-<summary>Nerd-explain of the noise option</summary>
+<summary>Nerd-explain the noise option</summary>
 
 I made quite a few tests and I was not sure if it was worth it to include this feature, but the results are interesting enough to warrant at least a test period. Let me know what you think.
 
@@ -57,6 +57,10 @@ Basically the IPAdapter sends two pictures for the conditioning, one is the refe
 
 What I'm doing is to send a very noisy image instead of an empty one. The `noise` parameter determines the amount of noise. A value of `0.01` adds a lot of noise and creates an image close to the original created by the IPAdapter (a very noisy image being intelligible could be considered like an empty image); a value of `1.0` removes most of noise so the image gets conditioned more.
 </details>
+
+### IMPORTANT: Preparing the reference image
+
+The reference image needs to be encoded by the CLIP vision model. The encoder resizes the image **and crops it to the center!**. It's not an IPAdapter thing, it's how it works. This means that if you use a portrait or landscape image and the main attention (eg: the face of a character) is not in the middle you'll likely get undesired results. As a rule of thumb try to use square pictures.
 
 ### KSampler configuration suggestions
 

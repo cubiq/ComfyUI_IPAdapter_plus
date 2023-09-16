@@ -76,7 +76,7 @@ def attention(q, k, v, extra_options):
         out = out.transpose(1, 2).reshape(b, -1, extra_options["n_heads"] * extra_options["dim_head"])
     return out
 
-# TODO: still have to find the best way to add noise to the uncod image
+# TODO: still have to find the best way to add noise to the uncond image
 def image_add_noise(image, noise):
     image = image.permute([0,3,1,2])
     transforms = TT.Compose([
@@ -124,6 +124,7 @@ def encode_neg_image(clip_vision, image=None, noise=0):
         if t is not None:
             if k == 'hidden_states':
                 outputs["penultimate_hidden_states"] = t[-2].cpu()
+                outputs["hidden_states"] = None
             else:
                 outputs[k] = t.cpu()
 
@@ -243,7 +244,7 @@ class IPAdapterApply:
                 "clip_vision": ("CLIP_VISION",),
                 "image": ("IMAGE",),
                 "model": ("MODEL", ),
-                "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.1 }),
+                "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.05 }),
                 "noise": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01 })
             },
         }
