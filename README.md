@@ -5,6 +5,8 @@ This IPAdapter implementation follows as close as possible the ComfyUI way of do
 
 ## Updates
 
+**2023/9/17**: Better image handling, lower memory usage. Changed how the noise is generated.
+
 **2023/9/15**: Huge code cleanup! I streamlined the node structure for a tidier workflow. **IMPORTANT** this is a breaking update, we don't need the dedicated clip vision encoder anymore. Please check the new included workflows. Also introduced the new `noise` option, see below for details.
 
 **2023/9/11**: The code has been rewritten to take advantage of the new ComfyUI updates regarding clip vision. Expect lower memory usage.
@@ -38,7 +40,7 @@ You can rename them to something easier to remember or put them into a sub-direc
 
 ## What is it?
 
-The IPAdapter are very powerful moderls for image to image conditioning. Given a reference image you can do image variations augmented by text prompt, controlnets and masks. Very useful to create image variations and "face swaps".
+The IPAdapter are very powerful moderls for image to image conditioning. Given a reference image you can do variations augmented by text prompt, controlnets and masks. Think of it as a 1-image lora.
 
 ## How to use
 
@@ -60,7 +62,7 @@ What I'm doing is to send a very noisy image instead of an empty one. The `noise
 
 ### IMPORTANT: Preparing the reference image
 
-The reference image needs to be encoded by the CLIP vision model. The encoder resizes the image **and crops it to the center!**. It's not an IPAdapter thing, it's how it works. This means that if you use a portrait or landscape image and the main attention (eg: the face of a character) is not in the middle you'll likely get undesired results. As a rule of thumb try to use square pictures.
+The reference image needs to be encoded by the CLIP vision model. The encoder resizes the image to 224×224 **and crops it to the center!**. It's not an IPAdapter thing, it's how it works. This means that if you use a portrait or landscape image and the main attention (eg: the face of a character) is not in the middle you'll likely get undesired results. As a rule of thumb try to use square pictures.
 
 ### KSampler configuration suggestions
 
@@ -70,7 +72,7 @@ The model tends to burn the images a little. If needed lower the CFG scale.
 
 It generally requires a few more steps than usual, if the result is underwhelming try to add 10+ steps.
 
-Generally speaking I find the SDXL models a bit disappointing. The 1.5 are pretty good, especially the Plus.
+The SDXL models are weird, I think they need more training but the `noise` option sometimes helps.
 
 ### IPAdapter + ControlNet
 

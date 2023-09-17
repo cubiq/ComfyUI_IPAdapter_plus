@@ -79,36 +79,26 @@ def attention(q, k, v, extra_options):
 # TODO: still have to find the best way to add noise to the uncond image
 def image_add_noise(image, noise):
     image = image.permute([0,3,1,2])
+    torch.manual_seed(0) # use a fixed random for reproducible results
     transforms = TT.Compose([
         TT.CenterCrop(min(image.shape[2], image.shape[3])),
-        TT.Resize((28, 28), antialias=True),
-        #TT.Resize((224, 224), interpolation=TT.InterpolationMode.NEAREST, antialias=True),
-        #TT.ColorJitter(contrast=(0.75,0.75)),
-        #TT.ElasticTransform(alpha=75.0, sigma=noise+.25),
-        TT.RandomVerticalFlip(p=1.0),
+        TT.Resize((224, 224), interpolation=TT.InterpolationMode.BICUBIC, antialias=True),
+        TT.ElasticTransform(alpha=75.0, sigma=noise*3.5), # shuffle the image
+        #TT.GaussianBlur(5, sigma=1.5),              # by adding blur in the negative image we get sharper results
+        #TT.RandomSolarize(threshold=.75, p=1),       # add color aberration to prevent sending the same colors in the negative image
+        TT.RandomVerticalFlip(p=1.0),                # flip the image to change the geometry even more
         TT.RandomHorizontalFlip(p=1.0),
     ])
-    torch.manual_seed(0) # use a fixed random for reproducible results
-    image = transforms(image)
+    image = transforms(image.cpu())
     image = image.permute([0,2,3,1])
-    image = image + ((1.9-1.9*noise) * torch.randn_like(image) + 0.1)
+    image = image + ((0.25*(1-noise)+0.05) * torch.randn_like(image) )   # add random noise
     return image
 
-def encode_neg_image(clip_vision, image=None, noise=0):
-    if noise > 0 and image is not None:
-        image = image_add_noise(image, noise)
-
-    if image is None:
-        image = torch.zeros( [1, 3, 224, 224] )
-
-    img = torch.clip((255. * image), 0, 255).round().int()
-    img = list(map(lambda a: a, img))
-    inputs = clip_vision.processor(images=img, return_tensors="pt")
+def zeroed_hidden_states(clip_vision):
+    image = torch.zeros( [1, 3, 224, 224] )
+    inputs = clip_vision.processor(images=image, return_tensors="pt")
     comfy.model_management.load_model_gpu(clip_vision.patcher)
-    pixel_values = inputs['pixel_values'].to(clip_vision.load_device)
-    
-    if noise == 0:
-        pixel_values = torch.zeros_like(pixel_values)
+    pixel_values = torch.zeros_like(inputs['pixel_values']).to(clip_vision.load_device)
 
     if clip_vision.dtype != torch.float32:
         precision_scope = torch.autocast
@@ -124,11 +114,8 @@ def encode_neg_image(clip_vision, image=None, noise=0):
         if t is not None:
             if k == 'hidden_states':
                 outputs["penultimate_hidden_states"] = t[-2].cpu()
-                outputs["hidden_states"] = None
-            else:
-                outputs[k] = t.cpu()
 
-    return outputs
+    return outputs["penultimate_hidden_states"]
 
 class IPAdapter(nn.Module):
     def __init__(self, ipadapter_model, cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4):
@@ -249,7 +236,7 @@ class IPAdapterApply:
             },
         }
 
-    RETURN_TYPES = ("MODEL", )
+    RETURN_TYPES = ("MODEL",)
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
@@ -259,21 +246,26 @@ class IPAdapterApply:
         self.dtype = model.model.diffusion_model.dtype
         self.device = comfy.model_management.get_torch_device()
         self.weight = weight
+        self.is_plus = "latents" in ipadapter["image_proj"]
 
         cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
         self.is_sdxl = cross_attention_dim == 2048
 
         clip_embed = clip_vision.encode_image(image)
-        self.is_plus = "latents" in ipadapter["image_proj"]
+        neg_image = image_add_noise(image, noise) if noise > 0 else None
+        
         if self.is_plus:
             clip_extra_context_tokens = 16
             clip_embed = clip_embed.penultimate_hidden_states
-            clip_embed_zeroed = encode_neg_image(clip_vision, image=image, noise=noise).penultimate_hidden_states
+            if noise > 0:
+                clip_embed_zeroed = clip_vision.encode_image(neg_image).penultimate_hidden_states
+            else:
+                clip_embed_zeroed = zeroed_hidden_states(clip_vision)
         else:
             clip_extra_context_tokens = 4
             clip_embed = clip_embed.image_embeds
             if noise > 0:
-                clip_embed_zeroed = encode_neg_image(clip_vision, image=image, noise=noise).image_embeds
+                clip_embed_zeroed = clip_vision.encode_image(neg_image).image_embeds
             else:
                 clip_embed_zeroed = torch.zeros_like(clip_embed)
 
