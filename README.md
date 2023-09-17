@@ -40,13 +40,13 @@ You can rename them to something easier to remember or put them into a sub-direc
 
 ## What is it?
 
-The IPAdapter are very powerful moderls for image to image conditioning. Given a reference image you can do variations augmented by text prompt, controlnets and masks. Think of it as a 1-image lora.
+The IPAdapter are very powerful models for image-to-image conditioning. Given a reference image you can do variations augmented by text prompt, controlnets and masks. Think of it as a 1-image lora.
 
 ## How to use
 
 There's a basic workflow included in this repo and a few examples in the [examples](./examples/) directory. Usually it's a good idea to lower the `weight` to at least `0.8`.
 
-The `noise` paramenter is an exclusive experimental exploitation of the IPAdapter models. You can set it as low as `0.01` for an arguably better result. **Please report your experience with the noise option**!
+The `noise` paramenter is an experimental exploitation of the IPAdapter models. You can set it as low as `0.01` for an arguably better result. **Please report your experience with the noise option**!
 
 <details>
 <summary>Nerd-explain the noise option</summary>
@@ -57,20 +57,18 @@ I made quite a few tests and I was not sure if it was worth it to include this f
 
 Basically the IPAdapter sends two pictures for the conditioning, one is the reference the other --that you don't see-- is an empty image that could be considered like a negative conditioning.
 
-What I'm doing is to send a very noisy image instead of an empty one. The `noise` parameter determines the amount of noise. A value of `0.01` adds a lot of noise and creates an image close to the original created by the IPAdapter (a very noisy image being intelligible could be considered like an empty image); a value of `1.0` removes most of noise so the image gets conditioned more.
+What I'm doing is to send a very noisy image instead of an empty one. The `noise` parameter determines the amount of noise. A value of `0.01` adds a lot of noise (a very noisy image being intelligible could be considered like an empty image); a value of `1.0` removes most of noise so the image gets conditioned more.
 </details>
 
 ### IMPORTANT: Preparing the reference image
 
-The reference image needs to be encoded by the CLIP vision model. The encoder resizes the image to 224×224 **and crops it to the center!**. It's not an IPAdapter thing, it's how it works. This means that if you use a portrait or landscape image and the main attention (eg: the face of a character) is not in the middle you'll likely get undesired results. As a rule of thumb try to use square pictures.
+The reference image needs to be encoded by the CLIP vision model. The encoder resizes the image to 224×224 **and crops it to the center!**. It's not an IPAdapter thing, it's how the clip vision works. This means that if you use a portrait or landscape image and the main attention (eg: the face of a character) is not in the middle you'll likely get undesired results. Use square pictures as reference for more reliable results.
 
 ### KSampler configuration suggestions
 
-Weirdly enough all `dpmpp_2m` (including `_sde`) samplers seem to perfom poorly with IPAdapter and they generally need 5-10 more steps than usual. `ddmin` and `euler` seem to be pretty good.
+The IPAdapter generally requires a few more steps than usual, if the result is underwhelming try to add 10+ steps. `ddmin` and `euler` seem to perform better than others.
 
 The model tends to burn the images a little. If needed lower the CFG scale.
-
-It generally requires a few more steps than usual, if the result is underwhelming try to add 10+ steps.
 
 The SDXL models are weird, I think they need more training but the `noise` option sometimes helps.
 
