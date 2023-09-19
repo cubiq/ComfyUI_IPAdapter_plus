@@ -95,7 +95,7 @@ def image_add_noise(image, noise):
     return image
 
 def zeroed_hidden_states(clip_vision):
-    image = torch.zeros( [1, 3, 224, 224] )
+    image = torch.zeros( [1, 224, 224, 3] )
     inputs = clip_vision.processor(images=image, return_tensors="pt")
     comfy.model_management.load_model_gpu(clip_vision.patcher)
     pixel_values = torch.zeros_like(inputs['pixel_values']).to(clip_vision.load_device)
@@ -109,13 +109,9 @@ def zeroed_hidden_states(clip_vision):
         outputs = clip_vision.model(pixel_values, output_hidden_states=True)
 
     # we only need the penultimate hidden states
-    for k in outputs:
-        t = outputs[k]
-        if t is not None:
-            if k == 'hidden_states':
-                outputs["penultimate_hidden_states"] = t[-2].cpu()
+    outputs = outputs['hidden_states'][-2].cpu() if 'hidden_states' in outputs else None
 
-    return outputs["penultimate_hidden_states"]
+    return outputs
 
 class IPAdapter(nn.Module):
     def __init__(self, ipadapter_model, cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4):
@@ -250,6 +246,9 @@ class IPAdapterApply:
 
         cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
         self.is_sdxl = cross_attention_dim == 2048
+
+        if image.shape[1] != image.shape[2]:
+            print("\033[33mINFO: the IPAdapter reference image is not a square, CLIPImageProcessor will resize and crop it at the center. If the main focus of the picture is not in the middle the result might not be what you are expecting.\033[0m")
 
         clip_embed = clip_vision.encode_image(image)
         neg_image = image_add_noise(image, noise) if noise > 0 else None
