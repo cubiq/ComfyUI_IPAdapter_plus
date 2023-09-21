@@ -80,13 +80,13 @@ The model is very effective when paired with a ControlNet. In the example below 
 
 ### IPAdapter Face
 
-IPAdapter offers an interesting model for a kind of "face swap" effect. [The workflow is provided](./examples/face.json). Set a close up face as reference image and then input your text prompt as always. The generated character should have the face of the reference. It also works with img2img given a high denoise.
+IPAdapter offers an interesting model for a kind of "face swap" effect. [The workflow is provided](./examples/IPAdapter_face.json). Set a close up face as reference image and then input your text prompt as always. The generated character should have the face of the reference. It also works with img2img given a high denoise.
 
 <img src="./examples/face_swap.jpg" width="50%" alt="face swap" />
 
 ### Masking
 
-The most effective way to apply the IPAdapter to a region is by an [inpainting workflow](./examples/inpainting.json). Remeber to use a specific checkpoint for inpainting otherwise it won't work. Even if you are inpainting a face I find that the *IPAdapter-Plus* (not the *face* one), works best.
+The most effective way to apply the IPAdapter to a region is by an [inpainting workflow](./examples/IPAdapter_inpaint.json). Remeber to use a specific checkpoint for inpainting otherwise it won't work. Even if you are inpainting a face I find that the *IPAdapter-Plus* (not the *face* one), works best.
 
 <img src="./examples/inpainting.jpg" width="100%" alt="inpainting" />
 
