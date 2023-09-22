@@ -96,7 +96,9 @@ def image_add_noise(image, noise):
 
 def zeroed_hidden_states(clip_vision):
     image = torch.zeros( [1, 224, 224, 3] )
-    inputs = clip_vision.processor(images=image, return_tensors="pt")
+    img = torch.clip((255. * image), 0, 255).round().int()
+    img = list(map(lambda a: a, img))
+    inputs = clip_vision.processor(images=img, return_tensors="pt")
     comfy.model_management.load_model_gpu(clip_vision.patcher)
     pixel_values = torch.zeros_like(inputs['pixel_values']).to(clip_vision.load_device)
 
