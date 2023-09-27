@@ -1,6 +1,7 @@
 import torch
 import contextlib
 import os
+import inspect
 
 import comfy.utils
 import comfy.model_management
@@ -231,16 +232,19 @@ class CrossAttentionPatch:
 
     def __call__(self, n, context_attn2, value_attn2, extra_options):
         org_dtype = n.dtype
+        frame = inspect.currentframe()
+        outer_frame = frame.f_back
+        cond_or_uncond = outer_frame.f_locals["transformer_options"]["cond_or_uncond"]
         with torch.autocast(device_type=self.device, dtype=self.dtype):
             q = n
             k = context_attn2
             v = value_attn2
             b, _, _ = q.shape
-
+            batch_prompt = b // len(cond_or_uncond)
             out = attention(q, k, v, extra_options)
 
             for weight, cond, uncond, ipadapter, mask in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks):
-                uncond_cond = torch.cat([uncond.repeat(b//2, 1, 1), cond.repeat(b//2, 1, 1)], dim=0)
+                uncond_cond = torch.cat([(cond.repeat(batch_prompt, 1, 1), uncond.repeat(batch_prompt, 1, 1))[i] for i in cond_or_uncond], dim=0)
 
                 # k, v for ip_adapter
                 ip_k = ipadapter.ip_layers.to_kvs[self.number*2](uncond_cond)
