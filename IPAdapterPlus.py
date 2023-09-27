@@ -211,24 +211,24 @@ class IPAdapterPlus(IPAdapter):
 
 class CrossAttentionPatch:
     # forward for patching
-    def __init__(self, weight, ipadapter, dtype, device, number, cond, uncond, mask=None):
+    def __init__(self, weight, ipadapter, dtype, number, cond, uncond, mask=None):
         self.weights = [weight]
         self.ipadapters = [ipadapter]
         self.conds = [cond]
         self.unconds = [uncond]
         self.dtype = dtype
-        self.device = 'cuda' if 'cuda' in device.type else 'cpu'
+        self.device = 'cuda'
         self.number = number
         self.masks = [mask]
     
-    def set_new_condition(self, weight, ipadapter, cond, uncond, dtype, device, number, mask=None):
+    def set_new_condition(self, weight, ipadapter, cond, uncond, dtype, number, mask=None):
         self.weights.append(weight)
         self.ipadapters.append(ipadapter)
         self.conds.append(cond)
         self.unconds.append(uncond)
         self.masks.append(mask)
         self.dtype = dtype
-        self.device = 'cuda' if 'cuda' in device.type else 'cpu'
+        self.device = 'cuda'
 
     def __call__(self, n, context_attn2, value_attn2, extra_options):
         org_dtype = n.dtype
@@ -351,7 +351,6 @@ class IPAdapterApply:
             "weight": self.weight,
             "ipadapter": self.ipadapter,
             "dtype": self.dtype,
-            "device": self.device,
             "cond": image_prompt_embeds,
             "uncond": uncond_image_prompt_embeds,
         }
