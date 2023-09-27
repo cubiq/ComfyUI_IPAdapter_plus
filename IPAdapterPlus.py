@@ -168,17 +168,18 @@ def contrast_adaptive_sharpening(image, amount):
     return (output)
 
 class IPAdapter(nn.Module):
-    def __init__(self, ipadapter_model, cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4):
+    def __init__(self, ipadapter_model, cross_attention_dim=1024, output_cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4, is_sdxl=False):
         super().__init__()
 
         self.clip_embeddings_dim = clip_embeddings_dim
-        self.cross_attention_dim = ipadapter_model["ip_adapter"]["1.to_k_ip.weight"].shape[1]
+        self.cross_attention_dim = cross_attention_dim
+        self.output_cross_attention_dim = output_cross_attention_dim
         self.clip_extra_context_tokens = clip_extra_context_tokens
+        self.is_sdxl = is_sdxl
 
         self.image_proj_model = self.init_proj()
-
         self.image_proj_model.load_state_dict(ipadapter_model["image_proj"])
-        self.ip_layers = To_KV(cross_attention_dim)
+        self.ip_layers = To_KV(self.output_cross_attention_dim)
         self.ip_layers.load_state_dict(ipadapter_model["ip_adapter"])
 
     def init_proj(self):
@@ -201,10 +202,10 @@ class IPAdapterPlus(IPAdapter):
             dim=self.cross_attention_dim,
             depth=4,
             dim_head=64,
-            heads=12,
+            heads=20 if self.is_sdxl else 12,
             num_queries=self.clip_extra_context_tokens,
             embedding_dim=self.clip_embeddings_dim,
-            output_dim=self.cross_attention_dim,
+            output_dim=self.output_cross_attention_dim,
             ff_mult=4
         )
         return image_proj_model
@@ -303,8 +304,9 @@ class IPAdapterApply:
         self.weight = weight
         self.is_plus = "latents" in ipadapter["image_proj"]
 
-        cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
-        self.is_sdxl = cross_attention_dim == 2048
+        output_cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
+        self.is_sdxl = output_cross_attention_dim == 2048
+        cross_attention_dim = 1280 if self.is_plus and self.is_sdxl else output_cross_attention_dim
 
         if image.shape[1] != image.shape[2]:
             print("\033[33mINFO: the IPAdapter reference image is not a square, CLIPImageProcessor will resize and crop it at the center. If the main focus of the picture is not in the middle the result might not be what you are expecting.\033[0m")
@@ -334,8 +336,10 @@ class IPAdapterApply:
         self.ipadapter = IPA(
             ipadapter,
             cross_attention_dim=cross_attention_dim,
+            output_cross_attention_dim=output_cross_attention_dim,
             clip_embeddings_dim=clip_embeddings_dim,
-            clip_extra_context_tokens=clip_extra_context_tokens
+            clip_extra_context_tokens=clip_extra_context_tokens,
+            is_sdxl=self.is_sdxl,
         )
         
         self.ipadapter.to(self.device, dtype=self.dtype)
