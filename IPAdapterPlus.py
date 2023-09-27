@@ -115,6 +115,57 @@ def zeroed_hidden_states(clip_vision):
 
     return outputs
 
+def min_(tensor_list):
+    # return the element-wise min of the tensor list.
+    x = torch.stack(tensor_list)
+    mn = x.min(axis=0)[0]
+    return mn
+    
+def max_(tensor_list):
+    # return the element-wise max of the tensor list.
+    x = torch.stack(tensor_list)
+    mx = x.max(axis=0)[0]
+    return mx
+
+# From https://github.com/Jamy-L/Pytorch-Contrast-Adaptive-Sharpening/
+def contrast_adaptive_sharpening(image, amount):
+    img = F.pad(image, pad=(1, 1, 1, 1)).cpu()
+
+    a = img[..., :-2, :-2]
+    b = img[..., :-2, 1:-1]
+    c = img[..., :-2, 2:]
+    d = img[..., 1:-1, :-2]
+    e = img[..., 1:-1, 1:-1]
+    f = img[..., 1:-1, 2:]
+    g = img[..., 2:, :-2]
+    h = img[..., 2:, 1:-1]
+    i = img[..., 2:, 2:]
+    
+    # Computing contrast
+    cross = (b, d, e, f, h)
+    mn = min_(cross)
+    mx = max_(cross)
+    
+    diag = (a, c, g, i)
+    mn2 = min_(diag)
+    mx2 = max_(diag)
+    mx = mx + mx2
+    mn = mn + mn2
+    
+    # Computing local weight
+    inv_mx = torch.reciprocal(mx + 1e-7) # add epsilon to prevent division by zero
+    amp = inv_mx * torch.minimum(mn, (2 - mx))
+
+    # scaling
+    amp = torch.sqrt(amp)
+    w = - amp * (amount * (1/5 - 1/8) + 1/8)
+    div = torch.reciprocal(1 + 4*w)
+
+    output = ((b + d + f + h)*w + e) * div
+    output = output.clamp(0, 1)
+
+    return (output)
+
 class IPAdapter(nn.Module):
     def __init__(self, ipadapter_model, cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4):
         super().__init__()
@@ -159,26 +210,28 @@ class IPAdapterPlus(IPAdapter):
 
 class CrossAttentionPatch:
     # forward for patching
-    def __init__(self, weight, ipadapter, dtype, number, cond, uncond, mask=None):
+    def __init__(self, weight, ipadapter, dtype, device, number, cond, uncond, mask=None):
         self.weights = [weight]
         self.ipadapters = [ipadapter]
         self.conds = [cond]
         self.unconds = [uncond]
         self.dtype = dtype
+        self.device = 'cuda' if 'cuda' in device.type else 'cpu'
         self.number = number
         self.masks = [mask]
     
-    def set_new_condition(self, weight, ipadapter, cond, uncond, dtype, number, mask=None):
+    def set_new_condition(self, weight, ipadapter, cond, uncond, dtype, device, number, mask=None):
         self.weights.append(weight)
         self.ipadapters.append(ipadapter)
         self.conds.append(cond)
         self.unconds.append(uncond)
         self.masks.append(mask)
         self.dtype = dtype
+        self.device = 'cuda' if 'cuda' in device.type else 'cpu'
 
     def __call__(self, n, context_attn2, value_attn2, extra_options):
         org_dtype = n.dtype
-        with torch.autocast("cuda", dtype=self.dtype):
+        with torch.autocast(device_type=self.device, dtype=self.dtype):
             q = n
             k = context_attn2
             v = value_attn2
@@ -294,6 +347,7 @@ class IPAdapterApply:
             "weight": self.weight,
             "ipadapter": self.ipadapter,
             "dtype": self.dtype,
+            "device": self.device,
             "cond": image_prompt_embeds,
             "uncond": uncond_image_prompt_embeds,
         }
@@ -323,12 +377,70 @@ class IPAdapterApply:
 
         return (work_model, )
 
+class PrepImageForClipVision:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "image": ("IMAGE",),
+            "interpolation": (["lanczos", "nearest", "bilinear", "bicubic", "area", "nearest-exact"],),
+            "crop_position": (["top", "bottom", "left", "right", "center"],),
+            "sharpening": ("FLOAT", {"default": 0.1, "min": 0, "max": 1, "step": 0.05}),
+            "add_weight": ("BOOLEAN", {"default": False}),
+        },
+    }
+
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "prep_image"
+
+    CATEGORY = "ipadapter"
+
+    def prep_image(self, image, interpolation="lanczos", crop_position="center", sharpening=0.0, add_weight=False):
+        _, oh, ow, _ = image.shape
+
+        crop_size = min(oh, ow)
+        x = (ow-crop_size) // 2
+        y = (oh-crop_size) // 2
+        if "top" in crop_position:
+            y = 0
+        elif "bottom" in crop_position:
+            y = oh-crop_size
+        elif "left" in crop_position:
+            x = 0
+        elif "right" in crop_position:
+            x = ow-crop_size
+        
+        x2 = x+crop_size
+        y2 = y+crop_size
+
+        # crop
+        output = image[:, y:y2, x:x2, :]
+
+        output = output.permute([0,3,1,2])
+
+        # resize
+        if interpolation == "lanczos":
+            output = comfy.utils.lanczos(output, 224, 224)
+        else:
+            output = F.interpolate(output, size=(224, 224), mode=interpolation)
+       
+        if sharpening > 0:
+            output = contrast_adaptive_sharpening(output, sharpening)
+        
+        output = output.permute([0,2,3,1])
+
+        if add_weight is True:
+            output = torch.stack((output,output)).squeeze()
+
+        return (output,)
+
 NODE_CLASS_MAPPINGS = {
     "IPAdapterModelLoader": IPAdapterModelLoader,
     "IPAdapterApply": IPAdapterApply,
+    "PrepImageForClipVision": PrepImageForClipVision,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterModelLoader": "Load IPAdapter Model",
     "IPAdapterApply": "Apply IPAdapter",
+    "PrepImageForClipVision": "Prepare Image For Clip Vision",
 }

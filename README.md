@@ -5,6 +5,8 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 ## Updates
 
+**2023/9/27**: Added a `PrepImageForClipVision` to prepare your images for IPAdapters and get generally better results. See below for details. Note that this is useful for any clip vision encoded image, not only IPAdapter.
+
 **2023/9/17**: Better image handling, lower memory usage. Changed how the noise is generated.
 
 **2023/9/15**: Huge code cleanup! I streamlined the node structure for a tidier workflow. **IMPORTANT** this is a breaking update, we don't need the dedicated clip vision encoder anymore. Please check the new included workflows. Also introduced the new `noise` option, see below for details.
@@ -64,6 +66,14 @@ What I'm doing is to send a very noisy image instead of an empty one. The `noise
 ### IMPORTANT: Preparing the reference image
 
 The reference image needs to be encoded by the CLIP vision model. The encoder resizes the image to 224×224 **and crops it to the center!**. It's not an IPAdapter thing, it's how the clip vision works. This means that if you use a portrait or landscape image and the main attention (eg: the face of a character) is not in the middle you'll likely get undesired results. Use square pictures as reference for more predictable results.
+
+I've added a `PrepImageForClipVision` node that does all the required operations for you. You just have to select the crop position (top/left/center/etc...) and a sharpening amount if you want.
+
+The `add_weight` option is useful **only** in case of image batches, **do not use otherwise**. It effectively doubles the image weight in a batch of images. It's the same as sending the same image twice.
+
+In the image below you can see the difference between prepped and not prepped images.
+
+<img src="./examples/prep_images.jpg" width="100%" alt="prepped images" />
 
 ### KSampler configuration suggestions
 
