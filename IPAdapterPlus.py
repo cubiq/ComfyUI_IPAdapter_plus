@@ -94,7 +94,8 @@ def image_add_noise(image, noise):
     image = image + ((0.25*(1-noise)+0.05) * torch.randn_like(image) )   # add random noise
     return image
 
-def zeroed_hidden_states(clip_vision, image):
+def zeroed_hidden_states(clip_vision, batch_size):
+    image = torch.zeros([batch_size, 224, 224, 3])
     img = torch.clip((255. * image), 0, 255).round().int()
     img = list(map(lambda a: a, img))
     inputs = clip_vision.processor(images=img, return_tensors="pt")
@@ -313,7 +314,7 @@ class IPAdapterApply:
             if noise > 0:
                 clip_embed_zeroed = clip_vision.encode_image(neg_image).penultimate_hidden_states
             else:
-                clip_embed_zeroed = zeroed_hidden_states(clip_vision, image)
+                clip_embed_zeroed = zeroed_hidden_states(clip_vision, image.shape[0])
         else:
             clip_extra_context_tokens = 4
             clip_embed = clip_embed.image_embeds
