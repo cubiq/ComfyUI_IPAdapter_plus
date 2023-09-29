@@ -5,7 +5,7 @@ import inspect
 
 import comfy.utils
 import comfy.model_management
-from comfy.clip_vision import ClipVisionModel
+import folder_paths
 
 from torch import nn
 import torch.nn.functional as F
@@ -154,7 +154,7 @@ def contrast_adaptive_sharpening(image, amount):
     mn = mn + mn2
     
     # Computing local weight
-    inv_mx = torch.reciprocal(mx + 1e-7) # add epsilon to prevent division by zero
+    inv_mx = torch.reciprocal(mx)
     amp = inv_mx * torch.minimum(mn, (2 - mx))
 
     # scaling
@@ -164,6 +164,7 @@ def contrast_adaptive_sharpening(image, amount):
 
     output = ((b + d + f + h)*w + e) * div
     output = output.clamp(0, 1)
+    output = torch.nan_to_num(output)
 
     return (output)
 
@@ -235,17 +236,20 @@ class CrossAttentionPatch:
         org_dtype = n.dtype
         frame = inspect.currentframe()
         outer_frame = frame.f_back
-        cond_or_uncond = outer_frame.f_locals["transformer_options"]["cond_or_uncond"]
+        cond_or_uncond = outer_frame.f_locals["transformer_options"]["cond_or_uncond"] if "cond_or_uncond" in outer_frame.f_locals["transformer_options"] else None
         with torch.autocast(device_type=self.device, dtype=self.dtype):
             q = n
             k = context_attn2
             v = value_attn2
             b, _, _ = q.shape
-            batch_prompt = b // len(cond_or_uncond)
+            batch_prompt = b // len(cond_or_uncond) if cond_or_uncond is not None else None
             out = attention(q, k, v, extra_options)
 
             for weight, cond, uncond, ipadapter, mask in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks):
-                uncond_cond = torch.cat([(cond.repeat(batch_prompt, 1, 1), uncond.repeat(batch_prompt, 1, 1))[i] for i in cond_or_uncond], dim=0)
+                if cond_or_uncond is not None:
+                    uncond_cond = torch.cat([(cond.repeat(batch_prompt, 1, 1), uncond.repeat(batch_prompt, 1, 1))[i] for i in cond_or_uncond], dim=0)
+                else:
+                    uncond_cond = torch.cat([uncond.repeat(b//2, 1, 1), cond.repeat(b//2, 1, 1)], dim=0)
 
                 # k, v for ip_adapter
                 ip_k = ipadapter.ip_layers.to_kvs[self.number*2](uncond_cond)
@@ -296,9 +300,7 @@ class IPAdapterApply:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    uncond_hidden_states = None
-
-    def apply_ipadapter(self, ipadapter, clip_vision, image, model, weight, noise):
+    def apply_ipadapter(self, ipadapter, model, weight, clip_vision=None, image=None, noise=None, embeds=None):
         self.dtype = model.model.diffusion_model.dtype
         self.device = comfy.model_management.get_torch_device()
         self.weight = weight
@@ -307,27 +309,31 @@ class IPAdapterApply:
         output_cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
         self.is_sdxl = output_cross_attention_dim == 2048
         cross_attention_dim = 1280 if self.is_plus and self.is_sdxl else output_cross_attention_dim
+        clip_extra_context_tokens = 16 if self.is_plus else 4
 
-        if image.shape[1] != image.shape[2]:
-            print("\033[33mINFO: the IPAdapter reference image is not a square, CLIPImageProcessor will resize and crop it at the center. If the main focus of the picture is not in the middle the result might not be what you are expecting.\033[0m")
-
-        clip_embed = clip_vision.encode_image(image)
-        neg_image = image_add_noise(image, noise) if noise > 0 else None
-        
-        if self.is_plus:
-            clip_extra_context_tokens = 16
-            clip_embed = clip_embed.penultimate_hidden_states
-            if noise > 0:
-                clip_embed_zeroed = clip_vision.encode_image(neg_image).penultimate_hidden_states
-            else:
-                clip_embed_zeroed = zeroed_hidden_states(clip_vision, image.shape[0])
+        if embeds is not None:
+            embeds = torch.unbind(embeds)
+            clip_embed = embeds[0].cpu()
+            clip_embed_zeroed = embeds[1].cpu()
         else:
-            clip_extra_context_tokens = 4
-            clip_embed = clip_embed.image_embeds
-            if noise > 0:
-                clip_embed_zeroed = clip_vision.encode_image(neg_image).image_embeds
+            if image.shape[1] != image.shape[2]:
+                print("\033[33mINFO: the IPAdapter reference image is not a square, CLIPImageProcessor will resize and crop it at the center. If the main focus of the picture is not in the middle the result might not be what you are expecting.\033[0m")
+
+            clip_embed = clip_vision.encode_image(image)
+            neg_image = image_add_noise(image, noise) if noise > 0 else None
+            
+            if self.is_plus:
+                clip_embed = clip_embed.penultimate_hidden_states
+                if noise > 0:
+                    clip_embed_zeroed = clip_vision.encode_image(neg_image).penultimate_hidden_states
+                else:
+                    clip_embed_zeroed = zeroed_hidden_states(clip_vision, image.shape[0])
             else:
-                clip_embed_zeroed = torch.zeros_like(clip_embed)
+                clip_embed = clip_embed.image_embeds
+                if noise > 0:
+                    clip_embed_zeroed = clip_vision.encode_image(neg_image).image_embeds
+                else:
+                    clip_embed_zeroed = torch.zeros_like(clip_embed)
 
         clip_embeddings_dim = clip_embed.shape[-1]
 
@@ -389,9 +395,9 @@ class PrepImageForClipVision:
     def INPUT_TYPES(s):
         return {"required": {
             "image": ("IMAGE",),
-            "interpolation": (["lanczos", "nearest", "bilinear", "bicubic", "area", "nearest-exact"],),
+            "interpolation": (["bicubic", "nearest", "bilinear", "area", "nearest-exact", "lanczos"],),
             "crop_position": (["top", "bottom", "left", "right", "center"],),
-            "sharpening": ("FLOAT", {"default": 0.1, "min": 0, "max": 1, "step": 0.05}),
+            "sharpening": ("FLOAT", {"default": 0.0, "min": 0, "max": 1, "step": 0.05}),
             "add_weight": ("BOOLEAN", {"default": False}),
         },
     }
@@ -440,14 +446,114 @@ class PrepImageForClipVision:
 
         return (output,)
 
+
+class IPAdapterEncoder:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "clip_vision": ("CLIP_VISION",),
+            "image": ("IMAGE",),
+            "plus": ("BOOLEAN", { "default": False }),
+            "noise": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01 }),
+        },
+    }
+
+    RETURN_TYPES = ("EMBEDS",)
+    FUNCTION = "preprocess"
+    CATEGORY = "ipadapter"
+
+    def preprocess(self, clip_vision, image, plus, noise):
+        clip_embed = clip_vision.encode_image(image)
+        neg_image = image_add_noise(image, noise) if noise > 0 else None
+        
+        if plus:
+            clip_embed = clip_embed.penultimate_hidden_states
+            if noise > 0:
+                clip_embed_zeroed = clip_vision.encode_image(neg_image).penultimate_hidden_states
+            else:
+                clip_embed_zeroed = zeroed_hidden_states(clip_vision, image.shape[0])
+        else:
+            clip_embed = clip_embed.image_embeds
+            if noise > 0:
+                clip_embed_zeroed = clip_vision.encode_image(neg_image).image_embeds
+            else:
+                clip_embed_zeroed = torch.zeros_like(clip_embed)
+        
+        output = torch.stack((clip_embed, clip_embed_zeroed))
+
+        return( output, )
+
+class IPAdapterApplyEncoded(IPAdapterApply):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "ipadapter": ("IPADAPTER", ),
+                "embeds": ("EMBEDS",),
+                "model": ("MODEL", ),
+                "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.05 }),
+            },
+        }
+
+class IPAdapterSaveEmbeds:
+    def __init__(self):
+        self.output_dir = folder_paths.get_output_directory()
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "embeds": ("EMBEDS",),
+            "filename_prefix": ("STRING", {"default": "embeds/IPAdapter"})
+        },
+    }
+
+    RETURN_TYPES = ()
+    FUNCTION = "save"
+    OUTPUT_NODE = True
+    CATEGORY = "ipadapter"
+
+    def save(self, embeds, filename_prefix):
+        full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(filename_prefix, self.output_dir)
+        file = f"{filename}_{counter:05}_.ipadpt"
+        file = os.path.join(full_output_folder, file)
+
+        torch.save(embeds, file)
+        return (None, )
+
+
+class IPAdapterLoadEmbeds:
+    @classmethod
+    def INPUT_TYPES(s):
+        input_dir = folder_paths.get_input_directory()
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f)) and f.endswith(".ipadpt")]
+        return {"required": {"embeds": [sorted(files), ]}, }
+
+    RETURN_TYPES = ("EMBEDS", )
+    FUNCTION = "load"
+    CATEGORY = "ipadapter"
+
+    def load(self, embeds):
+        path = folder_paths.get_annotated_filepath(embeds)
+        output = torch.load(path).cpu()
+
+        return (output, )
+
 NODE_CLASS_MAPPINGS = {
     "IPAdapterModelLoader": IPAdapterModelLoader,
     "IPAdapterApply": IPAdapterApply,
+    "IPAdapterApplyEncoded": IPAdapterApplyEncoded,
     "PrepImageForClipVision": PrepImageForClipVision,
+    "IPAdapterEncoder": IPAdapterEncoder,
+    "IPAdapterSaveEmbeds": IPAdapterSaveEmbeds,
+    "IPAdapterLoadEmbeds": IPAdapterLoadEmbeds,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterModelLoader": "Load IPAdapter Model",
     "IPAdapterApply": "Apply IPAdapter",
+    "IPAdapterApplyEncoded": "Apply IPAdapter from Encoded",
     "PrepImageForClipVision": "Prepare Image For Clip Vision",
+    "IPAdapterEncoder": "Encode IPAdapter Image",
+    "IPAdapterSaveEmbeds": "Save IPAdapter Embeds",
+    "IPAdapterLoadEmbeds": "Load IPAdapter Embeds",
 }
