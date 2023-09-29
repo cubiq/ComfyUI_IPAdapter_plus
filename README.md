@@ -5,6 +5,8 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 ## Updates
 
+**2023/9/29**: Added save/load of encoded images. Fix minor bugs.
+
 **2023/9/27**: Added a `PrepImageForClipVision` node to prepare your images for IPAdapters and get generally better results. See below for details. Note that this is useful for any clip vision encoded image, not only IPAdapter.
 
 **2023/9/17**: Better image handling, lower memory usage. Changed how the noise is generated.
