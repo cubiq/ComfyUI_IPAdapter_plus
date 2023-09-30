@@ -23,6 +23,14 @@ The IPAdapter are very powerful models for image-to-image conditioning. Given a 
 
 ![IPAdapter Example workflow](./ipadapter_workflow.png)
 
+## Video Introduction
+
+<a href="https://youtu.be/7m9ZZFU3HWo" target="_blank">
+ <img src="https://img.youtube.com/vi/7m9ZZFU3HWo/hqdefault.jpg" alt="Watch the video" />
+</a>
+
+[Watch on YouTube](https://youtu.be/7m9ZZFU3HWo)
+
 ## Installation
 
 Download or git clone this repository inside `ComfyUI/custom_nodes/` directory.
