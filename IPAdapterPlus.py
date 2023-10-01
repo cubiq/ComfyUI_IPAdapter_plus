@@ -120,13 +120,13 @@ def min_(tensor_list):
     # return the element-wise min of the tensor list.
     x = torch.stack(tensor_list)
     mn = x.min(axis=0)[0]
-    return mn
+    return torch.clamp(mn, min=0)
     
 def max_(tensor_list):
     # return the element-wise max of the tensor list.
     x = torch.stack(tensor_list)
     mx = x.max(axis=0)[0]
-    return mx
+    return torch.clamp(mx, max=1)
 
 # From https://github.com/Jamy-L/Pytorch-Contrast-Adaptive-Sharpening/
 def contrast_adaptive_sharpening(image, amount):
