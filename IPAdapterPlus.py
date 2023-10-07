@@ -128,6 +128,9 @@ def max_(tensor_list):
     mx = x.max(axis=0)[0]
     return torch.clamp(mx, max=1)
 
+def get_hidden_states(embed):
+    return embed.penultimate_hidden_states if hasattr(embed, 'penultimate_hidden_states') else embed.last_hidden_state
+
 # From https://github.com/Jamy-L/Pytorch-Contrast-Adaptive-Sharpening/
 def contrast_adaptive_sharpening(image, amount):
     img = F.pad(image, pad=(1, 1, 1, 1)).cpu()
@@ -323,9 +326,9 @@ class IPAdapterApply:
             neg_image = image_add_noise(image, noise) if noise > 0 else None
             
             if self.is_plus:
-                clip_embed = clip_embed.penultimate_hidden_states
+                clip_embed = get_hidden_states(clip_embed)
                 if noise > 0:
-                    clip_embed_zeroed = clip_vision.encode_image(neg_image).penultimate_hidden_states
+                    clip_embed_zeroed = get_hidden_states(clip_vision.encode_image(neg_image))
                 else:
                     clip_embed_zeroed = zeroed_hidden_states(clip_vision, image.shape[0])
             else:
@@ -467,9 +470,9 @@ class IPAdapterEncoder:
         neg_image = image_add_noise(image, noise) if noise > 0 else None
         
         if plus:
-            clip_embed = clip_embed.penultimate_hidden_states
+            clip_embed = get_hidden_states(clip_embed)
             if noise > 0:
-                clip_embed_zeroed = clip_vision.encode_image(neg_image).penultimate_hidden_states
+                clip_embed_zeroed = get_hidden_states(clip_vision.encode_image(neg_image))
             else:
                 clip_embed_zeroed = zeroed_hidden_states(clip_vision, image.shape[0])
         else:
