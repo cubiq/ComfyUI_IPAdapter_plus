@@ -120,6 +120,20 @@ It is possible to pass multiple images for the conditioning with the `Batch Imag
 
 It seems to be effective with 2-3 images, beyond that it tends to *blur* the information too much.
 
+## Troubleshooting
+
+**Error: 'CLIPVisionModelOutput' object has no attribute 'penultimate_hidden_states'**
+
+You are using an old version of ComfyUI. Update and you'll be fine.
+
+**Error with Tensor size mismatch**
+
+You are using the wrong CLIP encoder+IPAdapter Model+Checkpoint combo. Remember that you need to select the CLIP encoder v1.5 for all v1.5 IPAdapter models AND for all models ending with `vit-h` (even if they are for SDXL).
+
+**Is it true that the input reference image must have the same size of the output image?**
+
+No, that's a metropolitan legend. Your input and output images can be of any size. Remember that all input images are scaled and cropped to 224x224 anyway.
+
 ## Credits
 
 - [IPAdapter](https://github.com/tencent-ailab/IP-Adapter/)
