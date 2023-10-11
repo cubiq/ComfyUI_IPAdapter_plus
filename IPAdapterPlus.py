@@ -399,8 +399,8 @@ class PrepImageForClipVision:
             "crop_position": (["top", "bottom", "left", "right", "center"],),
             "sharpening": ("FLOAT", {"default": 0.0, "min": 0, "max": 1, "step": 0.05}),
             "add_weight": ("BOOLEAN", {"default": False}),
-        },
-    }
+            },
+        }
 
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "prep_image"
@@ -455,8 +455,8 @@ class IPAdapterEncoder:
             "image": ("IMAGE",),
             "plus": ("BOOLEAN", { "default": False }),
             "noise": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01 }),
-        },
-    }
+            },
+        }
 
     RETURN_TYPES = ("EMBEDS",)
     FUNCTION = "preprocess"
@@ -504,8 +504,8 @@ class IPAdapterSaveEmbeds:
         return {"required": {
             "embeds": ("EMBEDS",),
             "filename_prefix": ("STRING", {"default": "embeds/IPAdapter"})
-        },
-    }
+            },
+        }
 
     RETURN_TYPES = ()
     FUNCTION = "save"
@@ -525,7 +525,7 @@ class IPAdapterLoadEmbeds:
     @classmethod
     def INPUT_TYPES(s):
         input_dir = folder_paths.get_input_directory()
-        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f)) and f.endswith(".ipadpt")]
+        files = [os.path.relpath(os.path.join(root, file), input_dir) for root, dirs, files in os.walk(input_dir) for file in files if file.endswith('.ipadpt')]
         return {"required": {"embeds": [sorted(files), ]}, }
 
     RETURN_TYPES = ("EMBEDS", )
