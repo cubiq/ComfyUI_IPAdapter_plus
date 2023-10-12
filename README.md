@@ -3,7 +3,9 @@
 
 IPAdapter implementation that follows the ComfyUI way of doing things. The code is memory efficient, fast, and shouldn't break with Comfy updates.
 
-## Updates
+## Important updates
+
+**2023/10/12**: Added image weighting in the `IPAdapterEncoder` node. This update is somewhat breaking; if you use `IPAdapterEncoder` and `PrepImageForClipVision` nodes you need to remove them from your workflow, refresh and recreate them. In the examples you'll find a [workflow](examples/IPAdapter_weighted.json) for weighted images.
 
 **2023/9/29**: Added save/load of encoded images. Fix minor bugs.
 
@@ -119,6 +121,14 @@ It is possible to pass multiple images for the conditioning with the `Batch Imag
 <img src="./examples/batch_images.jpg" width="100%" alt="batcg images" />
 
 It seems to be effective with 2-3 images, beyond that it tends to *blur* the information too much.
+
+### Image Weighting
+
+When sending multiple images you can increase/decrease the weight of each image by using the `IPAdapterEncoder` node. The workflow ([included in the examples](examples/IPAdapter_weighted.json)) looks like this:
+
+<img src="./examples/image_weighting.jpg" width="100%" alt="image weighting" />
+
+The node accepts 4 images, but remember that you can send batches of images to each slot.
 
 ## Troubleshooting
 

@@ -8,6 +8,7 @@ import comfy.model_management
 import folder_paths
 
 from torch import nn
+from PIL import Image
 import torch.nn.functional as F
 import torchvision.transforms as TT
 
@@ -395,10 +396,9 @@ class PrepImageForClipVision:
     def INPUT_TYPES(s):
         return {"required": {
             "image": ("IMAGE",),
-            "interpolation": (["bicubic", "nearest", "bilinear", "area", "nearest-exact", "lanczos"],),
+            "interpolation": (["LANCZOS", "BICUBIC", "HAMMING", "BILINEAR", "BOX", "NEAREST"],),
             "crop_position": (["top", "bottom", "left", "right", "center"],),
             "sharpening": ("FLOAT", {"default": 0.0, "min": 0, "max": 1, "step": 0.05}),
-            "add_weight": ("BOOLEAN", {"default": False}),
             },
         }
 
@@ -407,7 +407,7 @@ class PrepImageForClipVision:
 
     CATEGORY = "ipadapter"
 
-    def prep_image(self, image, interpolation="lanczos", crop_position="center", sharpening=0.0, add_weight=False):
+    def prep_image(self, image, interpolation="LANCZOS", crop_position="center", sharpening=0.0):
         _, oh, ow, _ = image.shape
 
         crop_size = min(oh, ow)
@@ -430,43 +430,79 @@ class PrepImageForClipVision:
 
         output = output.permute([0,3,1,2])
 
-        # resize
-        if interpolation == "lanczos":
-            output = comfy.utils.lanczos(output, 224, 224)
-        else:
-            output = F.interpolate(output, size=(224, 224), mode=interpolation)
+        # resize (apparently PIL resize is better than tourchvision interpolate)
+        imgs = []
+        for i in range(output.shape[0]):
+            img = TT.ToPILImage()(output[i])
+            img = img.resize((224,224), resample=Image.Resampling[interpolation])
+            imgs.append(TT.ToTensor()(img))
+        output = torch.stack(imgs, dim=0)
        
         if sharpening > 0:
             output = contrast_adaptive_sharpening(output, sharpening)
         
         output = output.permute([0,2,3,1])
 
-        if add_weight is True:
-            output = torch.stack((output,output)).squeeze()
-
         return (output,)
-
 
 class IPAdapterEncoder:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
             "clip_vision": ("CLIP_VISION",),
-            "image": ("IMAGE",),
-            "plus": ("BOOLEAN", { "default": False }),
+            "image_1": ("IMAGE",),
+            "ipadapter_plus": ("BOOLEAN", { "default": False }),
             "noise": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01 }),
+            "weight_1": ("FLOAT", { "default": 1.0, "min": 0, "max": 1.0, "step": 0.01 }),
             },
+            "optional": {
+                "image_2": ("IMAGE",),
+                "image_3": ("IMAGE",),
+                "image_4": ("IMAGE",),
+                "weight_2": ("FLOAT", { "default": 1.0, "min": 0, "max": 1.0, "step": 0.01 }),
+                "weight_3": ("FLOAT", { "default": 1.0, "min": 0, "max": 1.0, "step": 0.01 }),
+                "weight_4": ("FLOAT", { "default": 1.0, "min": 0, "max": 1.0, "step": 0.01 }),
+            }
         }
 
     RETURN_TYPES = ("EMBEDS",)
     FUNCTION = "preprocess"
     CATEGORY = "ipadapter"
 
-    def preprocess(self, clip_vision, image, plus, noise):
+    def preprocess(self, clip_vision, image_1, ipadapter_plus, noise, weight_1, image_2=None, image_3=None, image_4=None, weight_2=1.0, weight_3=1.0, weight_4=1.0):
+        weight_1 *= (0.1 + (weight_1 - 0.1))
+        weight_1 = 1.19e-05 if weight_1 <= 1.19e-05 else weight_1
+        weight_2 *= (0.1 + (weight_2 - 0.1))
+        weight_2 = 1.19e-05 if weight_2 <= 1.19e-05 else weight_2
+        weight_3 *= (0.1 + (weight_3 - 0.1))
+        weight_3 = 1.19e-05 if weight_3 <= 1.19e-05 else weight_3
+        weight_4 *= (0.1 + (weight_4 - 0.1))
+        weight_5 = 1.19e-05 if weight_4 <= 1.19e-05 else weight_4
+
+        image = image_1
+        weight = [weight_1]*image_1.shape[0]
+        
+        if image_2 is not None:
+            if image_1.shape[1:] != image_2.shape[1:]:
+                image_2 = comfy.utils.common_upscale(image_2.movedim(-1,1), image.shape[2], image.shape[1], "bilinear", "center").movedim(1,-1)
+            image = torch.cat((image, image_2), dim=0)
+            weight += [weight_2]*image_2.shape[0]
+        if image_3 is not None:
+            if image.shape[1:] != image_3.shape[1:]:
+                image_3 = comfy.utils.common_upscale(image_3.movedim(-1,1), image.shape[2], image.shape[1], "bilinear", "center").movedim(1,-1)
+            image = torch.cat((image, image_3), dim=0)
+            weight += [weight_3]*image_3.shape[0]
+        if image_4 is not None:
+            if image.shape[1:] != image_4.shape[1:]:
+                image_4 = comfy.utils.common_upscale(image_4.movedim(-1,1), image.shape[2], image.shape[1], "bilinear", "center").movedim(1,-1)
+            image = torch.cat((image, image_4), dim=0)
+            weight += [weight_4]*image_4.shape[0]
+        
+
         clip_embed = clip_vision.encode_image(image)
         neg_image = image_add_noise(image, noise) if noise > 0 else None
         
-        if plus:
+        if ipadapter_plus:
             clip_embed = clip_embed.penultimate_hidden_states
             if noise > 0:
                 clip_embed_zeroed = clip_vision.encode_image(neg_image).penultimate_hidden_states
@@ -478,6 +514,10 @@ class IPAdapterEncoder:
                 clip_embed_zeroed = clip_vision.encode_image(neg_image).image_embeds
             else:
                 clip_embed_zeroed = torch.zeros_like(clip_embed)
+
+        if any(e != 1.0 for e in weight):
+            weight = torch.tensor(weight).unsqueeze(-1) if not ipadapter_plus else torch.tensor(weight).unsqueeze(-1).unsqueeze(-1)
+            clip_embed = clip_embed * weight
         
         output = torch.stack((clip_embed, clip_embed_zeroed))
 
