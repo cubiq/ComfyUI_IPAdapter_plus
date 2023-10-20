@@ -78,7 +78,6 @@ def attention(q, k, v, extra_options):
         out = out.transpose(1, 2).reshape(b, -1, extra_options["n_heads"] * extra_options["dim_head"])
     return out
 
-# TODO: still have to find the best way to add noise to the uncond image
 def image_add_noise(image, noise):
     image = image.permute([0,3,1,2])
     torch.manual_seed(0) # use a fixed random for reproducible results
@@ -86,20 +85,16 @@ def image_add_noise(image, noise):
         TT.CenterCrop(min(image.shape[2], image.shape[3])),
         TT.Resize((224, 224), interpolation=TT.InterpolationMode.BICUBIC, antialias=True),
         TT.ElasticTransform(alpha=75.0, sigma=noise*3.5), # shuffle the image
-        #TT.GaussianBlur(5, sigma=1.5),              # by adding blur in the negative image we get sharper results
-        #TT.RandomSolarize(threshold=.75, p=1),       # add color aberration to prevent sending the same colors in the negative image
         TT.RandomVerticalFlip(p=1.0),                # flip the image to change the geometry even more
         TT.RandomHorizontalFlip(p=1.0),
     ])
     image = transforms(image.cpu())
     image = image.permute([0,2,3,1])
-    image = image + ((0.25*(1-noise)+0.05) * torch.randn_like(image) )   # add random noise
+    image = image + ((0.25*(1-noise)+0.05) * torch.randn_like(image) )   # add further random noise
     return image
 
 def zeroed_hidden_states(clip_vision, batch_size):
-    image = torch.zeros([batch_size, 224, 224, 3])
-    img = torch.clip((255. * image), 0, 255).round().int()
-    img = list(map(lambda a: a, img))
+    img = torch.zeros([batch_size, 224, 224, 3])
     inputs = clip_vision.processor(images=img, return_tensors="pt")
     comfy.model_management.load_model_gpu(clip_vision.patcher)
     pixel_values = torch.zeros_like(inputs['pixel_values']).to(clip_vision.load_device)
@@ -235,8 +230,7 @@ class CrossAttentionPatch:
 
     def __call__(self, n, context_attn2, value_attn2, extra_options):
         org_dtype = n.dtype
-        frame = inspect.currentframe()
-        outer_frame = frame.f_back
+        outer_frame = inspect.currentframe().f_back
         cond_or_uncond = outer_frame.f_locals["transformer_options"]["cond_or_uncond"] if "cond_or_uncond" in outer_frame.f_locals["transformer_options"] else None
         with torch.autocast(device_type=self.device, dtype=self.dtype):
             q = n
