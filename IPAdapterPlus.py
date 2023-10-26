@@ -1,11 +1,11 @@
 import torch
 import contextlib
 import os
-import inspect
 
 import comfy.utils
 import comfy.model_management
 from comfy.clip_vision import clip_preprocess
+from comfy.ldm.modules.attention import optimized_attention
 import folder_paths
 
 from torch import nn
@@ -62,23 +62,6 @@ def set_model_patch_replace(model, patch_kwargs, key):
     else:
         to["patches_replace"]["attn2"][key].set_new_condition(**patch_kwargs)
 
-def attention(q, k, v, extra_options):
-    if not hasattr(F, "multi_head_attention_forward"):
-        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=extra_options["n_heads"]), (q, k, v))
-        sim = torch.einsum('b i d, b j d -> b i j', q, k) * (extra_options["dim_head"] ** -0.5)
-        sim = F.softmax(sim, dim=-1)
-        out = torch.einsum('b i j, b j d -> b i d', sim, v)
-        out = rearrange(out, '(b h) n d -> b n (h d)', h=extra_options["n_heads"])
-    else:
-        b, _, _ = q.shape
-        q, k, v = map(
-            lambda t: t.view(b, -1, extra_options["n_heads"], extra_options["dim_head"]).transpose(1, 2),
-            (q, k, v),
-        )
-        out = F.scaled_dot_product_attention(q, k, v, attn_mask=None, dropout_p=0.0, is_causal=False)
-        out = out.transpose(1, 2).reshape(b, -1, extra_options["n_heads"] * extra_options["dim_head"])
-    return out
-
 def image_add_noise(image, noise):
     image = image.permute([0,3,1,2])
     torch.manual_seed(0) # use a fixed random for reproducible results
@@ -86,7 +69,7 @@ def image_add_noise(image, noise):
         TT.CenterCrop(min(image.shape[2], image.shape[3])),
         TT.Resize((224, 224), interpolation=TT.InterpolationMode.BICUBIC, antialias=True),
         TT.ElasticTransform(alpha=75.0, sigma=noise*3.5), # shuffle the image
-        TT.RandomVerticalFlip(p=1.0),                # flip the image to change the geometry even more
+        TT.RandomVerticalFlip(p=1.0), # flip the image to change the geometry even more
         TT.RandomHorizontalFlip(p=1.0),
     ])
     image = transforms(image.cpu())
@@ -229,15 +212,14 @@ class CrossAttentionPatch:
 
     def __call__(self, n, context_attn2, value_attn2, extra_options):
         org_dtype = n.dtype
-        outer_frame = inspect.currentframe().f_back
-        cond_or_uncond = outer_frame.f_locals["transformer_options"]["cond_or_uncond"] if "cond_or_uncond" in outer_frame.f_locals["transformer_options"] else None
+        cond_or_uncond = extra_options["cond_or_uncond"] if "cond_or_uncond" in extra_options else None
         with torch.autocast(device_type=self.device, dtype=self.dtype):
             q = n
             k = context_attn2
             v = value_attn2
             b, _, _ = q.shape
             batch_prompt = b // len(cond_or_uncond) if cond_or_uncond is not None else None
-            out = attention(q, k, v, extra_options)
+            out = optimized_attention(q, k, v, extra_options["n_heads"])
 
             for weight, cond, uncond, ipadapter, mask in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks):
                 if cond_or_uncond is not None:
@@ -249,7 +231,7 @@ class CrossAttentionPatch:
                 ip_k = ipadapter.ip_layers.to_kvs[self.number*2](uncond_cond)
                 ip_v = ipadapter.ip_layers.to_kvs[self.number*2+1](uncond_cond)
 
-                ip_out = attention(q, ip_k, ip_v, extra_options)
+                ip_out = optimized_attention(q, ip_k, ip_v, extra_options["n_heads"])
 
                 out = out + ip_out * weight
 
@@ -490,7 +472,6 @@ class IPAdapterEncoder:
             image = torch.cat((image, image_4), dim=0)
             weight += [weight_4]*image_4.shape[0]
         
-
         clip_embed = clip_vision.encode_image(image)
         neg_image = image_add_noise(image, noise) if noise > 0 else None
         
