@@ -31,7 +31,9 @@ The IPAdapter are very powerful models for image-to-image conditioning. Given a 
  <img src="https://img.youtube.com/vi/7m9ZZFU3HWo/hqdefault.jpg" alt="Watch the video" />
 </a>
 
-[Watch on YouTube](https://youtu.be/7m9ZZFU3HWo)
+**[Basic usage video](https://youtu.be/7m9ZZFU3HWo)**
+
+**[Advanced features video](https://www.youtube.com/watch?v=mJQ62ly7jrg)**
 
 ## Installation
 
@@ -62,12 +64,10 @@ You can rename them to something easier to remember or put them into a sub-direc
 
 There's a basic workflow included in this repo and a few examples in the [examples](./examples/) directory. Usually it's a good idea to lower the `weight` to at least `0.8`.
 
-The `noise` paramenter is an experimental exploitation of the IPAdapter models. You can set it as low as `0.01` for an arguably better result. **Please report your experience with the noise option**!
+The `noise` paramenter is an experimental exploitation of the IPAdapter models. You can set it as low as `0.01` for an arguably better result.
 
 <details>
 <summary><strong>More info about the noise option</strong></summary>
-
-I made quite a few tests and I was not sure if it was worth it to include this feature, but the results are interesting enough to warrant at least a test period. Let me know what you think.
 
 <img src="./examples/noise_example.jpg" width="100%" alt="canny controlnet" />
 

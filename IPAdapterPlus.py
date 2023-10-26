@@ -5,6 +5,7 @@ import inspect
 
 import comfy.utils
 import comfy.model_management
+from comfy.clip_vision import clip_preprocess
 import folder_paths
 
 from torch import nn
@@ -94,11 +95,9 @@ def image_add_noise(image, noise):
     return image
 
 def zeroed_hidden_states(clip_vision, batch_size):
-    img = torch.zeros([batch_size, 224, 224, 3])
-    img = list(map(lambda a: a, img))
-    inputs = clip_vision.processor(images=img, return_tensors="pt")
+    image = torch.zeros([batch_size, 224, 224, 3])
     comfy.model_management.load_model_gpu(clip_vision.patcher)
-    pixel_values = torch.zeros_like(inputs['pixel_values']).to(clip_vision.load_device)
+    pixel_values = clip_preprocess(image.to(clip_vision.load_device))
 
     if clip_vision.dtype != torch.float32:
         precision_scope = torch.autocast
@@ -166,7 +165,7 @@ def contrast_adaptive_sharpening(image, amount):
     return (output)
 
 class IPAdapter(nn.Module):
-    def __init__(self, ipadapter_model, cross_attention_dim=1024, output_cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4, is_sdxl=False):
+    def __init__(self, ipadapter_model, cross_attention_dim=1024, output_cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4, is_sdxl=False, is_plus=False):
         super().__init__()
 
         self.clip_embeddings_dim = clip_embeddings_dim
@@ -175,7 +174,7 @@ class IPAdapter(nn.Module):
         self.clip_extra_context_tokens = clip_extra_context_tokens
         self.is_sdxl = is_sdxl
 
-        self.image_proj_model = self.init_proj()
+        self.image_proj_model = self.init_proj() if not is_plus else self.init_proj_plus()
         self.image_proj_model.load_state_dict(ipadapter_model["image_proj"])
         self.ip_layers = To_KV(self.output_cross_attention_dim)
         self.ip_layers.load_state_dict(ipadapter_model["ip_adapter"])
@@ -188,14 +187,7 @@ class IPAdapter(nn.Module):
         )
         return image_proj_model
 
-    @torch.inference_mode()
-    def get_image_embeds(self, clip_embed, clip_embed_zeroed):
-        image_prompt_embeds = self.image_proj_model(clip_embed)
-        uncond_image_prompt_embeds = self.image_proj_model(clip_embed_zeroed)
-        return image_prompt_embeds, uncond_image_prompt_embeds
-
-class IPAdapterPlus(IPAdapter):
-    def init_proj(self):
+    def init_proj_plus(self):
         image_proj_model = Resampler(
             dim=self.cross_attention_dim,
             depth=4,
@@ -207,6 +199,12 @@ class IPAdapterPlus(IPAdapter):
             ff_mult=4
         )
         return image_proj_model
+
+    @torch.inference_mode()
+    def get_image_embeds(self, clip_embed, clip_embed_zeroed):
+        image_prompt_embeds = self.image_proj_model(clip_embed)
+        uncond_image_prompt_embeds = self.image_proj_model(clip_embed_zeroed)
+        return image_prompt_embeds, uncond_image_prompt_embeds
 
 class CrossAttentionPatch:
     # forward for patching
@@ -333,15 +331,14 @@ class IPAdapterApply:
 
         clip_embeddings_dim = clip_embed.shape[-1]
 
-        IPA = IPAdapterPlus if self.is_plus else IPAdapter
-
-        self.ipadapter = IPA(
+        self.ipadapter = IPAdapter(
             ipadapter,
             cross_attention_dim=cross_attention_dim,
             output_cross_attention_dim=output_cross_attention_dim,
             clip_embeddings_dim=clip_embeddings_dim,
             clip_extra_context_tokens=clip_extra_context_tokens,
             is_sdxl=self.is_sdxl,
+            is_plus=self.is_plus
         )
         
         self.ipadapter.to(self.device, dtype=self.dtype)
