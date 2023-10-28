@@ -51,14 +51,17 @@ For SD1.5 you need:
 For SDXL you need:
 - [ip-adapter_sdxl.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl.bin)
 - [ip-adapter_sdxl_vit-h.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.bin) **This model requires the use of the SD1.5 encoder despite being for SDXL checkpoints**
-- [ip-adapter-plus_sdxl_vit-h.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.bin) **Same as above, use the SD1.5 encoder**
+- [ip-adapter-plus_sdxl_vit-h.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.bin) Same as above, use the SD1.5 encoder
+- [ip-adapter-plus-face_sdxl_vit-h.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus-face_sdxl_vit-h.bin) As always, use the SD1.5 encoder
 
 Additionally you need the image encoders to be placed in the `ComfyUI/models/clip_vision/` directory:
 
-- [SD 1.5 model](https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors) (use this also for the SDXL **ip-adapter_sdxl_vit-h.bin** and **ip-adapter-plus_sdxl_vit-h.bin** models)
+- [SD 1.5 model](https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors) (use this also for all models ending with **_vit-h**)
 - [SDXL model](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/image_encoder/model.safetensors)
 
 You can rename them to something easier to remember or put them into a sub-directory.
+
+**Note:** the image encoders are actually [ViT-H](https://huggingface.co/laion/CLIP-ViT-H-14-laion2B-s32B-b79K) and [ViT-bigG](https://huggingface.co/laion/CLIP-ViT-bigG-14-laion2B-39B-b160k) (used only for one SDXL model). You probably already have them.
 
 ## How to
 
@@ -143,6 +146,10 @@ You are using the wrong CLIP encoder+IPAdapter Model+Checkpoint combo. Remember 
 **Is it true that the input reference image must have the same size of the output image?**
 
 No, that's a metropolitan legend. Your input and output images can be of any size. Remember that all input images are scaled and cropped to 224x224 anyway.
+
+## Diffusers version
+
+If you are interested I've also implemented the same features for [Huggingface Diffusers](https://github.com/cubiq/Diffusers_IPAdapter).
 
 ## Credits
 
