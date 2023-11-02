@@ -252,7 +252,7 @@ class IPAdapterModelLoader:
 
         model = comfy.utils.load_torch_file(ckpt_path, safe_load=True)
 
-        if ckpt_path.lower().endswith(".safetensors"):         
+        if ckpt_path.lower().endswith(".safetensors"):
             st_model = {"image_proj": {}, "ip_adapter": {}}
             for key in model.keys():
                 if key.startswith("image_proj."):
@@ -265,8 +265,6 @@ class IPAdapterModelLoader:
             for key in sorted_keys:
                 model["ip_adapter"][key] = st_model["ip_adapter"][key]
             st_model = None
-        else:
-            model = comfy.utils.load_torch_file(ckpt_path, safe_load=True)
 
         if not "ip_adapter" in model.keys() or not model["ip_adapter"]:
             raise Exception("invalid IPAdapter model {}".format(ckpt_path))
