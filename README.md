@@ -5,6 +5,8 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 ## Important updates
 
+**2023/11/02**: Added compatibility with the new models in safetensors format (available on [huggingface](https://huggingface.co/h94/IP-Adapter)).
+
 **2023/10/12**: Added image weighting in the `IPAdapterEncoder` node. This update is somewhat breaking; if you use `IPAdapterEncoder` and `PrepImageForClipVision` nodes you need to remove them from your workflow, refresh and recreate them. In the examples you'll find a [workflow](examples/IPAdapter_weighted.json) for weighted images.
 
 **2023/9/29**: Added save/load of encoded images. Fix minor bugs.
@@ -31,9 +33,9 @@ The IPAdapter are very powerful models for image-to-image conditioning. Given a 
  <img src="https://img.youtube.com/vi/7m9ZZFU3HWo/hqdefault.jpg" alt="Watch the video" />
 </a>
 
-**[Basic usage video](https://youtu.be/7m9ZZFU3HWo)**
+**:nerd_face: [Basic usage video](https://youtu.be/7m9ZZFU3HWo)**
 
-**[Advanced features video](https://www.youtube.com/watch?v=mJQ62ly7jrg)**
+**:rocket: [Advanced features video](https://www.youtube.com/watch?v=mJQ62ly7jrg)**
 
 ## Installation
 
@@ -53,6 +55,8 @@ For SDXL you need:
 - [ip-adapter_sdxl_vit-h.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.bin) **This model requires the use of the SD1.5 encoder despite being for SDXL checkpoints**
 - [ip-adapter-plus_sdxl_vit-h.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.bin) Same as above, use the SD1.5 encoder
 - [ip-adapter-plus-face_sdxl_vit-h.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus-face_sdxl_vit-h.bin) As always, use the SD1.5 encoder
+
+Please note that now the models are also available in safetensors format, you can find them on [huggingface](https://huggingface.co/h94/IP-Adapter).
 
 Additionally you need the image encoders to be placed in the `ComfyUI/models/clip_vision/` directory:
 
@@ -156,3 +160,10 @@ If you are interested I've also implemented the same features for [Huggingface D
 - [IPAdapter](https://github.com/tencent-ailab/IP-Adapter/)
 - [laksjdjf](https://github.com/laksjdjf/IPAdapter-ComfyUI/)
 - [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
+
+## IPAdapter in the wild
+
+Let me know if you spot the IPAdapter in the wild!
+
+- For German speakers you can find interesting YouTube tutorials on [A Latent Place](https://www.youtube.com/watch?v=rAWn_0YOBU0).
+- [Scott Detweiler](https://www.youtube.com/watch?v=xzGdynQDzsM) covered this extension.
