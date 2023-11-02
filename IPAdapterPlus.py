@@ -22,7 +22,7 @@ SD_V12_CHANNELS = [320] * 4 + [640] * 4 + [1280] * 4 + [1280] * 6 + [640] * 6 + 
 SD_XL_CHANNELS = [640] * 8 + [1280] * 40 + [1280] * 60 + [640] * 12 + [1280] * 20
 
 def get_filename_list(path):
-    return [f for f in os.listdir(path) if f.endswith('.bin')]
+    return [f for f in os.listdir(path) if f.endswith('.bin') or f.endswith('.safetensors')]
 
 class ImageProjModel(nn.Module):
     def __init__(self, cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4):
@@ -251,9 +251,24 @@ class IPAdapterModelLoader:
         ckpt_path = os.path.join(MODELS_DIR, ipadapter_file)
 
         model = comfy.utils.load_torch_file(ckpt_path, safe_load=True)
-        keys = model.keys()
 
-        if not "ip_adapter" in keys:
+        if ckpt_path.lower().endswith(".safetensors"):         
+            st_model = {"image_proj": {}, "ip_adapter": {}}
+            for key in model.keys():
+                if key.startswith("image_proj."):
+                    st_model["image_proj"][key.replace("image_proj.", "")] = model[key]
+                elif key.startswith("ip_adapter."):
+                    st_model["ip_adapter"][key.replace("ip_adapter.", "")] = model[key]
+            # sort keys
+            model = {"image_proj": st_model["image_proj"], "ip_adapter": {}}
+            sorted_keys = sorted(st_model["ip_adapter"].keys(), key=lambda x: int(x.split(".")[0]))
+            for key in sorted_keys:
+                model["ip_adapter"][key] = st_model["ip_adapter"][key]
+            st_model = None
+        else:
+            model = comfy.utils.load_torch_file(ckpt_path, safe_load=True)
+
+        if not "ip_adapter" in model.keys() or not model["ip_adapter"]:
             raise Exception("invalid IPAdapter model {}".format(ckpt_path))
 
         return (model,)
