@@ -199,16 +199,17 @@ class CrossAttentionPatch:
         self.dtype = dtype
         self.device = 'cuda'
         self.number = number
-        self.weight_type = weight_type
+        self.weight_type = [weight_type]
         self.masks = [mask]
     
-    def set_new_condition(self, weight, ipadapter, cond, uncond, dtype, number, mask=None):
+    def set_new_condition(self, weight, ipadapter, cond, uncond, dtype, number, weight_type, mask=None):
         self.weights.append(weight)
         self.ipadapters.append(ipadapter)
         self.conds.append(cond)
         self.unconds.append(uncond)
         self.masks.append(mask)
         self.dtype = dtype
+        self.weight_type.append(weight_type)
         self.device = 'cuda'
 
     def __call__(self, n, context_attn2, value_attn2, extra_options):
@@ -223,20 +224,20 @@ class CrossAttentionPatch:
             out = optimized_attention(q, k, v, extra_options["n_heads"])
 
             k = v = []
-            for weight, cond, uncond, ipadapter, mask in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks):
+            for weight, cond, uncond, ipadapter, mask, weight_type in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks, self.weight_type):
                 k_cond = ipadapter.ip_layers.to_kvs[self.number*2](cond).repeat(batch_prompt, 1, 1)
                 k_uncond = ipadapter.ip_layers.to_kvs[self.number*2](uncond).repeat(batch_prompt, 1, 1)
                 v_cond = ipadapter.ip_layers.to_kvs[self.number*2+1](cond).repeat(batch_prompt, 1, 1)
                 v_uncond = ipadapter.ip_layers.to_kvs[self.number*2+1](uncond).repeat(batch_prompt, 1, 1)
 
-                if self.weight_type.startswith("linear"):
+                if weight_type.startswith("linear"):
                     ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0) * weight
                     ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0) * weight
                 else:
                     ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0)
                     ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0)
 
-                    if self.weight_type.startswith("channel"):
+                    if weight_type.startswith("channel"):
                         # code by Lvmin Zhang at Stanford University as also seen on Fooocus IPAdapter implementation
                         # please read licensing notes https://github.com/lllyasviel/Fooocus/blob/main/fooocus_extras/ip_adapter.py#L225
                         ip_v_mean = torch.mean(ip_v, dim=1, keepdim=True)
@@ -247,16 +248,11 @@ class CrossAttentionPatch:
                         ip_k = ip_k * W
                         ip_v = ip_v_offset + ip_v_mean * W
 
-                k.append(ip_k)
-                v.append(ip_v)
-
-            k = torch.cat(k, dim=1)
-            v = torch.cat(v, dim=1)
-
-            if self.weight_type.startswith("original"):
-                out += optimized_attention(q, ip_k, ip_v, extra_options["n_heads"]) * weight
-            else:
-                out += optimized_attention(q, ip_k, ip_v, extra_options["n_heads"])
+                out_ip = optimized_attention(q, ip_k, ip_v, extra_options["n_heads"])
+                if weight_type.startswith("original"):
+                    out_ip = out_ip * weight
+                
+                out = out + out_ip
 
         return out.to(dtype=org_dtype)
 
