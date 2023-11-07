@@ -191,7 +191,7 @@ class IPAdapter(nn.Module):
 
 class CrossAttentionPatch:
     # forward for patching
-    def __init__(self, weight, ipadapter, dtype, number, cond, uncond, mask=None):
+    def __init__(self, weight, ipadapter, dtype, number, cond, uncond, weight_type, mask=None):
         self.weights = [weight]
         self.ipadapters = [ipadapter]
         self.conds = [cond]
@@ -199,6 +199,7 @@ class CrossAttentionPatch:
         self.dtype = dtype
         self.device = 'cuda'
         self.number = number
+        self.weight_type = weight_type
         self.masks = [mask]
     
     def set_new_condition(self, weight, ipadapter, cond, uncond, dtype, number, mask=None):
@@ -217,23 +218,45 @@ class CrossAttentionPatch:
             q = n
             k = context_attn2
             v = value_attn2
-            b, _, _ = q.shape
-            batch_prompt = b // len(cond_or_uncond) if cond_or_uncond is not None else None
+            b = q.shape[0]
+            batch_prompt = b // len(cond_or_uncond)
             out = optimized_attention(q, k, v, extra_options["n_heads"])
 
+            k = v = []
             for weight, cond, uncond, ipadapter, mask in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks):
-                if cond_or_uncond is not None:
-                    uncond_cond = torch.cat([(cond.repeat(batch_prompt, 1, 1), uncond.repeat(batch_prompt, 1, 1))[i] for i in cond_or_uncond], dim=0)
+                k_cond = ipadapter.ip_layers.to_kvs[self.number*2](cond).repeat(batch_prompt, 1, 1)
+                k_uncond = ipadapter.ip_layers.to_kvs[self.number*2](uncond).repeat(batch_prompt, 1, 1)
+                v_cond = ipadapter.ip_layers.to_kvs[self.number*2+1](cond).repeat(batch_prompt, 1, 1)
+                v_uncond = ipadapter.ip_layers.to_kvs[self.number*2+1](uncond).repeat(batch_prompt, 1, 1)
+
+                if self.weight_type.startswith("linear"):
+                    ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0) * weight
+                    ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0) * weight
                 else:
-                    uncond_cond = torch.cat([uncond.repeat(b//2, 1, 1), cond.repeat(b//2, 1, 1)], dim=0)
+                    ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0)
+                    ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0)
 
-                # k, v for ip_adapter
-                ip_k = ipadapter.ip_layers.to_kvs[self.number*2](uncond_cond)
-                ip_v = ipadapter.ip_layers.to_kvs[self.number*2+1](uncond_cond)
+                    if self.weight_type.startswith("channel"):
+                        # code by Lvmin Zhang at Stanford University as also seen on Fooocus IPAdapter implementation
+                        # please read licensing notes https://github.com/lllyasviel/Fooocus/blob/main/fooocus_extras/ip_adapter.py#L225
+                        ip_v_mean = torch.mean(ip_v, dim=1, keepdim=True)
+                        ip_v_offset = ip_v - ip_v_mean
+                        B, F, C = ip_k.shape
+                        channel_penalty = float(C) / 1280.0
+                        W = weight * channel_penalty
+                        ip_k = ip_k * W
+                        ip_v = ip_v_offset + ip_v_mean * W
 
-                ip_out = optimized_attention(q, ip_k, ip_v, extra_options["n_heads"])
+                k.append(ip_k)
+                v.append(ip_v)
 
-                out = out + ip_out * weight
+            k = torch.cat(k, dim=1)
+            v = torch.cat(v, dim=1)
+
+            if self.weight_type.startswith("original"):
+                out += optimized_attention(q, ip_k, ip_v, extra_options["n_heads"]) * weight
+            else:
+                out += optimized_attention(q, ip_k, ip_v, extra_options["n_heads"])
 
         return out.to(dtype=org_dtype)
 
@@ -281,7 +304,8 @@ class IPAdapterApply:
                 "image": ("IMAGE",),
                 "model": ("MODEL", ),
                 "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.05 }),
-                "noise": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01 })
+                "noise": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01 }),
+                "weight_type": (["original", "linear", "channel penalty"], ),
             },
         }
 
@@ -289,7 +313,7 @@ class IPAdapterApply:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, ipadapter, model, weight, clip_vision=None, image=None, noise=None, embeds=None):
+    def apply_ipadapter(self, ipadapter, model, weight, clip_vision=None, image=None, weight_type="original", noise=None, embeds=None):
         self.dtype = model.model.diffusion_model.dtype
         self.device = comfy.model_management.get_torch_device()
         self.weight = weight
@@ -351,6 +375,7 @@ class IPAdapterApply:
             "dtype": self.dtype,
             "cond": image_prompt_embeds,
             "uncond": uncond_image_prompt_embeds,
+            "weight_type": weight_type
         }
 
         if not self.is_sdxl:
@@ -518,6 +543,7 @@ class IPAdapterApplyEncoded(IPAdapterApply):
                 "embeds": ("EMBEDS",),
                 "model": ("MODEL", ),
                 "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.05 }),
+                "weight_type": (["original", "linear", "channel penalty"], ),
             },
         }
 

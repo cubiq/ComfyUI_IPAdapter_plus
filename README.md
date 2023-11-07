@@ -5,19 +5,15 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 ## Important updates
 
+**2023/11/07**: Added three ways to apply the weight. [See below](#weight-types) for more info. **This might break things!** Please let me know if you are having issues. When loading an old workflow try to reload the page a couple of times or delete the `IPAdapter Apply` node and insert a new one.
+
 **2023/11/02**: Added compatibility with the new models in safetensors format (available on [huggingface](https://huggingface.co/h94/IP-Adapter)).
 
 **2023/10/12**: Added image weighting in the `IPAdapterEncoder` node. This update is somewhat breaking; if you use `IPAdapterEncoder` and `PrepImageForClipVision` nodes you need to remove them from your workflow, refresh and recreate them. In the examples you'll find a [workflow](examples/IPAdapter_weighted.json) for weighted images.
 
 **2023/9/29**: Added save/load of encoded images. Fix minor bugs.
 
-**2023/9/27**: Added a `PrepImageForClipVision` node to prepare your images for IPAdapters and get generally better results. See below for details. Note that this is useful for any clip vision encoded image, not only IPAdapter.
-
-**2023/9/17**: Better image handling, lower memory usage. Changed how the noise is generated.
-
-**2023/9/15**: Huge code cleanup! I streamlined the node structure for a tidier workflow. **IMPORTANT** this is a breaking update, we don't need the dedicated clip vision encoder anymore. Please check the new included workflows. Also introduced the new `noise` option, see below for details.
-
-**2023/9/11**: The code has been rewritten to take advantage of the new ComfyUI updates regarding clip vision. Expect lower memory usage.
+*(previous updates removed for better readability)*
 
 ## What is it?
 
@@ -137,11 +133,27 @@ When sending multiple images you can increase/decrease the weight of each image 
 
 The node accepts 4 images, but remember that you can send batches of images to each slot.
 
+### Weight types
+
+You can choose how the IPAdapter weight is applied to the image embeds. Options are:
+
+- **original**: The weight is applied to the aggregated tensors. The weight works predictably for values greater and lower than 1.
+- **linear**: The weight is applied to the individual tensors before aggretating them. Compared to `original` the influence is weaker when weight is <1 and stronger when >1. **Note:** at weight `1` the two methods are equivalent.
+- **channel penalty**: This method is developed by Lvmin Zhang at Stanford University and implemented in the Fooocus UI. Results are sometimes sharper but the image burns a little. It works very well also when weight is >1.
+
+The image below shows the difference (zoom in).
+
+<img src="./examples/weight_types.jpg" width="100%" alt="weight types" />
+
+In the examples directory you can find [a workflow](examples/IPAdapter_weight_types.json) that lets you easily compare the three methods.
+
+**Note:** I'm not still sure whether all methods will stay. `Linear` seems the most sensible but I wanted to keep the `original` for backward compatibility. `channel penalty` has a weird non-commercial clause but it's still part of a GNU GPLv3 software (ie: there's a licensing clash) so I'm trying to understand how to deal with that.
+
 ## Troubleshooting
 
 **Error: 'CLIPVisionModelOutput' object has no attribute 'penultimate_hidden_states'**
 
-You are using an old version of ComfyUI. Update and you'll be fine.
+You are using an old version of ComfyUI. Update and you'll be fine. **Please note** that on Windows for a full update you might need to re-download the latest standalone version.
 
 **Error with Tensor size mismatch**
 
@@ -158,8 +170,9 @@ If you are interested I've also implemented the same features for [Huggingface D
 ## Credits
 
 - [IPAdapter](https://github.com/tencent-ailab/IP-Adapter/)
-- [laksjdjf](https://github.com/laksjdjf/IPAdapter-ComfyUI/)
 - [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
+- [laksjdjf](https://github.com/laksjdjf/IPAdapter-ComfyUI/)
+- [fooocus](https://github.com/lllyasviel/Fooocus/blob/main/fooocus_extras/ip_adapter.py)
 
 ## IPAdapter in the wild
 
