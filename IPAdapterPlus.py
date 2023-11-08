@@ -214,14 +214,16 @@ class CrossAttentionPatch:
 
     def __call__(self, n, context_attn2, value_attn2, extra_options):
         org_dtype = n.dtype
-        cond_or_uncond = extra_options["cond_or_uncond"] if "cond_or_uncond" in extra_options else None
+        cond_or_uncond = extra_options["cond_or_uncond"]
         with torch.autocast(device_type=self.device, dtype=self.dtype):
             q = n
             k = context_attn2
             v = value_attn2
             b = q.shape[0]
+            qs = q.shape[1]
             batch_prompt = b // len(cond_or_uncond)
             out = optimized_attention(q, k, v, extra_options["n_heads"])
+            _, _, lh, lw = extra_options["original_shape"]
 
             k = v = []
             for weight, cond, uncond, ipadapter, mask, weight_type in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks, self.weight_type):
@@ -242,16 +244,29 @@ class CrossAttentionPatch:
                         # please read licensing notes https://github.com/lllyasviel/Fooocus/blob/main/fooocus_extras/ip_adapter.py#L225
                         ip_v_mean = torch.mean(ip_v, dim=1, keepdim=True)
                         ip_v_offset = ip_v - ip_v_mean
-                        B, F, C = ip_k.shape
+                        _, _, C = ip_k.shape
                         channel_penalty = float(C) / 1280.0
                         W = weight * channel_penalty
                         ip_k = ip_k * W
                         ip_v = ip_v_offset + ip_v_mean * W
 
-                out_ip = optimized_attention(q, ip_k, ip_v, extra_options["n_heads"])
+                out_ip = optimized_attention(q, ip_k, ip_v, extra_options["n_heads"])           
                 if weight_type.startswith("original"):
                     out_ip = out_ip * weight
-                
+
+                if mask is not None:
+                    # TODO: needs testing
+                    for rate in [1, 2, 4, 8]:
+                        mask_h = -(-lh//rate) # fancy ceil
+                        mask_w = -(-lw//rate)
+
+                        if mask_h*mask_w == qs:
+                            break
+                    
+                    mask_downsample = F.interpolate(mask.unsqueeze(0).unsqueeze(0), size=(mask_h, mask_w), mode="bilinear").squeeze(0)
+                    mask_downsample = mask_downsample.view(1, -1, 1).repeat(out.shape[0], 1, out.shape[2])
+                    out_ip = out_ip * mask_downsample
+
                 out = out + out_ip
 
         return out.to(dtype=org_dtype)
@@ -303,13 +318,16 @@ class IPAdapterApply:
                 "noise": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01 }),
                 "weight_type": (["original", "linear", "channel penalty"], ),
             },
+            "optional": {
+                "attn_mask": ("MASK",),
+            }
         }
 
     RETURN_TYPES = ("MODEL",)
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, ipadapter, model, weight, clip_vision=None, image=None, weight_type="original", noise=None, embeds=None):
+    def apply_ipadapter(self, ipadapter, model, weight, clip_vision=None, image=None, weight_type="original", noise=None, embeds=None, attn_mask=None):
         self.dtype = model.model.diffusion_model.dtype
         self.device = comfy.model_management.get_torch_device()
         self.weight = weight
@@ -364,6 +382,9 @@ class IPAdapterApply:
 
         work_model = model.clone()
 
+        if attn_mask is not None:
+            attn_mask = attn_mask.squeeze().to(self.device)
+        
         patch_kwargs = {
             "number": 0,
             "weight": self.weight,
@@ -371,7 +392,8 @@ class IPAdapterApply:
             "dtype": self.dtype,
             "cond": image_prompt_embeds,
             "uncond": uncond_image_prompt_embeds,
-            "weight_type": weight_type
+            "weight_type": weight_type,
+            "mask": attn_mask
         }
 
         if not self.is_sdxl:
@@ -541,6 +563,9 @@ class IPAdapterApplyEncoded(IPAdapterApply):
                 "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.05 }),
                 "weight_type": (["original", "linear", "channel penalty"], ),
             },
+            "optional": {
+                "attn_mask": ("MASK",),
+            }
         }
 
 class IPAdapterSaveEmbeds:

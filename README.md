@@ -5,6 +5,8 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 ## Important updates
 
+**2023/11/08**: Added attention masking. 
+
 **2023/11/07**: Added three ways to apply the weight. [See below](#weight-types) for more info. **This might break things!** Please let me know if you are having issues. When loading an old workflow try to reload the page a couple of times or delete the `IPAdapter Apply` node and insert a new one.
 
 **2023/11/02**: Added compatibility with the new models in safetensors format (available on [huggingface](https://huggingface.co/h94/IP-Adapter)).
@@ -139,7 +141,7 @@ You can choose how the IPAdapter weight is applied to the image embeds. Options 
 
 - **original**: The weight is applied to the aggregated tensors. The weight works predictably for values greater and lower than 1.
 - **linear**: The weight is applied to the individual tensors before aggretating them. Compared to `original` the influence is weaker when weight is <1 and stronger when >1. **Note:** at weight `1` the two methods are equivalent.
-- **channel penalty**: This method is developed by Lvmin Zhang at Stanford University and implemented in the Fooocus UI. Results are sometimes sharper but the image burns a little. It works very well also when weight is >1.
+- **channel penalty**: This method is a modified version of Lvmin Zhang's (Fooocus). Results are sometimes sharper. It works very well also when weight is >1. Still experimental, may change in the future.
 
 The image below shows the difference (zoom in).
 
@@ -148,6 +150,18 @@ The image below shows the difference (zoom in).
 In the examples directory you can find [a workflow](examples/IPAdapter_weight_types.json) that lets you easily compare the three methods.
 
 **Note:** I'm not still sure whether all methods will stay. `Linear` seems the most sensible but I wanted to keep the `original` for backward compatibility. `channel penalty` has a weird non-commercial clause but it's still part of a GNU GPLv3 software (ie: there's a licensing clash) so I'm trying to understand how to deal with that.
+
+### Attention masking
+
+It's possible to add a mask to define the area where the IPAdapter will be applied to. Everything outside the mask will ignore the reference images and will only listen to the text prompt.
+
+It is suggested to use a mask of the same size of the final generated image.
+
+In the picture below I use two reference images masked one on the left and the other on the right. The image is generated only with IPAdapter and one ksampler (without in/outpainting or area conditioning).
+
+<img src="./examples/masking.jpg" width="512" alt="masking" />
+
+In the examples directory you'll find a couple of masking workflows: [simple](examples/IPAdapter_mask.json) and [two masks](examples/IPAdapter_2_masks.json).
 
 ## Troubleshooting
 
