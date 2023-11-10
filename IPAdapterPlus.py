@@ -24,6 +24,22 @@ SD_XL_CHANNELS = [640] * 8 + [1280] * 40 + [1280] * 60 + [640] * 12 + [1280] * 2
 def get_filename_list(path):
     return [f for f in os.listdir(path) if f.endswith('.bin') or f.endswith('.safetensors')]
 
+class MLPProjModel(torch.nn.Module):
+    """SD model with image prompt"""
+    def __init__(self, cross_attention_dim=1024, clip_embeddings_dim=1024):
+        super().__init__()
+        
+        self.proj = torch.nn.Sequential(
+            torch.nn.Linear(clip_embeddings_dim, clip_embeddings_dim),
+            torch.nn.GELU(),
+            torch.nn.Linear(clip_embeddings_dim, cross_attention_dim),
+            torch.nn.LayerNorm(cross_attention_dim)
+        )
+        
+    def forward(self, image_embeds):
+        clip_extra_context_tokens = self.proj(image_embeds)
+        return clip_extra_context_tokens
+
 class ImageProjModel(nn.Module):
     def __init__(self, cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4):
         super().__init__()
@@ -148,7 +164,7 @@ def contrast_adaptive_sharpening(image, amount):
     return (output)
 
 class IPAdapter(nn.Module):
-    def __init__(self, ipadapter_model, cross_attention_dim=1024, output_cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4, is_sdxl=False, is_plus=False):
+    def __init__(self, ipadapter_model, cross_attention_dim=1024, output_cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4, is_sdxl=False, is_plus=False, is_full=False):
         super().__init__()
 
         self.clip_embeddings_dim = clip_embeddings_dim
@@ -156,6 +172,7 @@ class IPAdapter(nn.Module):
         self.output_cross_attention_dim = output_cross_attention_dim
         self.clip_extra_context_tokens = clip_extra_context_tokens
         self.is_sdxl = is_sdxl
+        self.is_full = is_full
 
         self.image_proj_model = self.init_proj() if not is_plus else self.init_proj_plus()
         self.image_proj_model.load_state_dict(ipadapter_model["image_proj"])
@@ -171,16 +188,22 @@ class IPAdapter(nn.Module):
         return image_proj_model
 
     def init_proj_plus(self):
-        image_proj_model = Resampler(
-            dim=self.cross_attention_dim,
-            depth=4,
-            dim_head=64,
-            heads=20 if self.is_sdxl else 12,
-            num_queries=self.clip_extra_context_tokens,
-            embedding_dim=self.clip_embeddings_dim,
-            output_dim=self.output_cross_attention_dim,
-            ff_mult=4
-        )
+        if self.is_full:
+            image_proj_model = MLPProjModel(
+                cross_attention_dim=self.cross_attention_dim,
+                clip_embeddings_dim=self.clip_embeddings_dim
+            )
+        else:
+            image_proj_model = Resampler(
+                dim=self.cross_attention_dim,
+                depth=4,
+                dim_head=64,
+                heads=20 if self.is_sdxl else 12,
+                num_queries=self.clip_extra_context_tokens,
+                embedding_dim=self.clip_embeddings_dim,
+                output_dim=self.output_cross_attention_dim,
+                ff_mult=4
+            )
         return image_proj_model
 
     @torch.inference_mode()
@@ -331,7 +354,8 @@ class IPAdapterApply:
         self.dtype = model.model.diffusion_model.dtype
         self.device = comfy.model_management.get_torch_device()
         self.weight = weight
-        self.is_plus = "latents" in ipadapter["image_proj"]
+        self.is_full = "proj.0.weight" in ipadapter["image_proj"]
+        self.is_plus = self.is_full or "latents" in ipadapter["image_proj"]
 
         output_cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
         self.is_sdxl = output_cross_attention_dim == 2048
@@ -371,7 +395,8 @@ class IPAdapterApply:
             clip_embeddings_dim=clip_embeddings_dim,
             clip_extra_context_tokens=clip_extra_context_tokens,
             is_sdxl=self.is_sdxl,
-            is_plus=self.is_plus
+            is_plus=self.is_plus,
+            is_full=self.is_full,
         )
         
         self.ipadapter.to(self.device, dtype=self.dtype)
