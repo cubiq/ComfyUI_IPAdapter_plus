@@ -23,7 +23,21 @@ SD_XL_CHANNELS = [640] * 8 + [1280] * 40 + [1280] * 60 + [640] * 12 + [1280] * 2
 
 def get_filename_list(path):
     return [f for f in os.listdir(path) if f.endswith('.bin') or f.endswith('.safetensors')]
+def pad_to_square(tensor):
+    tensor = tensor.squeeze(0).permute(2, 0, 1)
+    _, h, w = tensor.shape
 
+    target_length = max(h, w)
+
+    pad_l = (target_length - w) // 2
+    pad_r = (target_length - w) - pad_l
+    
+    pad_t = (target_length - h) // 2
+    pad_b = (target_length - h) - pad_t
+
+    padded_tensor = F.pad(tensor, (pad_l, pad_r, pad_t, pad_b), mode="constant", value=0)
+    
+    return padded_tensor.permute(1, 2, 0).unsqueeze(0)
 class MLPProjModel(torch.nn.Module):
     """SD model with image prompt"""
     def __init__(self, cross_attention_dim=1024, clip_embeddings_dim=1024):
@@ -450,6 +464,7 @@ class PrepImageForClipVision:
     def INPUT_TYPES(s):
         return {"required": {
             "image": ("IMAGE",),
+            "padding": ("BOOLEAN", {"default": False}),
             "interpolation": (["LANCZOS", "BICUBIC", "HAMMING", "BILINEAR", "BOX", "NEAREST"],),
             "crop_position": (["top", "bottom", "left", "right", "center"],),
             "sharpening": ("FLOAT", {"default": 0.0, "min": 0, "max": 1, "step": 0.05}),
@@ -461,7 +476,11 @@ class PrepImageForClipVision:
 
     CATEGORY = "ipadapter"
 
-    def prep_image(self, image, interpolation="LANCZOS", crop_position="center", sharpening=0.0):
+    def prep_image(self, image, padding, interpolation="LANCZOS", crop_position="center", sharpening=0.0, output_size=244):
+        #add padding to image
+        if padding:
+            image = pad_to_square(image)     
+        
         _, oh, ow, _ = image.shape
 
         crop_size = min(oh, ow)
@@ -488,7 +507,7 @@ class PrepImageForClipVision:
         imgs = []
         for i in range(output.shape[0]):
             img = TT.ToPILImage()(output[i])
-            img = img.resize((224,224), resample=Image.Resampling[interpolation])
+            img = img.resize((output_size,output_size), resample=Image.Resampling[interpolation])
             imgs.append(TT.ToTensor()(img))
         output = torch.stack(imgs, dim=0)
        
