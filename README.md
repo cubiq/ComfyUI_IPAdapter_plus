@@ -87,8 +87,6 @@ The reference image needs to be encoded by the CLIP vision model. The encoder re
 
 I've added a `PrepImageForClipVision` node that does all the required operations for you. You just have to select the crop position (top/left/center/etc...) and a sharpening amount if you want.
 
-The `add_weight` option is useful **only** in case of image batches, **do not use otherwise**. It effectively doubles the image weight in a batch of images. It's like sending the same image twice.
-
 In the image below you can see the difference between prepped and not prepped images.
 
 <img src="./examples/prep_images.jpg" width="100%" alt="prepped images" />
