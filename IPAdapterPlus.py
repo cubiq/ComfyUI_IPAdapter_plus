@@ -248,7 +248,6 @@ class CrossAttentionPatch:
             out = optimized_attention(q, k, v, extra_options["n_heads"])
             _, _, lh, lw = extra_options["original_shape"]
 
-            k = v = []
             for weight, cond, uncond, ipadapter, mask, weight_type in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks, self.weight_type):
                 k_cond = ipadapter.ip_layers.to_kvs[self.number*2](cond).repeat(batch_prompt, 1, 1)
                 k_uncond = ipadapter.ip_layers.to_kvs[self.number*2](uncond).repeat(batch_prompt, 1, 1)
