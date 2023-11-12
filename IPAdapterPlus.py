@@ -476,7 +476,7 @@ class PrepImageForClipVision:
 
     CATEGORY = "ipadapter"
 
-    def prep_image(self, image, padding, interpolation="LANCZOS", crop_position="center", sharpening=0.0, output_size=244):
+    def prep_image(self, image, padding, interpolation="LANCZOS", crop_position="center", sharpening=0.0):
         #add padding to image
         if padding:
             image = pad_to_square(image)     
@@ -507,7 +507,7 @@ class PrepImageForClipVision:
         imgs = []
         for i in range(output.shape[0]):
             img = TT.ToPILImage()(output[i])
-            img = img.resize((output_size,output_size), resample=Image.Resampling[interpolation])
+            img = img.resize((244,244), resample=Image.Resampling[interpolation])
             imgs.append(TT.ToTensor()(img))
         output = torch.stack(imgs, dim=0)
        
