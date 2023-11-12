@@ -507,7 +507,7 @@ class PrepImageForClipVision:
         imgs = []
         for i in range(output.shape[0]):
             img = TT.ToPILImage()(output[i])
-            img = img.resize((244,244), resample=Image.Resampling[interpolation])
+            img = img.resize((224,224), resample=Image.Resampling[interpolation])
             imgs.append(TT.ToTensor()(img))
         output = torch.stack(imgs, dim=0)
        
