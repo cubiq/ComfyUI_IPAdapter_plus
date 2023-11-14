@@ -35,6 +35,8 @@ The IPAdapter are very powerful models for image-to-image conditioning. Given a 
 
 **:rocket: [Advanced features video](https://www.youtube.com/watch?v=mJQ62ly7jrg)**
 
+**:japanese_goblin: [Attention Masking](https://www.youtube.com/watch?v=vqG1VXKteQg)**
+
 ## Installation
 
 Download or git clone this repository inside `ComfyUI/custom_nodes/` directory.
@@ -47,6 +49,7 @@ For SD1.5 you need:
 - [ip-adapter_sd15_light.bin](https://huggingface.co/h94/IP-Adapter/blob/main/models/ip-adapter_sd15_light.bin), use this when text prompt is more important than reference images
 - [ip-adapter-plus_sd15.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-plus_sd15.bin)
 - [ip-adapter-plus-face_sd15.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-plus-face_sd15.bin)
+- [ip-adapter-full-face_sd15.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-full-face_sd15.bin)
 
 For SDXL you need:
 - [ip-adapter_sdxl.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl.bin)
@@ -81,7 +84,7 @@ Basically the IPAdapter sends two pictures for the conditioning, one is the refe
 What I'm doing is to send a very noisy image instead of an empty one. The `noise` parameter determines the amount of noise that is added. A value of `0.01` adds a lot of noise (more noise == less impact becaue the model doesn't get it); a value of `1.0` removes most of noise so the generated image gets conditioned more.
 </details>
 
-### IMPORTANT: Preparing the reference image
+### Preparing the reference image
 
 The reference image needs to be encoded by the CLIP vision model. The encoder resizes the image to 224×224 **and crops it to the center!**. It's not an IPAdapter thing, it's how the clip vision works. This means that if you use a portrait or landscape image and the main attention (eg: the face of a character) is not in the middle you'll likely get undesired results. Use square pictures as reference for more predictable results.
 
@@ -93,11 +96,9 @@ In the image below you can see the difference between prepped and not prepped im
 
 ### KSampler configuration suggestions
 
-The IPAdapter generally requires a few more `steps` than usual, if the result is underwhelming try to add 10+ steps. `ddmin`, `ddpm` and `euler` seem to perform better than others.
+The IPAdapter generally requires a few more `steps` than usual, if the result is underwhelming try to add 10+ steps. The model tends to burn the images a little. If needed lower the CFG scale.
 
-The model tends to burn the images a little. If needed lower the CFG scale.
-
-The SDXL models are weird but the `noise` option sometimes helps.
+The `noise` option generally grants better results, experiment with it.
 
 ### IPAdapter + ControlNet
 
@@ -110,6 +111,8 @@ The model is very effective when paired with a ControlNet. In the example below 
 IPAdapter offers an interesting model for a kind of "face swap" effect. [The workflow is provided](./examples/IPAdapter_face.json). Set a close up face as reference image and then input your text prompt as always. The generated character should have the face of the reference. It also works with img2img given a high denoise.
 
 <img src="./examples/face_swap.jpg" width="50%" alt="face swap" />
+
+**Note:** there's a new `full-face` model available that's arguably better.
 
 ### Masking
 
@@ -167,9 +170,9 @@ In the examples directory you'll find a couple of masking workflows: [simple](ex
 
 You are using an old version of ComfyUI. Update and you'll be fine. **Please note** that on Windows for a full update you might need to re-download the latest standalone version.
 
-**Error with Tensor size mismatch**
+**size mismatch for proj_in.weight: copying a param with shape torch.Size([..., ...]) from checkpoint, the shape in current model is torch.Size([..., ...])**
 
-You are using the wrong CLIP encoder+IPAdapter Model+Checkpoint combo. Remember that you need to select the CLIP encoder v1.5 for all v1.5 IPAdapter models AND for all models ending with `vit-h` (even if they are for SDXL).
+You are using the wrong image encoder+IPAdapter Model+Checkpoint combo. Remember that you need to select the CLIP encoder v1.5 for all v1.5 IPAdapter models AND for all models ending with `vit-h` (even if they are for SDXL).
 
 **Is it true that the input reference image must have the same size of the output image?**
 

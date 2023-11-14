@@ -1,6 +1,6 @@
 {
-  "last_node_id": 51,
-  "last_link_id": 90,
+  "last_node_id": 52,
+  "last_link_id": 92,
   "nodes": [
     {
       "id": 5,
@@ -46,15 +46,15 @@
       "id": 6,
       "type": "VAEDecode",
       "pos": [
-        1410,
-        280
+        1430,
+        300
       ],
       "size": {
         "0": 140,
         "1": 50
       },
       "flags": {},
-      "order": 20,
+      "order": 21,
       "mode": 0,
       "inputs": [
         {
@@ -86,8 +86,8 @@
       "id": 7,
       "type": "VAELoader",
       "pos": [
-        1140,
-        580
+        1160,
+        600
       ],
       "size": {
         "0": 240,
@@ -197,8 +197,8 @@
       "id": 34,
       "type": "SolidMask",
       "pos": [
-        -170,
-        -30
+        -570,
+        -50
       ],
       "size": {
         "0": 210,
@@ -231,11 +231,11 @@
       "bgcolor": "#353"
     },
     {
-      "id": 37,
+      "id": 32,
       "type": "SolidMask",
       "pos": [
-        870,
-        90
+        -570,
+        100
       ],
       "size": {
         "0": 210,
@@ -243,423 +243,6 @@
       },
       "flags": {},
       "order": 4,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": [
-            75
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "SolidMask"
-      },
-      "widgets_values": [
-        1,
-        384,
-        512
-      ],
-      "color": "#232",
-      "bgcolor": "#353"
-    },
-    {
-      "id": 12,
-      "type": "LoadImage",
-      "pos": [
-        120,
-        -390
-      ],
-      "size": [
-        230,
-        320
-      ],
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            32
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": [],
-          "shape": 3,
-          "slot_index": 1
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "woman.png",
-        "image"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 38,
-      "type": "MaskComposite",
-      "pos": [
-        1120,
-        -100
-      ],
-      "size": {
-        "0": 210,
-        "1": 126
-      },
-      "flags": {},
-      "order": 15,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "destination",
-          "type": "MASK",
-          "link": 57
-        },
-        {
-          "name": "source",
-          "type": "MASK",
-          "link": 76
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": [
-            83
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "MaskComposite"
-      },
-      "widgets_values": [
-        384,
-        0,
-        "add"
-      ],
-      "color": "#232",
-      "bgcolor": "#353"
-    },
-    {
-      "id": 48,
-      "type": "FeatherMask",
-      "pos": [
-        1120,
-        70
-      ],
-      "size": {
-        "0": 210,
-        "1": 130
-      },
-      "flags": {},
-      "order": 12,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "mask",
-          "type": "MASK",
-          "link": 75
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": [
-            76
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "FeatherMask"
-      },
-      "widgets_values": [
-        150,
-        0,
-        0,
-        0
-      ],
-      "color": "#232",
-      "bgcolor": "#353"
-    },
-    {
-      "id": 27,
-      "type": "LoadImage",
-      "pos": [
-        1080,
-        -490
-      ],
-      "size": [
-        240,
-        330
-      ],
-      "flags": {},
-      "order": 6,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            81
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": [],
-          "shape": 3,
-          "slot_index": 1
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "venere.jpg",
-        "image"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 47,
-      "type": "FeatherMask",
-      "pos": [
-        70,
-        100
-      ],
-      "size": [
-        210,
-        130
-      ],
-      "flags": {},
-      "order": 14,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "mask",
-          "type": "MASK",
-          "link": 71
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": [
-            72
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "FeatherMask"
-      },
-      "widgets_values": [
-        0,
-        0,
-        150,
-        0
-      ],
-      "color": "#232",
-      "bgcolor": "#353"
-    },
-    {
-      "id": 33,
-      "type": "MaskComposite",
-      "pos": [
-        310,
-        100
-      ],
-      "size": [
-        210,
-        130
-      ],
-      "flags": {},
-      "order": 16,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "destination",
-          "type": "MASK",
-          "link": 51
-        },
-        {
-          "name": "source",
-          "type": "MASK",
-          "link": 72
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": [
-            89
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "MaskComposite"
-      },
-      "widgets_values": [
-        0,
-        0,
-        "add"
-      ],
-      "color": "#232",
-      "bgcolor": "#353"
-    },
-    {
-      "id": 10,
-      "type": "IPAdapterModelLoader",
-      "pos": [
-        380,
-        -330
-      ],
-      "size": {
-        "0": 300,
-        "1": 60
-      },
-      "flags": {},
-      "order": 7,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IPADAPTER",
-          "type": "IPADAPTER",
-          "links": [
-            79,
-            85
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterModelLoader"
-      },
-      "widgets_values": [
-        "ip-adapter-plus_sd15.bin"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 11,
-      "type": "CLIPVisionLoader",
-      "pos": [
-        380,
-        -230
-      ],
-      "size": {
-        "0": 300,
-        "1": 60
-      },
-      "flags": {},
-      "order": 8,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "CLIP_VISION",
-          "type": "CLIP_VISION",
-          "links": [
-            80,
-            86
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CLIPVisionLoader"
-      },
-      "widgets_values": [
-        "IPAdapter_image_encoder_sd15.safetensors"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 13,
-      "type": "PrepImageForClipVision",
-      "pos": [
-        430,
-        -120
-      ],
-      "size": {
-        "0": 243.60000610351562,
-        "1": 110
-      },
-      "flags": {},
-      "order": 13,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 32
-        }
-      ],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            87
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "PrepImageForClipVision"
-      },
-      "widgets_values": [
-        "LANCZOS",
-        "center",
-        0
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 32,
-      "type": "SolidMask",
-      "pos": [
-        -170,
-        120
-      ],
-      "size": {
-        "0": 210,
-        "1": 106
-      },
-      "flags": {},
-      "order": 9,
       "mode": 0,
       "outputs": [
         {
@@ -724,18 +307,489 @@
       "bgcolor": "#353"
     },
     {
+      "id": 8,
+      "type": "PreviewImage",
+      "pos": [
+        1450,
+        400
+      ],
+      "size": {
+        "0": 675.9465942382812,
+        "1": 480.1444091796875
+      },
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 9
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 50,
+      "type": "IPAdapterApply",
+      "pos": [
+        1030,
+        -220
+      ],
+      "size": {
+        "0": 210,
+        "1": 190
+      },
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "ipadapter",
+          "type": "IPADAPTER",
+          "link": 79
+        },
+        {
+          "name": "clip_vision",
+          "type": "CLIP_VISION",
+          "link": 80
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 92
+        },
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 90
+        },
+        {
+          "name": "attn_mask",
+          "type": "MASK",
+          "link": 83
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            84
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterApply"
+      },
+      "widgets_values": [
+        0.7000000000000001,
+        0.5,
+        "channel penalty"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 52,
+      "type": "PrepImageForClipVision",
+      "pos": [
+        760,
+        -380
+      ],
+      "size": {
+        "0": 243.60000610351562,
+        "1": 110
+      },
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 91
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            92
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PrepImageForClipVision"
+      },
+      "widgets_values": [
+        "LANCZOS",
+        "center",
+        0
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 11,
+      "type": "CLIPVisionLoader",
+      "pos": [
+        50,
+        -350
+      ],
+      "size": {
+        "0": 300,
+        "1": 60
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "CLIP_VISION",
+          "type": "CLIP_VISION",
+          "links": [
+            80,
+            86
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPVisionLoader"
+      },
+      "widgets_values": [
+        "IPAdapter_image_encoder_sd15.safetensors"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 12,
+      "type": "LoadImage",
+      "pos": [
+        -270,
+        -420
+      ],
+      "size": {
+        "0": 230,
+        "1": 320
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            32
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "woman.png",
+        "image"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 13,
+      "type": "PrepImageForClipVision",
+      "pos": [
+        20,
+        -200
+      ],
+      "size": {
+        "0": 243.60000610351562,
+        "1": 110
+      },
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 32
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            87
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PrepImageForClipVision"
+      },
+      "widgets_values": [
+        "LANCZOS",
+        "center",
+        0
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 47,
+      "type": "FeatherMask",
+      "pos": [
+        -310,
+        100
+      ],
+      "size": {
+        "0": 210,
+        "1": 130
+      },
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 71
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            72
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "FeatherMask"
+      },
+      "widgets_values": [
+        0,
+        0,
+        150,
+        0
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 33,
+      "type": "MaskComposite",
+      "pos": [
+        -50,
+        40
+      ],
+      "size": {
+        "0": 210,
+        "1": 130
+      },
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "destination",
+          "type": "MASK",
+          "link": 51
+        },
+        {
+          "name": "source",
+          "type": "MASK",
+          "link": 72
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            89
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaskComposite"
+      },
+      "widgets_values": [
+        0,
+        0,
+        "add"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 38,
+      "type": "MaskComposite",
+      "pos": [
+        780,
+        -70
+      ],
+      "size": {
+        "0": 210,
+        "1": 126
+      },
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "destination",
+          "type": "MASK",
+          "link": 57
+        },
+        {
+          "name": "source",
+          "type": "MASK",
+          "link": 76
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            83
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaskComposite"
+      },
+      "widgets_values": [
+        384,
+        0,
+        "add"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 37,
+      "type": "SolidMask",
+      "pos": [
+        280,
+        100
+      ],
+      "size": {
+        "0": 210,
+        "1": 106
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            75
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SolidMask"
+      },
+      "widgets_values": [
+        1,
+        384,
+        512
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 48,
+      "type": "FeatherMask",
+      "pos": [
+        530,
+        90
+      ],
+      "size": {
+        "0": 210,
+        "1": 130
+      },
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 75
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            76
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "FeatherMask"
+      },
+      "widgets_values": [
+        150,
+        0,
+        0,
+        0
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
       "id": 51,
       "type": "IPAdapterApply",
       "pos": [
-        720,
-        -210
+        468,
+        -169
       ],
-      "size": [
-        210,
-        190
-      ],
+      "size": {
+        "0": 210,
+        "1": 190
+      },
       "flags": {},
-      "order": 17,
+      "order": 18,
       "mode": 0,
       "inputs": [
         {
@@ -787,64 +841,78 @@
       "bgcolor": "#335"
     },
     {
-      "id": 50,
-      "type": "IPAdapterApply",
+      "id": 27,
+      "type": "LoadImage",
       "pos": [
-        1400,
-        -240
+        480,
+        -600
       ],
-      "size": [
-        210,
-        190
-      ],
+      "size": {
+        "0": 240,
+        "1": 330
+      },
       "flags": {},
-      "order": 18,
+      "order": 8,
       "mode": 0,
-      "inputs": [
-        {
-          "name": "ipadapter",
-          "type": "IPADAPTER",
-          "link": 79
-        },
-        {
-          "name": "clip_vision",
-          "type": "CLIP_VISION",
-          "link": 80
-        },
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 81
-        },
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 90
-        },
-        {
-          "name": "attn_mask",
-          "type": "MASK",
-          "link": 83
-        }
-      ],
       "outputs": [
         {
-          "name": "MODEL",
-          "type": "MODEL",
+          "name": "IMAGE",
+          "type": "IMAGE",
           "links": [
-            84
+            91
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "venere.jpg",
+        "image"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 10,
+      "type": "IPAdapterModelLoader",
+      "pos": [
+        50,
+        -460
+      ],
+      "size": {
+        "0": 300,
+        "1": 60
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IPADAPTER",
+          "type": "IPADAPTER",
+          "links": [
+            79,
+            85
           ],
           "shape": 3,
           "slot_index": 0
         }
       ],
       "properties": {
-        "Node name for S&R": "IPAdapterApply"
+        "Node name for S&R": "IPAdapterModelLoader"
       },
       "widgets_values": [
-        0.7000000000000001,
-        0.5,
-        "channel penalty"
+        "ip-adapter-plus_sd15.safetensors"
       ],
       "color": "#223",
       "bgcolor": "#335"
@@ -853,15 +921,15 @@
       "id": 1,
       "type": "KSampler",
       "pos": [
-        1140,
-        280
+        1160,
+        300
       ],
       "size": {
         "0": 240,
         "1": 262
       },
       "flags": {},
-      "order": 19,
+      "order": 20,
       "mode": 0,
       "inputs": [
         {
@@ -907,31 +975,6 @@
         "karras",
         1
       ]
-    },
-    {
-      "id": 8,
-      "type": "PreviewImage",
-      "pos": [
-        1430,
-        380
-      ],
-      "size": [
-        675.9466064453127,
-        480.1444152832032
-      ],
-      "flags": {},
-      "order": 21,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 9
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "PreviewImage"
-      }
     }
   ],
   "links": [
@@ -1072,14 +1115,6 @@
       "CLIP_VISION"
     ],
     [
-      81,
-      27,
-      0,
-      50,
-      2,
-      "IMAGE"
-    ],
-    [
       83,
       38,
       0,
@@ -1142,6 +1177,22 @@
       50,
       3,
       "MODEL"
+    ],
+    [
+      91,
+      27,
+      0,
+      52,
+      0,
+      "IMAGE"
+    ],
+    [
+      92,
+      52,
+      0,
+      50,
+      2,
+      "IMAGE"
     ]
   ],
   "groups": [],
