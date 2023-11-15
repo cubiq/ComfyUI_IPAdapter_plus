@@ -16,13 +16,16 @@ import torchvision.transforms as TT
 from .resampler import Resampler
 
 MODELS_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "models")
+SUPPORTED_EXTENSIONS = [".bin", ".safetensors"]
+if "ip_adapters" in folder_paths.folder_names_and_paths:
+    folder_paths.folder_names_and_paths["ip_adapters"][0].append(MODELS_DIR)
+    folder_paths.folder_names_and_paths["ip_adapters"][1].update(SUPPORTED_EXTENSIONS)
+else:
+    folder_paths.folder_names_and_paths["ip_adapters"] = ([MODELS_DIR], SUPPORTED_EXTENSIONS)
 
 # attention_channels
 SD_V12_CHANNELS = [320] * 4 + [640] * 4 + [1280] * 4 + [1280] * 6 + [640] * 6 + [320] * 6 + [1280] * 2
 SD_XL_CHANNELS = [640] * 8 + [1280] * 40 + [1280] * 60 + [640] * 12 + [1280] * 20
-
-def get_filename_list(path):
-    return [f for f in os.listdir(path) if f.endswith('.bin') or f.endswith('.safetensors')]
 
 class MLPProjModel(torch.nn.Module):
     """SD model with image prompt"""
@@ -296,7 +299,7 @@ class CrossAttentionPatch:
 class IPAdapterModelLoader:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": { "ipadapter_file": (get_filename_list(MODELS_DIR), )}}
+        return {"required": {"ipadapter_file": (folder_paths.get_filename_list("ip_adapters"),)}}
 
     RETURN_TYPES = ("IPADAPTER",)
     FUNCTION = "load_ipadapter_model"
@@ -304,7 +307,7 @@ class IPAdapterModelLoader:
     CATEGORY = "ipadapter"
 
     def load_ipadapter_model(self, ipadapter_file):
-        ckpt_path = os.path.join(MODELS_DIR, ipadapter_file)
+        ckpt_path = folder_paths.get_full_path("ip_adapters", ipadapter_file)
 
         model = comfy.utils.load_torch_file(ckpt_path, safe_load=True)
 
