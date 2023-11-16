@@ -451,7 +451,7 @@ class PrepImageForClipVision:
         return {"required": {
             "image": ("IMAGE",),
             "interpolation": (["LANCZOS", "BICUBIC", "HAMMING", "BILINEAR", "BOX", "NEAREST"],),
-            "crop_position": (["top", "bottom", "left", "right", "center"],),
+            "crop_position": (["top", "bottom", "left", "right", "center", "pad"],),
             "sharpening": ("FLOAT", {"default": 0.0, "min": 0, "max": 1, "step": 0.05}),
             },
         }
@@ -463,26 +463,33 @@ class PrepImageForClipVision:
 
     def prep_image(self, image, interpolation="LANCZOS", crop_position="center", sharpening=0.0):
         _, oh, ow, _ = image.shape
+        output = image.permute([0,3,1,2])
 
-        crop_size = min(oh, ow)
-        x = (ow-crop_size) // 2
-        y = (oh-crop_size) // 2
-        if "top" in crop_position:
-            y = 0
-        elif "bottom" in crop_position:
-            y = oh-crop_size
-        elif "left" in crop_position:
-            x = 0
-        elif "right" in crop_position:
-            x = ow-crop_size
-        
-        x2 = x+crop_size
-        y2 = y+crop_size
+        if "pad" in crop_position:
+            target_length = max(oh, ow)
+            pad_l = (target_length - ow) // 2
+            pad_r = (target_length - ow) - pad_l
+            pad_t = (target_length - oh) // 2
+            pad_b = (target_length - oh) - pad_t
+            output = F.pad(output, (pad_l, pad_r, pad_t, pad_b), value=0, mode="constant")
+        else:
+            crop_size = min(oh, ow)
+            x = (ow-crop_size) // 2
+            y = (oh-crop_size) // 2
+            if "top" in crop_position:
+                y = 0
+            elif "bottom" in crop_position:
+                y = oh-crop_size
+            elif "left" in crop_position:
+                x = 0
+            elif "right" in crop_position:
+                x = ow-crop_size
+            
+            x2 = x+crop_size
+            y2 = y+crop_size
 
-        # crop
-        output = image[:, y:y2, x:x2, :]
-
-        output = output.permute([0,3,1,2])
+            # crop
+            output = output[:, :, y:y2, x:x2]
 
         # resize (apparently PIL resize is better than tourchvision interpolate)
         imgs = []

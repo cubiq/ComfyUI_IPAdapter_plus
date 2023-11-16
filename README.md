@@ -5,7 +5,7 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 ## Important updates
 
-**2023/11/08**: Added attention masking. 
+**2023/11/08**: Added [attention masking](#attention-masking). 
 
 **2023/11/07**: Added three ways to apply the weight. [See below](#weight-types) for more info. **This might break things!** Please let me know if you are having issues. When loading an old workflow try to reload the page a couple of times or delete the `IPAdapter Apply` node and insert a new one.
 
