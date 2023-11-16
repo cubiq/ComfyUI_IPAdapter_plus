@@ -440,7 +440,7 @@ class IPAdapterApply:
                     set_model_patch_replace(work_model, patch_kwargs, ("output", id, index))
                     patch_kwargs["number"] += 1
             for index in range(10):
-                set_model_patch_replace(work_model, patch_kwargs, ("midlle", 0, index))
+                set_model_patch_replace(work_model, patch_kwargs, ("middle", 0, index))
                 patch_kwargs["number"] += 1
 
         return (work_model, )
