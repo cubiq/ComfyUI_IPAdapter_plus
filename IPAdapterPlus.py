@@ -238,6 +238,7 @@ class CrossAttentionPatch:
     def __call__(self, n, context_attn2, value_attn2, extra_options):
         org_dtype = n.dtype
         cond_or_uncond = extra_options["cond_or_uncond"]
+
         with torch.autocast(device_type=self.device, dtype=self.dtype):
             q = n
             k = context_attn2
@@ -285,8 +286,21 @@ class CrossAttentionPatch:
                         if mask_h*mask_w == qs:
                             break
                     
-                    mask_downsample = F.interpolate(mask.unsqueeze(0).unsqueeze(0), size=(mask_h, mask_w), mode="bilinear").squeeze(0)
-                    mask_downsample = mask_downsample.view(1, -1, 1).repeat(out.shape[0], 1, out.shape[2])
+                    #mask_downsample = F.interpolate(mask.unsqueeze(0).unsqueeze(0), size=(mask_h, mask_w), mode="bilinear").squeeze(0)
+                    mask_downsample = F.interpolate(mask.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
+
+                    # if we don't have enough masks repeat the last one until we reach the right size
+                    if mask_downsample.shape[0] < batch_prompt:
+                        mask_downsample = torch.cat((mask_downsample, mask_downsample[-1:, :, :].repeat((batch_prompt-mask_downsample.shape[0], 1, 1))), dim=0)
+                    # if we have too many remove the exceeding
+                    elif mask_downsample.shape[0] > batch_prompt:
+                        mask_downsample = mask_downsample[:batch_prompt, :, :]
+                    
+                    # repeat the masks
+                    mask_downsample = mask_downsample.repeat(len(cond_or_uncond), 1, 1)
+                    mask_downsample = mask_downsample.view(mask_downsample.shape[0], -1, 1).repeat(1, 1, out.shape[2])
+                    
+                    #mask_downsample = mask_downsample.view(1, -1, 1).repeat(out.shape[0], 1, out.shape[2])
                     out_ip = out_ip * mask_downsample
 
                 out = out + out_ip
@@ -407,7 +421,7 @@ class IPAdapterApply:
         work_model = model.clone()
 
         if attn_mask is not None:
-            attn_mask = attn_mask.squeeze().to(self.device)
+            attn_mask = attn_mask.to(self.device)
         
         patch_kwargs = {
             "number": 0,
