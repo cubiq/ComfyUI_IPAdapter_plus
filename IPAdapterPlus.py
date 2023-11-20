@@ -286,8 +286,8 @@ class CrossAttentionPatch:
                         if mask_h*mask_w == qs:
                             break
                     
-                    # check if using AnimateDiff and sliding context window
-                    if (hasattr(cond_or_uncond, "params") and cond_or_uncond.params["sub_idxs"] is not None):
+                    # check if more than 1 mask, using AnimateDiff, and has sliding context window
+                    if (mask.shape[0] > 1 and hasattr(cond_or_uncond, "params") and cond_or_uncond.params["sub_idxs"] is not None):
                         # if mask length matches or exceeds full_length, just get sub_idx masks, resize, and continue
                         if mask.shape[0] >= cond_or_uncond.params["full_length"]:
                             mask_downsample: Tensor = mask[cond_or_uncond.params["sub_idxs"]]
