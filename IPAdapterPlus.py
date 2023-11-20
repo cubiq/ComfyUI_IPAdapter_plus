@@ -8,7 +8,7 @@ from comfy.clip_vision import clip_preprocess
 from comfy.ldm.modules.attention import optimized_attention
 import folder_paths
 
-from torch import nn
+from torch import Tensor, nn
 from PIL import Image
 import torch.nn.functional as F
 import torchvision.transforms as TT
@@ -286,8 +286,28 @@ class CrossAttentionPatch:
                         if mask_h*mask_w == qs:
                             break
                     
-                    #mask_downsample = F.interpolate(mask.unsqueeze(0).unsqueeze(0), size=(mask_h, mask_w), mode="bilinear").squeeze(0)
-                    mask_downsample = F.interpolate(mask.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
+                    # check if using AnimateDiff and sliding context window
+                    if (hasattr(cond_or_uncond, "params") and cond_or_uncond.params["sub_idxs"] is not None):
+                        # if mask length matches or exceeds full_length, just get sub_idx masks, resize, and continue
+                        if mask.shape[0] >= cond_or_uncond.params["full_length"]:
+                            mask_downsample: Tensor = mask[cond_or_uncond.params["sub_idxs"]]
+                            mask_downsample = F.interpolate(mask_downsample.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
+                        # otherwise, need to do more to get proper sub_idxs masks
+                        else:
+                            # first, resize to needed attention size (to save on needed memory for other operations)
+                            mask_downsample = F.interpolate(mask.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
+                            # check if mask length matches full_length - if not, make it match
+                            if mask_downsample.shape[0] < cond_or_uncond.params["full_length"]:
+                                mask_downsample = torch.cat((mask_downsample, mask_downsample[-1:].repeat((cond_or_uncond.params["full_length"]-mask_downsample.shape[0], 1, 1))), dim=0)
+                            # if we have too many remove the excess (should not happen, but just in case)
+                            if mask_downsample.shape[0] > cond_or_uncond.params["full_length"]:
+                                mask_downsample = mask_downsample[:cond_or_uncond.params["full_length"]]
+                            # now, select sub_idxs masks
+                            mask_downsample = mask_downsample[cond_or_uncond.params["sub_idxs"]]
+                    # otherwise, perform usual mask interpolation
+                    else:
+                        #mask_downsample = F.interpolate(mask.unsqueeze(0).unsqueeze(0), size=(mask_h, mask_w), mode="bilinear").squeeze(0)
+                        mask_downsample = F.interpolate(mask.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
 
                     # if we don't have enough masks repeat the last one until we reach the right size
                     if mask_downsample.shape[0] < batch_prompt:
