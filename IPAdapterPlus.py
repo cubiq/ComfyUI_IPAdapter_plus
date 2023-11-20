@@ -278,7 +278,7 @@ class CrossAttentionPatch:
 
                 if mask is not None:
                     # TODO: needs testing
-                    for rate in [1, 2, 4, 8]:
+                    for rate in [1, 2, 4, 8, 16]:
                         mask_h = -(-lh//rate) # fancy ceil
                         mask_w = -(-lw//rate)
 
