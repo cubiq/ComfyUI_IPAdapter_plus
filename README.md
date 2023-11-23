@@ -5,7 +5,9 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 ## Important updates
 
-**2023/11/08**: Added [attention masking](#attention-masking). 
+**2023/11/23**: Small but important update: the new default location for the IPAdapter models is `ComfyUI/models/ipadapter`. **No panic**: the legacy `ComfyUI/custom_nodes/ComfyUI_IPAdapter_plus/models` location still works and nothing will break.
+
+**2023/11/08**: Added [attention masking](#attention-masking).
 
 **2023/11/07**: Added three ways to apply the weight. [See below](#weight-types) for more info. **This might break things!** Please let me know if you are having issues. When loading an old workflow try to reload the page a couple of times or delete the `IPAdapter Apply` node and insert a new one.
 
@@ -41,15 +43,18 @@ The IPAdapter are very powerful models for image-to-image conditioning. Given a 
 
 Download or git clone this repository inside `ComfyUI/custom_nodes/` directory.
 
-The pre-trained models are available on [huggingface](https://huggingface.co/h94/IP-Adapter), download and place them in the `ComfyUI/custom_nodes/ComfyUI_IPAdapter_plus/models` directory.
+The pre-trained models are available on [huggingface](https://huggingface.co/h94/IP-Adapter), download and place them in the `ComfyUI/models/ipadapter` directory (create it if not present). You can also use any custom location setting an `ipadapter` entry in the `extra_model_paths.yaml` file.
+
+Note: the legacy `ComfyUI/custom_nodes/ComfyUI_IPAdapter_plus/models` is still supported and it will be ignored only if the global directory is present.
 
 For SD1.5 you need:
 
 - [ip-adapter_sd15.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15.bin)
-- [ip-adapter_sd15_light.bin](https://huggingface.co/h94/IP-Adapter/blob/main/models/ip-adapter_sd15_light.bin), use this when text prompt is more important than reference images
+- [ip-adapter_sd15_light.bin](https://huggingface.co/h94/IP-Adapter/blob/main/models/ip-adapter_sd15_light.safetensors), use this when text prompt is more important than reference images
 - [ip-adapter-plus_sd15.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-plus_sd15.bin)
 - [ip-adapter-plus-face_sd15.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-plus-face_sd15.bin)
 - [ip-adapter-full-face_sd15.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-full-face_sd15.bin)
+- [ip-adapter_sd15_vit-G.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15_vit-G.bin), this model requires the vit-bigG image encoder (the SDXL one below)
 
 For SDXL you need:
 - [ip-adapter_sdxl.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl.bin)
@@ -166,9 +171,9 @@ In the examples directory you'll find a couple of masking workflows: [simple](ex
 
 ## Troubleshooting
 
-**Error: 'CLIPVisionModelOutput' object has no attribute 'penultimate_hidden_states'**
+**Error: 'CLIPVisionModelOutput' object has no attribute 'penultimate_hidden_states'** and **AttributeError: 'NoneType' object has no attribute 'encode_image'**
 
-You are using an old version of ComfyUI. Update and you'll be fine. **Please note** that on Windows for a full update you might need to re-download the latest standalone version.
+You are using an old version of ComfyUI or of this extension. Update and you'll be fine. **Please note** that on Windows for a full update you might need to re-download the latest standalone version. Also sometimes the Manager fails to update even if everything seems fine. In that case you need to update manually or remove the extension and re-install it.
 
 **size mismatch for proj_in.weight: copying a param with shape torch.Size([..., ...]) from checkpoint, the shape in current model is torch.Size([..., ...])**
 
