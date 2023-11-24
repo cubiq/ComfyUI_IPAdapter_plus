@@ -5,6 +5,8 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 ## Important updates
 
+**2023/11/24**: Support for multiple attention masks.
+
 **2023/11/23**: Small but important update: the new default location for the IPAdapter models is `ComfyUI/models/ipadapter`. **No panic**: the legacy `ComfyUI/custom_nodes/ComfyUI_IPAdapter_plus/models` location still works and nothing will break.
 
 **2023/11/08**: Added [attention masking](#attention-masking).
@@ -119,7 +121,7 @@ IPAdapter offers an interesting model for a kind of "face swap" effect. [The wor
 
 **Note:** there's a new `full-face` model available that's arguably better.
 
-### Masking
+### Masking (Inpainting)
 
 The most effective way to apply the IPAdapter to a region is by an [inpainting workflow](./examples/IPAdapter_inpaint.json). Remeber to use a specific checkpoint for inpainting otherwise it won't work. Even if you are inpainting a face I find that the *IPAdapter-Plus* (not the *face* one), works best.
 
@@ -166,6 +168,8 @@ It is suggested to use a mask of the same size of the final generated image.
 In the picture below I use two reference images masked one on the left and the other on the right. The image is generated only with IPAdapter and one ksampler (without in/outpainting or area conditioning).
 
 <img src="./examples/masking.jpg" width="512" alt="masking" />
+
+It is also possible to send a batch of masks that will be applied to a batch of latents, one per frame. The size should be the same but if needed some normalization will be performed to avoid errors. This feature also supports (experimentally) AnimateDiff including context sliding.
 
 In the examples directory you'll find a couple of masking workflows: [simple](examples/IPAdapter_mask.json) and [two masks](examples/IPAdapter_2_masks.json).
 

@@ -241,6 +241,7 @@ class CrossAttentionPatch:
     def __call__(self, n, context_attn2, value_attn2, extra_options):
         org_dtype = n.dtype
         cond_or_uncond = extra_options["cond_or_uncond"]
+
         with torch.autocast(device_type=self.device, dtype=self.dtype):
             q = n
             k = context_attn2
@@ -287,9 +288,40 @@ class CrossAttentionPatch:
 
                         if mask_h*mask_w == qs:
                             break
+
+                    # check if using AnimateDiff and sliding context window
+                    if (mask.shape[0] > 1 and hasattr(cond_or_uncond, "params") and cond_or_uncond.params["sub_idxs"] is not None):
+                        # if mask length matches or exceeds full_length, just get sub_idx masks, resize, and continue
+                        if mask.shape[0] >= cond_or_uncond.params["full_length"]:
+                            mask_downsample = torch.Tensor(mask[cond_or_uncond.params["sub_idxs"]])
+                            mask_downsample = F.interpolate(mask_downsample.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
+                        # otherwise, need to do more to get proper sub_idxs masks
+                        else:
+                            # first, resize to needed attention size (to save on needed memory for other operations)
+                            mask_downsample = F.interpolate(mask.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
+                            # check if mask length matches full_length - if not, make it match
+                            if mask_downsample.shape[0] < cond_or_uncond.params["full_length"]:
+                                mask_downsample = torch.cat((mask_downsample, mask_downsample[-1:].repeat((cond_or_uncond.params["full_length"]-mask_downsample.shape[0], 1, 1))), dim=0)
+                            # if we have too many remove the excess (should not happen, but just in case)
+                            if mask_downsample.shape[0] > cond_or_uncond.params["full_length"]:
+                                mask_downsample = mask_downsample[:cond_or_uncond.params["full_length"]]
+                            # now, select sub_idxs masks
+                            mask_downsample = mask_downsample[cond_or_uncond.params["sub_idxs"]]
+                    # otherwise, perform usual mask interpolation
+                    else:
+                        mask_downsample = F.interpolate(mask.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
+
+                    # if we don't have enough masks repeat the last one until we reach the right size
+                    if mask_downsample.shape[0] < batch_prompt:
+                        mask_downsample = torch.cat((mask_downsample, mask_downsample[-1:, :, :].repeat((batch_prompt-mask_downsample.shape[0], 1, 1))), dim=0)
+                    # if we have too many remove the exceeding
+                    elif mask_downsample.shape[0] > batch_prompt:
+                        mask_downsample = mask_downsample[:batch_prompt, :, :]
                     
-                    mask_downsample = F.interpolate(mask.unsqueeze(0).unsqueeze(0), size=(mask_h, mask_w), mode="bilinear").squeeze(0)
-                    mask_downsample = mask_downsample.view(1, -1, 1).repeat(out.shape[0], 1, out.shape[2])
+                    # repeat the masks
+                    mask_downsample = mask_downsample.repeat(len(cond_or_uncond), 1, 1)
+                    mask_downsample = mask_downsample.view(mask_downsample.shape[0], -1, 1).repeat(1, 1, out.shape[2])
+
                     out_ip = out_ip * mask_downsample
 
                 out = out + out_ip
@@ -410,7 +442,7 @@ class IPAdapterApply:
         work_model = model.clone()
 
         if attn_mask is not None:
-            attn_mask = attn_mask.squeeze().to(self.device)
+            attn_mask = attn_mask.to(self.device)
         
         patch_kwargs = {
             "number": 0,
