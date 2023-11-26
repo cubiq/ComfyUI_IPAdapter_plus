@@ -5,7 +5,7 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 ## Important updates
 
-**2023/11/26**: Added [timestepping](#timestepping). You may need to delete the old nodes and recreate them.
+**2023/11/26**: Added [timestepping](#timestepping). You may need to delete the old nodes and recreate them. **Important:** For this to work you need to update ComfyUI to the latest version.
 
 **2023/11/24**: Support for multiple attention masks.
 
