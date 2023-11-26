@@ -210,7 +210,7 @@ class IPAdapter(nn.Module):
 
 class CrossAttentionPatch:
     # forward for patching
-    def __init__(self, weight, ipadapter, dtype, number, cond, uncond, weight_type, mask=None):
+    def __init__(self, weight, ipadapter, dtype, number, cond, uncond, weight_type, mask=None, sigma_start=0.0, sigma_end=1.0):
         self.weights = [weight]
         self.ipadapters = [ipadapter]
         self.conds = [cond]
@@ -220,11 +220,13 @@ class CrossAttentionPatch:
         self.number = number
         self.weight_type = [weight_type]
         self.masks = [mask]
+        self.sigma_start = [sigma_start]
+        self.sigma_end = [sigma_end]
 
         self.k_key = str(self.number*2+1) + "_to_k_ip"
         self.v_key = str(self.number*2+1) + "_to_v_ip"
     
-    def set_new_condition(self, weight, ipadapter, cond, uncond, dtype, number, weight_type, mask=None):
+    def set_new_condition(self, weight, ipadapter, cond, uncond, dtype, number, weight_type, mask=None, sigma_start=0.0, sigma_end=1.0):
         self.weights.append(weight)
         self.ipadapters.append(ipadapter)
         self.conds.append(cond)
@@ -233,10 +235,13 @@ class CrossAttentionPatch:
         self.dtype = dtype
         self.weight_type.append(weight_type)
         self.device = 'cuda'
+        self.sigma_start.append(sigma_start)
+        self.sigma_end.append(sigma_end)
 
     def __call__(self, n, context_attn2, value_attn2, extra_options):
         org_dtype = n.dtype
         cond_or_uncond = extra_options["cond_or_uncond"]
+        sigma = extra_options["sigmas"][0].item()
 
         with torch.autocast(device_type=self.device, dtype=self.dtype):
             q = n
@@ -248,7 +253,10 @@ class CrossAttentionPatch:
             out = optimized_attention(q, k, v, extra_options["n_heads"])
             _, _, lh, lw = extra_options["original_shape"]
 
-            for weight, cond, uncond, ipadapter, mask, weight_type in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks, self.weight_type):
+            for weight, cond, uncond, ipadapter, mask, weight_type, sigma_start, sigma_end in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks, self.weight_type, self.sigma_start, self.sigma_end):
+                if sigma > sigma_start or sigma < sigma_end:
+                    continue
+
                 k_cond = ipadapter.ip_layers.to_kvs[self.k_key](cond).repeat(batch_prompt, 1, 1)
                 k_uncond = ipadapter.ip_layers.to_kvs[self.k_key](uncond).repeat(batch_prompt, 1, 1)
                 v_cond = ipadapter.ip_layers.to_kvs[self.v_key](cond).repeat(batch_prompt, 1, 1)
@@ -285,23 +293,24 @@ class CrossAttentionPatch:
                             break
 
                     # check if using AnimateDiff and sliding context window
-                    if (mask.shape[0] > 1 and hasattr(cond_or_uncond, "params") and cond_or_uncond.params["sub_idxs"] is not None):
+                    ad_params = extra_options['ad_params'] if "ad_params" in extra_options else None
+                    if (mask.shape[0] > 1 and ad_params is not None and ad_params["sub_idxs"] is not None):
                         # if mask length matches or exceeds full_length, just get sub_idx masks, resize, and continue
-                        if mask.shape[0] >= cond_or_uncond.params["full_length"]:
-                            mask_downsample = torch.Tensor(mask[cond_or_uncond.params["sub_idxs"]])
+                        if mask.shape[0] >= ad_params["full_length"]:
+                            mask_downsample = torch.Tensor(mask[ad_params["sub_idxs"]])
                             mask_downsample = F.interpolate(mask_downsample.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
                         # otherwise, need to do more to get proper sub_idxs masks
                         else:
-                            # first, resize to needed attention size (to save on needed memory for other operations)
+                            # resize to needed attention size (to save on memory)
                             mask_downsample = F.interpolate(mask.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
                             # check if mask length matches full_length - if not, make it match
-                            if mask_downsample.shape[0] < cond_or_uncond.params["full_length"]:
-                                mask_downsample = torch.cat((mask_downsample, mask_downsample[-1:].repeat((cond_or_uncond.params["full_length"]-mask_downsample.shape[0], 1, 1))), dim=0)
+                            if mask_downsample.shape[0] < ad_params["full_length"]:
+                                mask_downsample = torch.cat((mask_downsample, mask_downsample[-1:].repeat((ad_params["full_length"]-mask_downsample.shape[0], 1, 1))), dim=0)
                             # if we have too many remove the excess (should not happen, but just in case)
-                            if mask_downsample.shape[0] > cond_or_uncond.params["full_length"]:
-                                mask_downsample = mask_downsample[:cond_or_uncond.params["full_length"]]
+                            if mask_downsample.shape[0] > ad_params["full_length"]:
+                                mask_downsample = mask_downsample[:ad_params["full_length"]]
                             # now, select sub_idxs masks
-                            mask_downsample = mask_downsample[cond_or_uncond.params["sub_idxs"]]
+                            mask_downsample = mask_downsample[ad_params["sub_idxs"]]
                     # otherwise, perform usual mask interpolation
                     else:
                         mask_downsample = F.interpolate(mask.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
@@ -364,6 +373,8 @@ class IPAdapterApply:
                 "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.05 }),
                 "noise": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01 }),
                 "weight_type": (["original", "linear", "channel penalty"], ),
+                "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
             },
             "optional": {
                 "attn_mask": ("MASK",),
@@ -374,7 +385,7 @@ class IPAdapterApply:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, ipadapter, model, weight, clip_vision=None, image=None, weight_type="original", noise=None, embeds=None, attn_mask=None):
+    def apply_ipadapter(self, ipadapter, model, weight, clip_vision=None, image=None, weight_type="original", noise=None, embeds=None, attn_mask=None, start_at=0.0, end_at=1.0):
         self.dtype = model.model.diffusion_model.dtype
         self.device = comfy.model_management.get_torch_device()
         self.weight = weight
@@ -433,7 +444,10 @@ class IPAdapterApply:
 
         if attn_mask is not None:
             attn_mask = attn_mask.to(self.device)
-        
+
+        sigma_start = model.model.model_sampling.percent_to_sigma(start_at)
+        sigma_end = model.model.model_sampling.percent_to_sigma(end_at)
+
         patch_kwargs = {
             "number": 0,
             "weight": self.weight,
@@ -442,7 +456,9 @@ class IPAdapterApply:
             "cond": image_prompt_embeds,
             "uncond": uncond_image_prompt_embeds,
             "weight_type": weight_type,
-            "mask": attn_mask
+            "mask": attn_mask,
+            "sigma_start": sigma_start,
+            "sigma_end": sigma_end,
         }
 
         if not self.is_sdxl:
@@ -618,6 +634,8 @@ class IPAdapterApplyEncoded(IPAdapterApply):
                 "model": ("MODEL", ),
                 "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.05 }),
                 "weight_type": (["original", "linear", "channel penalty"], ),
+                "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
             },
             "optional": {
                 "attn_mask": ("MASK",),

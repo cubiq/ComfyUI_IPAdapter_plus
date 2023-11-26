@@ -5,6 +5,8 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 ## Important updates
 
+**2023/11/26**: Added [timestepping](#timestepping). You may need to delete the old nodes and recreate them.
+
 **2023/11/24**: Support for multiple attention masks.
 
 **2023/11/23**: Small but important update: the new default location for the IPAdapter models is `ComfyUI/models/ipadapter`. **No panic**: the legacy `ComfyUI/custom_nodes/ComfyUI_IPAdapter_plus/models` location still works and nothing will break.
@@ -39,7 +41,7 @@ The IPAdapter are very powerful models for image-to-image conditioning. Given a 
 
 **:rocket: [Advanced features video](https://www.youtube.com/watch?v=mJQ62ly7jrg)**
 
-**:japanese_goblin: [Attention Masking](https://www.youtube.com/watch?v=vqG1VXKteQg)**
+**:japanese_goblin: [Attention Masking video](https://www.youtube.com/watch?v=vqG1VXKteQg)**
 
 ## Installation
 
@@ -172,6 +174,12 @@ In the picture below I use two reference images masked one on the left and the o
 It is also possible to send a batch of masks that will be applied to a batch of latents, one per frame. The size should be the same but if needed some normalization will be performed to avoid errors. This feature also supports (experimentally) AnimateDiff including context sliding.
 
 In the examples directory you'll find a couple of masking workflows: [simple](examples/IPAdapter_mask.json) and [two masks](examples/IPAdapter_2_masks.json).
+
+### Timestepping
+
+In the `Apply IPAdapter` node you can set a start and an end point. The IPAdapter will be applied exclusively in that timeframe of the generation. This is a very powerful tool to modulate the intesity of IPAdapter models.
+
+<img src="./examples/timestepping.jpg" width="100%" alt="timestepping" />
 
 ## Troubleshooting
 
