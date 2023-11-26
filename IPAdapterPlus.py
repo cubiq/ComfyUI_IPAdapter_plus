@@ -23,10 +23,6 @@ if "ipadapter" not in folder_paths.folder_names_and_paths:
 else:
     folder_paths.folder_names_and_paths["ipadapter"][1].update(folder_paths.supported_pt_extensions)
 
-# attention_channels
-SD_V12_CHANNELS = [320] * 4 + [640] * 4 + [1280] * 4 + [1280] * 6 + [640] * 6 + [320] * 6 + [1280] * 2
-SD_XL_CHANNELS = [640] * 8 + [1280] * 40 + [1280] * 60 + [640] * 12 + [1280] * 20
-
 class MLPProjModel(torch.nn.Module):
     """SD model with image prompt"""
     def __init__(self, cross_attention_dim=1024, clip_embeddings_dim=1024):
@@ -59,15 +55,13 @@ class ImageProjModel(nn.Module):
         return clip_extra_context_tokens
 
 class To_KV(nn.Module):
-    def __init__(self, cross_attention_dim):
+    def __init__(self, state_dict):
         super().__init__()
 
-        channels = SD_XL_CHANNELS if cross_attention_dim == 2048 else SD_V12_CHANNELS
-        self.to_kvs = nn.ModuleList([nn.Linear(cross_attention_dim, channel, bias=False) for channel in channels])
-        
-    def load_state_dict(self, state_dict):
-        for i, key in enumerate(state_dict.keys()):
-            self.to_kvs[i].weight.data = state_dict[key]
+        self.to_kvs = nn.ModuleDict()
+        for key, value in state_dict.items():
+            self.to_kvs[key.replace(".weight", "").replace(".", "_")] = nn.Linear(value.shape[1], value.shape[0], bias=False)
+            self.to_kvs[key.replace(".weight", "").replace(".", "_")].weight.data = value
 
 def set_model_patch_replace(model, patch_kwargs, key):
     to = model.model_options["transformer_options"]
@@ -179,8 +173,7 @@ class IPAdapter(nn.Module):
 
         self.image_proj_model = self.init_proj() if not is_plus else self.init_proj_plus()
         self.image_proj_model.load_state_dict(ipadapter_model["image_proj"])
-        self.ip_layers = To_KV(self.output_cross_attention_dim)
-        self.ip_layers.load_state_dict(ipadapter_model["ip_adapter"])
+        self.ip_layers = To_KV(ipadapter_model["ip_adapter"])
 
     def init_proj(self):
         image_proj_model = ImageProjModel(
@@ -227,6 +220,9 @@ class CrossAttentionPatch:
         self.number = number
         self.weight_type = [weight_type]
         self.masks = [mask]
+
+        self.k_key = str(self.number*2+1) + "_to_k_ip"
+        self.v_key = str(self.number*2+1) + "_to_v_ip"
     
     def set_new_condition(self, weight, ipadapter, cond, uncond, dtype, number, weight_type, mask=None):
         self.weights.append(weight)
@@ -253,11 +249,10 @@ class CrossAttentionPatch:
             _, _, lh, lw = extra_options["original_shape"]
 
             for weight, cond, uncond, ipadapter, mask, weight_type in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks, self.weight_type):
-                k_cond = ipadapter.ip_layers.to_kvs[self.number*2](cond).repeat(batch_prompt, 1, 1)
-                k_uncond = ipadapter.ip_layers.to_kvs[self.number*2](uncond).repeat(batch_prompt, 1, 1)
-                v_cond = ipadapter.ip_layers.to_kvs[self.number*2+1](cond).repeat(batch_prompt, 1, 1)
-                v_uncond = ipadapter.ip_layers.to_kvs[self.number*2+1](uncond).repeat(batch_prompt, 1, 1)
-
+                k_cond = ipadapter.ip_layers.to_kvs[self.k_key](cond).repeat(batch_prompt, 1, 1)
+                k_uncond = ipadapter.ip_layers.to_kvs[self.k_key](uncond).repeat(batch_prompt, 1, 1)
+                v_cond = ipadapter.ip_layers.to_kvs[self.v_key](cond).repeat(batch_prompt, 1, 1)
+                v_uncond = ipadapter.ip_layers.to_kvs[self.v_key](uncond).repeat(batch_prompt, 1, 1)
                 if weight_type.startswith("linear"):
                     ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0) * weight
                     ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0) * weight
@@ -350,13 +345,8 @@ class IPAdapterModelLoader:
                     st_model["image_proj"][key.replace("image_proj.", "")] = model[key]
                 elif key.startswith("ip_adapter."):
                     st_model["ip_adapter"][key.replace("ip_adapter.", "")] = model[key]
-            # sort keys
-            model = {"image_proj": st_model["image_proj"], "ip_adapter": {}}
-            sorted_keys = sorted(st_model["ip_adapter"].keys(), key=lambda x: int(x.split(".")[0]))
-            for key in sorted_keys:
-                model["ip_adapter"][key] = st_model["ip_adapter"][key]
-            st_model = None
-
+            model = st_model
+                    
         if not "ip_adapter" in model.keys() or not model["ip_adapter"]:
             raise Exception("invalid IPAdapter model {}".format(ckpt_path))
 
