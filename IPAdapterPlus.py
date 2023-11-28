@@ -313,7 +313,8 @@ class CrossAttentionPatch:
                             mask_downsample = mask_downsample[ad_params["sub_idxs"]]
                     # otherwise, perform usual mask interpolation
                     else:
-                        mask_downsample = F.interpolate(mask.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
+                        mask_downsample = F.interpolate(mask.unsqueeze(0).unsqueeze(0), size=(mask_h, mask_w), mode="bicubic").squeeze(0)
+
 
                     # if we don't have enough masks repeat the last one until we reach the right size
                     if mask_downsample.shape[0] < batch_prompt:
