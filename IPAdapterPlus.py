@@ -241,7 +241,7 @@ class CrossAttentionPatch:
     def __call__(self, n, context_attn2, value_attn2, extra_options):
         org_dtype = n.dtype
         cond_or_uncond = extra_options["cond_or_uncond"]
-        sigma = extra_options["sigmas"][0].item()
+        sigma = extra_options["sigmas"][0].item() if 'sigmas' in extra_options else 999999999.9
 
         with torch.autocast(device_type=self.device, dtype=self.dtype):
             q = n
