@@ -5,6 +5,8 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 ## Important updates
 
+**2023/11/29**: Added `unfold_batch` option to send the reference images sequentially to a latent batch. Useful for animations.
+
 **2023/11/26**: Added [timestepping](#timestepping). You may need to delete the old nodes and recreate them. **Important:** For this to work you need to update ComfyUI to the latest version.
 
 **2023/11/24**: Support for multiple attention masks.
@@ -183,17 +185,7 @@ In the `Apply IPAdapter` node you can set a start and an end point. The IPAdapte
 
 ## Troubleshooting
 
-**Error: 'CLIPVisionModelOutput' object has no attribute 'penultimate_hidden_states'** and **AttributeError: 'NoneType' object has no attribute 'encode_image'**
-
-You are using an old version of ComfyUI or of this extension. Update and you'll be fine. **Please note** that on Windows for a full update you might need to re-download the latest standalone version. Also sometimes the Manager fails to update even if everything seems fine. In that case you need to update manually or remove the extension and re-install it.
-
-**size mismatch for proj_in.weight: copying a param with shape torch.Size([..., ...]) from checkpoint, the shape in current model is torch.Size([..., ...])**
-
-You are using the wrong image encoder+IPAdapter Model+Checkpoint combo. Remember that you need to select the CLIP encoder v1.5 for all v1.5 IPAdapter models AND for all models ending with `vit-h` (even if they are for SDXL).
-
-**Is it true that the input reference image must have the same size of the output image?**
-
-No, that's a metropolitan legend. Your input and output images can be of any size. Remember that all input images are scaled and cropped to 224x224 anyway.
+Please check the [troubleshooting](https://github.com/cubiq/ComfyUI_IPAdapter_plus/issues/108) before posting a new issue.
 
 ## Diffusers version
 

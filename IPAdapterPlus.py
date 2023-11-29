@@ -210,7 +210,7 @@ class IPAdapter(nn.Module):
 
 class CrossAttentionPatch:
     # forward for patching
-    def __init__(self, weight, ipadapter, dtype, number, cond, uncond, weight_type, mask=None, sigma_start=0.0, sigma_end=1.0):
+    def __init__(self, weight, ipadapter, dtype, number, cond, uncond, weight_type, mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False):
         self.weights = [weight]
         self.ipadapters = [ipadapter]
         self.conds = [cond]
@@ -222,11 +222,12 @@ class CrossAttentionPatch:
         self.masks = [mask]
         self.sigma_start = [sigma_start]
         self.sigma_end = [sigma_end]
+        self.unfold_batch = [unfold_batch]
 
         self.k_key = str(self.number*2+1) + "_to_k_ip"
         self.v_key = str(self.number*2+1) + "_to_v_ip"
     
-    def set_new_condition(self, weight, ipadapter, cond, uncond, dtype, number, weight_type, mask=None, sigma_start=0.0, sigma_end=1.0):
+    def set_new_condition(self, weight, ipadapter, cond, uncond, dtype, number, weight_type, mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False):
         self.weights.append(weight)
         self.ipadapters.append(ipadapter)
         self.conds.append(cond)
@@ -237,6 +238,7 @@ class CrossAttentionPatch:
         self.device = 'cuda'
         self.sigma_start.append(sigma_start)
         self.sigma_end.append(sigma_end)
+        self.unfold_batch.append(unfold_batch)
 
     def __call__(self, n, context_attn2, value_attn2, extra_options):
         org_dtype = n.dtype
@@ -252,15 +254,53 @@ class CrossAttentionPatch:
             batch_prompt = b // len(cond_or_uncond)
             out = optimized_attention(q, k, v, extra_options["n_heads"])
             _, _, lh, lw = extra_options["original_shape"]
+            
+            # extra options for AnimateDiff
+            ad_params = extra_options['ad_params'] if "ad_params" in extra_options else None
 
-            for weight, cond, uncond, ipadapter, mask, weight_type, sigma_start, sigma_end in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks, self.weight_type, self.sigma_start, self.sigma_end):
+            for weight, cond, uncond, ipadapter, mask, weight_type, sigma_start, sigma_end, unfold_batch in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks, self.weight_type, self.sigma_start, self.sigma_end, self.unfold_batch):
                 if sigma > sigma_start or sigma < sigma_end:
                     continue
 
-                k_cond = ipadapter.ip_layers.to_kvs[self.k_key](cond).repeat(batch_prompt, 1, 1)
-                k_uncond = ipadapter.ip_layers.to_kvs[self.k_key](uncond).repeat(batch_prompt, 1, 1)
-                v_cond = ipadapter.ip_layers.to_kvs[self.v_key](cond).repeat(batch_prompt, 1, 1)
-                v_uncond = ipadapter.ip_layers.to_kvs[self.v_key](uncond).repeat(batch_prompt, 1, 1)
+                if unfold_batch and cond.shape[0] > 1:
+                    # Check AnimateDiff context window
+                    if ad_params is not None and ad_params["sub_idxs"] is not None:
+                        # if images length matches or exceeds full_length get sub_idx images
+                        if cond.shape[0] >= ad_params["full_length"]:
+                            cond = torch.Tensor(cond[ad_params["sub_idxs"]])
+                            uncond = torch.Tensor(uncond[ad_params["sub_idxs"]])
+                        # otherwise, need to do more to get proper sub_idxs masks
+                        else:
+                            # check if images length matches full_length - if not, make it match
+                            if cond.shape[0] < ad_params["full_length"]:
+                                cond = torch.cat((cond, cond[-1:].repeat((ad_params["full_length"]-cond.shape[0], 1, 1))), dim=0)
+                                uncond = torch.cat((uncond, uncond[-1:].repeat((ad_params["full_length"]-uncond.shape[0], 1, 1))), dim=0)
+                            # if we have too many remove the excess (should not happen, but just in case)
+                            if cond.shape[0] > ad_params["full_length"]:
+                                cond = cond[:ad_params["full_length"]]
+                                uncond = uncond[:ad_params["full_length"]]
+                            cond = cond[ad_params["sub_idxs"]]
+                            uncond = uncond[ad_params["sub_idxs"]]
+
+                    # if we don't have enough reference images repeat the last one until we reach the right size
+                    if cond.shape[0] < batch_prompt:
+                        cond = torch.cat((cond, cond[-1:].repeat((batch_prompt-cond.shape[0], 1, 1))), dim=0)
+                        uncond = torch.cat((uncond, uncond[-1:].repeat((batch_prompt-uncond.shape[0], 1, 1))), dim=0)
+                    # if we have too many remove the exceeding
+                    elif cond.shape[0] > batch_prompt:
+                        cond = cond[:batch_prompt]
+                        uncond = uncond[:batch_prompt]
+
+                    k_cond = ipadapter.ip_layers.to_kvs[self.k_key](cond)
+                    k_uncond = ipadapter.ip_layers.to_kvs[self.k_key](uncond)
+                    v_cond = ipadapter.ip_layers.to_kvs[self.v_key](cond)
+                    v_uncond = ipadapter.ip_layers.to_kvs[self.v_key](uncond)
+                else:
+                    k_cond = ipadapter.ip_layers.to_kvs[self.k_key](cond).repeat(batch_prompt, 1, 1)
+                    k_uncond = ipadapter.ip_layers.to_kvs[self.k_key](uncond).repeat(batch_prompt, 1, 1)
+                    v_cond = ipadapter.ip_layers.to_kvs[self.v_key](cond).repeat(batch_prompt, 1, 1)
+                    v_uncond = ipadapter.ip_layers.to_kvs[self.v_key](uncond).repeat(batch_prompt, 1, 1)
+
                 if weight_type.startswith("linear"):
                     ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0) * weight
                     ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0) * weight
@@ -293,7 +333,6 @@ class CrossAttentionPatch:
                             break
 
                     # check if using AnimateDiff and sliding context window
-                    ad_params = extra_options['ad_params'] if "ad_params" in extra_options else None
                     if (mask.shape[0] > 1 and ad_params is not None and ad_params["sub_idxs"] is not None):
                         # if mask length matches or exceeds full_length, just get sub_idx masks, resize, and continue
                         if mask.shape[0] >= ad_params["full_length"]:
@@ -375,6 +414,7 @@ class IPAdapterApply:
                 "weight_type": (["original", "linear", "channel penalty"], ),
                 "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "unfold_batch": ("BOOLEAN", { "default": False }),
             },
             "optional": {
                 "attn_mask": ("MASK",),
@@ -385,7 +425,7 @@ class IPAdapterApply:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, ipadapter, model, weight, clip_vision=None, image=None, weight_type="original", noise=None, embeds=None, attn_mask=None, start_at=0.0, end_at=1.0):
+    def apply_ipadapter(self, ipadapter, model, weight, clip_vision=None, image=None, weight_type="original", noise=None, embeds=None, attn_mask=None, start_at=0.0, end_at=1.0, unfold_batch=False):
         self.dtype = model.model.diffusion_model.dtype
         self.device = comfy.model_management.get_torch_device()
         self.weight = weight
@@ -459,6 +499,7 @@ class IPAdapterApply:
             "mask": attn_mask,
             "sigma_start": sigma_start,
             "sigma_end": sigma_end,
+            "unfold_batch": unfold_batch,
         }
 
         if not self.is_sdxl:
@@ -636,6 +677,7 @@ class IPAdapterApplyEncoded(IPAdapterApply):
                 "weight_type": (["original", "linear", "channel penalty"], ),
                 "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "unfold_batch": ("BOOLEAN", { "default": False }),
             },
             "optional": {
                 "attn_mask": ("MASK",),
