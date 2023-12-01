@@ -210,13 +210,13 @@ class IPAdapter(nn.Module):
 
 class CrossAttentionPatch:
     # forward for patching
-    def __init__(self, weight, ipadapter, dtype, number, cond, uncond, weight_type, mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False):
+    def __init__(self, weight, ipadapter, device, dtype, number, cond, uncond, weight_type, mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False):
         self.weights = [weight]
         self.ipadapters = [ipadapter]
         self.conds = [cond]
         self.unconds = [uncond]
         self.dtype = dtype
-        self.device = 'cuda'
+        self.device = device
         self.number = number
         self.weight_type = [weight_type]
         self.masks = [mask]
@@ -227,15 +227,15 @@ class CrossAttentionPatch:
         self.k_key = str(self.number*2+1) + "_to_k_ip"
         self.v_key = str(self.number*2+1) + "_to_v_ip"
     
-    def set_new_condition(self, weight, ipadapter, cond, uncond, dtype, number, weight_type, mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False):
+    def set_new_condition(self, weight, ipadapter, device, dtype, number, cond, uncond, weight_type, mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False):
         self.weights.append(weight)
         self.ipadapters.append(ipadapter)
         self.conds.append(cond)
         self.unconds.append(uncond)
         self.masks.append(mask)
         self.dtype = dtype
+        self.device = device
         self.weight_type.append(weight_type)
-        self.device = 'cuda'
         self.sigma_start.append(sigma_start)
         self.sigma_end.append(sigma_end)
         self.unfold_batch.append(unfold_batch)
@@ -245,7 +245,10 @@ class CrossAttentionPatch:
         cond_or_uncond = extra_options["cond_or_uncond"]
         sigma = extra_options["sigmas"][0].item() if 'sigmas' in extra_options else 999999999.9
 
-        with torch.autocast(device_type=self.device, dtype=self.dtype):
+        # extra options for AnimateDiff
+        ad_params = extra_options['ad_params'] if "ad_params" in extra_options else None
+
+        with torch.autocast(device_type=self.device.type, dtype=self.dtype):
             q = n
             k = context_attn2
             v = value_attn2
@@ -255,9 +258,6 @@ class CrossAttentionPatch:
             out = optimized_attention(q, k, v, extra_options["n_heads"])
             _, _, lh, lw = extra_options["original_shape"]
             
-            # extra options for AnimateDiff
-            ad_params = extra_options['ad_params'] if "ad_params" in extra_options else None
-
             for weight, cond, uncond, ipadapter, mask, weight_type, sigma_start, sigma_end, unfold_batch in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks, self.weight_type, self.sigma_start, self.sigma_end, self.unfold_batch):
                 if sigma > sigma_start or sigma < sigma_end:
                     continue
@@ -492,6 +492,7 @@ class IPAdapterApply:
             "number": 0,
             "weight": self.weight,
             "ipadapter": self.ipadapter,
+            "device": self.device,
             "dtype": self.dtype,
             "cond": image_prompt_embeds,
             "uncond": uncond_image_prompt_embeds,

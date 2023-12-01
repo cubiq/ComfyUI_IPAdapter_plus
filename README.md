@@ -45,6 +45,8 @@ The IPAdapter are very powerful models for image-to-image conditioning. Given a 
 
 **:japanese_goblin: [Attention Masking video](https://www.youtube.com/watch?v=vqG1VXKteQg)**
 
+**:movie_camera: [Animation Features video](https://www.youtube.com/watch?v=ddYbhv3WgWw)**
+
 ## Installation
 
 Download or git clone this repository inside `ComfyUI/custom_nodes/` directory.
@@ -200,7 +202,8 @@ If you are interested I've also implemented the same features for [Huggingface D
 
 ## IPAdapter in the wild
 
-Let me know if you spot the IPAdapter in the wild!
+Let me know if you spot the IPAdapter in the wild or tag @latentvision in the video description!
 
 - For German speakers you can find interesting YouTube tutorials on [A Latent Place](https://www.youtube.com/watch?v=rAWn_0YOBU0).
+- In Chinese [Introversify](https://www.youtube.com/watch?v=xl8f3oxZgY8)
 - [Scott Detweiler](https://www.youtube.com/watch?v=xzGdynQDzsM) covered this extension.
