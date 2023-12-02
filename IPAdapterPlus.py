@@ -217,7 +217,6 @@ class CrossAttentionPatch:
         self.unconds = [uncond]
         self.dtype = dtype
         self.device = 'cuda' if 'cuda' in device.type else 'cpu'
-        print(self.device)
         self.number = number
         self.weight_type = [weight_type]
         self.masks = [mask]
