@@ -215,8 +215,8 @@ class CrossAttentionPatch:
         self.ipadapters = [ipadapter]
         self.conds = [cond]
         self.unconds = [uncond]
-        self.dtype = dtype
         self.device = 'cuda' if 'cuda' in device.type else 'cpu'
+        self.dtype = dtype if 'cuda' in self.device else torch.bfloat16
         self.number = number
         self.weight_type = [weight_type]
         self.masks = [mask]
@@ -233,8 +233,8 @@ class CrossAttentionPatch:
         self.conds.append(cond)
         self.unconds.append(uncond)
         self.masks.append(mask)
-        self.dtype = dtype
         self.device = 'cuda' if 'cuda' in device.type else 'cpu'
+        self.dtype = dtype if 'cuda' in self.device else torch.bfloat16
         self.weight_type.append(weight_type)
         self.sigma_start.append(sigma_start)
         self.sigma_end.append(sigma_end)
