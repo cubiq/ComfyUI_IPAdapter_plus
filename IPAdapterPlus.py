@@ -216,7 +216,8 @@ class CrossAttentionPatch:
         self.conds = [cond]
         self.unconds = [uncond]
         self.dtype = dtype
-        self.device = device
+        self.device = 'cuda' if 'cuda' in device.type else 'cpu'
+        print(self.device)
         self.number = number
         self.weight_type = [weight_type]
         self.masks = [mask]
@@ -234,7 +235,7 @@ class CrossAttentionPatch:
         self.unconds.append(uncond)
         self.masks.append(mask)
         self.dtype = dtype
-        self.device = device
+        self.device = 'cuda' if 'cuda' in device.type else 'cpu'
         self.weight_type.append(weight_type)
         self.sigma_start.append(sigma_start)
         self.sigma_end.append(sigma_end)
@@ -248,7 +249,7 @@ class CrossAttentionPatch:
         # extra options for AnimateDiff
         ad_params = extra_options['ad_params'] if "ad_params" in extra_options else None
 
-        with torch.autocast(device_type=self.device.type, dtype=self.dtype):
+        with torch.autocast(device_type=self.device, dtype=self.dtype):
             q = n
             k = context_attn2
             v = value_attn2
