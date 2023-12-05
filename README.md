@@ -85,7 +85,7 @@ You can rename them to something easier to remember or put them into a sub-direc
 
 There's a basic workflow included in this repo and a few examples in the [examples](./examples/) directory. Usually it's a good idea to lower the `weight` to at least `0.8`.
 
-The `noise` paramenter is an experimental exploitation of the IPAdapter models. You can set it as low as `0.01` for an arguably better result.
+The `noise` parameter is an experimental exploitation of the IPAdapter models. You can set it as low as `0.01` for an arguably better result.
 
 <details>
 <summary><strong>More info about the noise option</strong></summary>
