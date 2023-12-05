@@ -725,6 +725,23 @@ class IPAdapterLoadEmbeds:
 
         return (output, )
 
+
+class IPAdapterBatchEmbeds:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "embed1": ("EMBEDS",),
+            "embed2": ("EMBEDS",),
+        }}
+
+    RETURN_TYPES = ("EMBEDS",)
+    FUNCTION = "batch"
+    CATEGORY = "ipadapter"
+
+    def batch(self, embed1, embed2):
+        output = torch.cat((embed1, embed2), dim=1)
+        return (output, )
+
 NODE_CLASS_MAPPINGS = {
     "IPAdapterModelLoader": IPAdapterModelLoader,
     "IPAdapterApply": IPAdapterApply,
@@ -733,6 +750,7 @@ NODE_CLASS_MAPPINGS = {
     "IPAdapterEncoder": IPAdapterEncoder,
     "IPAdapterSaveEmbeds": IPAdapterSaveEmbeds,
     "IPAdapterLoadEmbeds": IPAdapterLoadEmbeds,
+    "IPAdapterBatchEmbeds": IPAdapterBatchEmbeds,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -743,4 +761,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterEncoder": "Encode IPAdapter Image",
     "IPAdapterSaveEmbeds": "Save IPAdapter Embeds",
     "IPAdapterLoadEmbeds": "Load IPAdapter Embeds",
+    "IPAdapterBatchEmbeds": "IPAdapter Batch Embeds",
 }
