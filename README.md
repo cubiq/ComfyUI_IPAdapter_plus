@@ -21,8 +21,6 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 **2023/10/12**: Added image weighting in the `IPAdapterEncoder` node. This update is somewhat breaking; if you use `IPAdapterEncoder` and `PrepImageForClipVision` nodes you need to remove them from your workflow, refresh and recreate them. In the examples you'll find a [workflow](examples/IPAdapter_weighted.json) for weighted images.
 
-**2023/9/29**: Added save/load of encoded images. Fix minor bugs.
-
 *(previous updates removed for better readability)*
 
 ## What is it?
