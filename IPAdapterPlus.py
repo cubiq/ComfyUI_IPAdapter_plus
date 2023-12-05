@@ -1,6 +1,7 @@
 import torch
 import contextlib
 import os
+import math
 
 import comfy.utils
 import comfy.model_management
@@ -324,13 +325,9 @@ class CrossAttentionPatch:
                     out_ip = out_ip * weight
 
                 if mask is not None:
-                    # TODO: needs testing
-                    for rate in [1, 2, 4, 8, 16]:
-                        mask_h = -(-lh//rate) # fancy ceil
-                        mask_w = -(-lw//rate)
-
-                        if mask_h*mask_w == qs:
-                            break
+                    # TODO: needs checking
+                    mask_h = max(1, round(lh / math.sqrt(lh * lw / qs)))
+                    mask_w = qs // mask_h
 
                     # check if using AnimateDiff and sliding context window
                     if (mask.shape[0] > 1 and ad_params is not None and ad_params["sub_idxs"] is not None):
@@ -581,7 +578,7 @@ class PrepImageForClipVision:
             img = img.resize((224,224), resample=Image.Resampling[interpolation])
             imgs.append(TT.ToTensor()(img))
         output = torch.stack(imgs, dim=0)
-       
+        
         if sharpening > 0:
             output = contrast_adaptive_sharpening(output, sharpening)
         
