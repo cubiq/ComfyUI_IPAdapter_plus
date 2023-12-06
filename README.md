@@ -5,6 +5,8 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 ## Important updates
 
+**2023/12/05**: Added `batch embeds` node. This lets you encode images in batches and merge them together into an `IPAdapter Apply Encoded` node. Useful mostly for animations because the clip vision encoder takes a lot of VRAM. My suggestion is to split the animation in batches of about 120 frames.
+
 **2023/11/29**: Added `unfold_batch` option to send the reference images sequentially to a latent batch. Useful for animations.
 
 **2023/11/26**: Added [timestepping](#timestepping). You may need to delete the old nodes and recreate them. **Important:** For this to work you need to update ComfyUI to the latest version.
