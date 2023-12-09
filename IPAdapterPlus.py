@@ -102,10 +102,10 @@ def zeroed_hidden_states(clip_vision, batch_size):
         precision_scope = lambda a, b: contextlib.nullcontext(a)
 
     with precision_scope(comfy.model_management.get_autocast_device(clip_vision.load_device), torch.float32):
-        outputs = clip_vision.model(pixel_values, output_hidden_states=True)
+        outputs = clip_vision.model(pixel_values, intermediate_output=-2)
 
     # we only need the penultimate hidden states
-    outputs = outputs['hidden_states'][-2].cpu() if 'hidden_states' in outputs else None
+    outputs = outputs[1].to(comfy.model_management.intermediate_device())
 
     return outputs
 

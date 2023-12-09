@@ -37,38 +37,6 @@
       ]
     },
     {
-      "id": 3,
-      "type": "IPAdapterModelLoader",
-      "pos": [
-        290,
-        60
-      ],
-      "size": {
-        "0": 300,
-        "1": 60
-      },
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IPADAPTER",
-          "type": "IPADAPTER",
-          "links": [
-            1
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterModelLoader"
-      },
-      "widgets_values": [
-        "ip-adapter_sd15.bin"
-      ]
-    },
-    {
       "id": 8,
       "type": "CLIPTextEncode",
       "pos": [
@@ -80,7 +48,7 @@
         "1": 120
       },
       "flags": {},
-      "order": 8,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
@@ -121,7 +89,7 @@
         "1": 120
       },
       "flags": {},
-      "order": 7,
+      "order": 6,
       "mode": 0,
       "inputs": [
         {
@@ -203,7 +171,7 @@
         "1": 60
       },
       "flags": {},
-      "order": 2,
+      "order": 1,
       "mode": 0,
       "outputs": [
         {
@@ -250,61 +218,6 @@
       ]
     },
     {
-      "id": 5,
-      "type": "IPAdapterApply",
-      "pos": [
-        650,
-        60
-      ],
-      "size": {
-        "0": 210,
-        "1": 142
-      },
-      "flags": {},
-      "order": 6,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "ipadapter",
-          "type": "IPADAPTER",
-          "link": 1
-        },
-        {
-          "name": "clip_vision",
-          "type": "CLIP_VISION",
-          "link": 2
-        },
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 3
-        },
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 4
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            7
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterApply"
-      },
-      "widgets_values": [
-        1,
-        0
-      ]
-    },
-    {
       "id": 6,
       "type": "LoadImage",
       "pos": [
@@ -316,7 +229,7 @@
         "1": 320
       },
       "flags": {},
-      "order": 3,
+      "order": 2,
       "mode": 0,
       "outputs": [
         {
@@ -415,7 +328,7 @@
         "1": 60
       },
       "flags": {},
-      "order": 4,
+      "order": 3,
       "mode": 0,
       "outputs": [
         {
@@ -447,7 +360,7 @@
         "1": 100
       },
       "flags": {},
-      "order": 5,
+      "order": 4,
       "mode": 0,
       "outputs": [
         {
@@ -481,6 +394,102 @@
       },
       "widgets_values": [
         "v1-5-pruned-emaonly.safetensors"
+      ]
+    },
+    {
+      "id": 5,
+      "type": "IPAdapterApply",
+      "pos": [
+        651,
+        -57
+      ],
+      "size": {
+        "0": 210,
+        "1": 258
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "ipadapter",
+          "type": "IPADAPTER",
+          "link": 1
+        },
+        {
+          "name": "clip_vision",
+          "type": "CLIP_VISION",
+          "link": 2
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 3
+        },
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 4
+        },
+        {
+          "name": "attn_mask",
+          "type": "MASK",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            7
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterApply"
+      },
+      "widgets_values": [
+        1,
+        0,
+        "original",
+        0,
+        1,
+        false
+      ]
+    },
+    {
+      "id": 3,
+      "type": "IPAdapterModelLoader",
+      "pos": [
+        290,
+        60
+      ],
+      "size": {
+        "0": 300,
+        "1": 60
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IPADAPTER",
+          "type": "IPADAPTER",
+          "links": [
+            1
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterModelLoader"
+      },
+      "widgets_values": [
+        "ip-adapter_sd15.safetensors"
       ]
     }
   ],
