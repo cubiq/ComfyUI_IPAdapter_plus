@@ -461,7 +461,7 @@ class IPAdapterApply:
         
         self.ipadapter.to(self.device, dtype=self.dtype)
 
-        image_prompt_embeds, uncond_image_prompt_embeds = self.ipadapter.get_image_embeds(clip_embed.to(self.device, dtype=self.embeds_dtype), clip_embed_zeroed.to(self.device, dtype=self.embeds_dtype))
+        image_prompt_embeds, uncond_image_prompt_embeds = self.ipadapter.get_image_embeds(clip_embed.to(self.device, dtype=self.dtype), clip_embed_zeroed.to(self.device, dtype=self.dtype))
         image_prompt_embeds = image_prompt_embeds.to(self.device, dtype=self.embeds_dtype)
         uncond_image_prompt_embeds = uncond_image_prompt_embeds.to(self.device, dtype=self.embeds_dtype)
 
