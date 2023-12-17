@@ -313,7 +313,8 @@ class CrossAttentionPatch:
 
             if mask is not None:
                 # TODO: needs checking
-                mask_h = max(1, round(lh / math.sqrt(lh * lw / qs)))
+                mask_h = lh / math.sqrt(lh * lw / qs)
+                mask_h = int(mask_h) + int((qs % int(mask_h)) != 0)
                 mask_w = qs // mask_h
 
                 # check if using AnimateDiff and sliding context window
