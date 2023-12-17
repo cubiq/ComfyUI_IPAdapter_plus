@@ -20,9 +20,10 @@ from .resampler import Resampler
 GLOBAL_MODELS_DIR = os.path.join(folder_paths.models_dir, "ipadapter")
 MODELS_DIR = GLOBAL_MODELS_DIR if os.path.isdir(GLOBAL_MODELS_DIR) else os.path.join(os.path.dirname(os.path.realpath(__file__)), "models")
 if "ipadapter" not in folder_paths.folder_names_and_paths:
-    folder_paths.folder_names_and_paths["ipadapter"] = ([MODELS_DIR], folder_paths.supported_pt_extensions)
+    current_paths = [MODELS_DIR]
 else:
-    folder_paths.folder_names_and_paths["ipadapter"][1].update(folder_paths.supported_pt_extensions)
+    current_paths, _ = folder_paths.folder_names_and_paths["ipadapter"]
+folder_paths.folder_names_and_paths["ipadapter"] = (current_paths, folder_paths.supported_pt_extensions)
 
 class MLPProjModel(torch.nn.Module):
     """SD model with image prompt"""
@@ -94,19 +95,10 @@ def image_add_noise(image, noise):
 def zeroed_hidden_states(clip_vision, batch_size):
     image = torch.zeros([batch_size, 224, 224, 3])
     comfy.model_management.load_model_gpu(clip_vision.patcher)
-    pixel_values = clip_preprocess(image.to(clip_vision.load_device))
-
-    if clip_vision.dtype != torch.float32:
-        precision_scope = torch.autocast
-    else:
-        precision_scope = lambda a, b: contextlib.nullcontext(a)
-
-    with precision_scope(comfy.model_management.get_autocast_device(clip_vision.load_device), torch.float32):
-        outputs = clip_vision.model(pixel_values, intermediate_output=-2)
-
+    pixel_values = clip_preprocess(image.to(clip_vision.load_device)).float()
+    outputs = clip_vision.model(pixel_values=pixel_values, intermediate_output=-2)
     # we only need the penultimate hidden states
     outputs = outputs[1].to(comfy.model_management.intermediate_device())
-
     return outputs
 
 def min_(tensor_list):
@@ -211,13 +203,11 @@ class IPAdapter(nn.Module):
 
 class CrossAttentionPatch:
     # forward for patching
-    def __init__(self, weight, ipadapter, device, dtype, number, cond, uncond, weight_type, mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False):
+    def __init__(self, weight, ipadapter, number, cond, uncond, weight_type, mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False):
         self.weights = [weight]
         self.ipadapters = [ipadapter]
         self.conds = [cond]
         self.unconds = [uncond]
-        self.device = 'cuda' if 'cuda' in device.type else 'cpu'
-        self.dtype = dtype if 'cuda' in self.device else torch.bfloat16
         self.number = number
         self.weight_type = [weight_type]
         self.masks = [mask]
@@ -228,14 +218,12 @@ class CrossAttentionPatch:
         self.k_key = str(self.number*2+1) + "_to_k_ip"
         self.v_key = str(self.number*2+1) + "_to_v_ip"
     
-    def set_new_condition(self, weight, ipadapter, device, dtype, number, cond, uncond, weight_type, mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False):
+    def set_new_condition(self, weight, ipadapter, number, cond, uncond, weight_type, mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False):
         self.weights.append(weight)
         self.ipadapters.append(ipadapter)
         self.conds.append(cond)
         self.unconds.append(uncond)
         self.masks.append(mask)
-        self.device = 'cuda' if 'cuda' in device.type else 'cpu'
-        self.dtype = dtype if 'cuda' in self.device else torch.bfloat16
         self.weight_type.append(weight_type)
         self.sigma_start.append(sigma_start)
         self.sigma_end.append(sigma_end)
@@ -249,122 +237,121 @@ class CrossAttentionPatch:
         # extra options for AnimateDiff
         ad_params = extra_options['ad_params'] if "ad_params" in extra_options else None
 
-        with torch.autocast(device_type=self.device, dtype=self.dtype):
-            q = n
-            k = context_attn2
-            v = value_attn2
-            b = q.shape[0]
-            qs = q.shape[1]
-            batch_prompt = b // len(cond_or_uncond)
-            out = optimized_attention(q, k, v, extra_options["n_heads"])
-            _, _, lh, lw = extra_options["original_shape"]
-            
-            for weight, cond, uncond, ipadapter, mask, weight_type, sigma_start, sigma_end, unfold_batch in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks, self.weight_type, self.sigma_start, self.sigma_end, self.unfold_batch):
-                if sigma > sigma_start or sigma < sigma_end:
-                    continue
+        q = n
+        k = context_attn2
+        v = value_attn2
+        b = q.shape[0]
+        qs = q.shape[1]
+        batch_prompt = b // len(cond_or_uncond)
+        out = optimized_attention(q, k, v, extra_options["n_heads"])
+        _, _, lh, lw = extra_options["original_shape"]
+        
+        for weight, cond, uncond, ipadapter, mask, weight_type, sigma_start, sigma_end, unfold_batch in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks, self.weight_type, self.sigma_start, self.sigma_end, self.unfold_batch):
+            if sigma > sigma_start or sigma < sigma_end:
+                continue
 
-                if unfold_batch and cond.shape[0] > 1:
-                    # Check AnimateDiff context window
-                    if ad_params is not None and ad_params["sub_idxs"] is not None:
-                        # if images length matches or exceeds full_length get sub_idx images
-                        if cond.shape[0] >= ad_params["full_length"]:
-                            cond = torch.Tensor(cond[ad_params["sub_idxs"]])
-                            uncond = torch.Tensor(uncond[ad_params["sub_idxs"]])
-                        # otherwise, need to do more to get proper sub_idxs masks
-                        else:
-                            # check if images length matches full_length - if not, make it match
-                            if cond.shape[0] < ad_params["full_length"]:
-                                cond = torch.cat((cond, cond[-1:].repeat((ad_params["full_length"]-cond.shape[0], 1, 1))), dim=0)
-                                uncond = torch.cat((uncond, uncond[-1:].repeat((ad_params["full_length"]-uncond.shape[0], 1, 1))), dim=0)
-                            # if we have too many remove the excess (should not happen, but just in case)
-                            if cond.shape[0] > ad_params["full_length"]:
-                                cond = cond[:ad_params["full_length"]]
-                                uncond = uncond[:ad_params["full_length"]]
-                            cond = cond[ad_params["sub_idxs"]]
-                            uncond = uncond[ad_params["sub_idxs"]]
-
-                    # if we don't have enough reference images repeat the last one until we reach the right size
-                    if cond.shape[0] < batch_prompt:
-                        cond = torch.cat((cond, cond[-1:].repeat((batch_prompt-cond.shape[0], 1, 1))), dim=0)
-                        uncond = torch.cat((uncond, uncond[-1:].repeat((batch_prompt-uncond.shape[0], 1, 1))), dim=0)
-                    # if we have too many remove the exceeding
-                    elif cond.shape[0] > batch_prompt:
-                        cond = cond[:batch_prompt]
-                        uncond = uncond[:batch_prompt]
-
-                    k_cond = ipadapter.ip_layers.to_kvs[self.k_key](cond)
-                    k_uncond = ipadapter.ip_layers.to_kvs[self.k_key](uncond)
-                    v_cond = ipadapter.ip_layers.to_kvs[self.v_key](cond)
-                    v_uncond = ipadapter.ip_layers.to_kvs[self.v_key](uncond)
-                else:
-                    k_cond = ipadapter.ip_layers.to_kvs[self.k_key](cond).repeat(batch_prompt, 1, 1)
-                    k_uncond = ipadapter.ip_layers.to_kvs[self.k_key](uncond).repeat(batch_prompt, 1, 1)
-                    v_cond = ipadapter.ip_layers.to_kvs[self.v_key](cond).repeat(batch_prompt, 1, 1)
-                    v_uncond = ipadapter.ip_layers.to_kvs[self.v_key](uncond).repeat(batch_prompt, 1, 1)
-
-                if weight_type.startswith("linear"):
-                    ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0) * weight
-                    ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0) * weight
-                else:
-                    ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0)
-                    ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0)
-
-                    if weight_type.startswith("channel"):
-                        # code by Lvmin Zhang at Stanford University as also seen on Fooocus IPAdapter implementation
-                        # please read licensing notes https://github.com/lllyasviel/Fooocus/blob/main/fooocus_extras/ip_adapter.py#L225
-                        ip_v_mean = torch.mean(ip_v, dim=1, keepdim=True)
-                        ip_v_offset = ip_v - ip_v_mean
-                        _, _, C = ip_k.shape
-                        channel_penalty = float(C) / 1280.0
-                        W = weight * channel_penalty
-                        ip_k = ip_k * W
-                        ip_v = ip_v_offset + ip_v_mean * W
-
-                out_ip = optimized_attention(q, ip_k, ip_v, extra_options["n_heads"])           
-                if weight_type.startswith("original"):
-                    out_ip = out_ip * weight
-
-                if mask is not None:
-                    # TODO: needs checking
-                    mask_h = max(1, round(lh / math.sqrt(lh * lw / qs)))
-                    mask_w = qs // mask_h
-
-                    # check if using AnimateDiff and sliding context window
-                    if (mask.shape[0] > 1 and ad_params is not None and ad_params["sub_idxs"] is not None):
-                        # if mask length matches or exceeds full_length, just get sub_idx masks, resize, and continue
-                        if mask.shape[0] >= ad_params["full_length"]:
-                            mask_downsample = torch.Tensor(mask[ad_params["sub_idxs"]])
-                            mask_downsample = F.interpolate(mask_downsample.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
-                        # otherwise, need to do more to get proper sub_idxs masks
-                        else:
-                            # resize to needed attention size (to save on memory)
-                            mask_downsample = F.interpolate(mask.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
-                            # check if mask length matches full_length - if not, make it match
-                            if mask_downsample.shape[0] < ad_params["full_length"]:
-                                mask_downsample = torch.cat((mask_downsample, mask_downsample[-1:].repeat((ad_params["full_length"]-mask_downsample.shape[0], 1, 1))), dim=0)
-                            # if we have too many remove the excess (should not happen, but just in case)
-                            if mask_downsample.shape[0] > ad_params["full_length"]:
-                                mask_downsample = mask_downsample[:ad_params["full_length"]]
-                            # now, select sub_idxs masks
-                            mask_downsample = mask_downsample[ad_params["sub_idxs"]]
-                    # otherwise, perform usual mask interpolation
+            if unfold_batch and cond.shape[0] > 1:
+                # Check AnimateDiff context window
+                if ad_params is not None and ad_params["sub_idxs"] is not None:
+                    # if images length matches or exceeds full_length get sub_idx images
+                    if cond.shape[0] >= ad_params["full_length"]:
+                        cond = torch.Tensor(cond[ad_params["sub_idxs"]])
+                        uncond = torch.Tensor(uncond[ad_params["sub_idxs"]])
+                    # otherwise, need to do more to get proper sub_idxs masks
                     else:
+                        # check if images length matches full_length - if not, make it match
+                        if cond.shape[0] < ad_params["full_length"]:
+                            cond = torch.cat((cond, cond[-1:].repeat((ad_params["full_length"]-cond.shape[0], 1, 1))), dim=0)
+                            uncond = torch.cat((uncond, uncond[-1:].repeat((ad_params["full_length"]-uncond.shape[0], 1, 1))), dim=0)
+                        # if we have too many remove the excess (should not happen, but just in case)
+                        if cond.shape[0] > ad_params["full_length"]:
+                            cond = cond[:ad_params["full_length"]]
+                            uncond = uncond[:ad_params["full_length"]]
+                        cond = cond[ad_params["sub_idxs"]]
+                        uncond = uncond[ad_params["sub_idxs"]]
+
+                # if we don't have enough reference images repeat the last one until we reach the right size
+                if cond.shape[0] < batch_prompt:
+                    cond = torch.cat((cond, cond[-1:].repeat((batch_prompt-cond.shape[0], 1, 1))), dim=0)
+                    uncond = torch.cat((uncond, uncond[-1:].repeat((batch_prompt-uncond.shape[0], 1, 1))), dim=0)
+                # if we have too many remove the exceeding
+                elif cond.shape[0] > batch_prompt:
+                    cond = cond[:batch_prompt]
+                    uncond = uncond[:batch_prompt]
+
+                k_cond = ipadapter.ip_layers.to_kvs[self.k_key](cond)
+                k_uncond = ipadapter.ip_layers.to_kvs[self.k_key](uncond)
+                v_cond = ipadapter.ip_layers.to_kvs[self.v_key](cond)
+                v_uncond = ipadapter.ip_layers.to_kvs[self.v_key](uncond)
+            else:
+                k_cond = ipadapter.ip_layers.to_kvs[self.k_key](cond).repeat(batch_prompt, 1, 1)
+                k_uncond = ipadapter.ip_layers.to_kvs[self.k_key](uncond).repeat(batch_prompt, 1, 1)
+                v_cond = ipadapter.ip_layers.to_kvs[self.v_key](cond).repeat(batch_prompt, 1, 1)
+                v_uncond = ipadapter.ip_layers.to_kvs[self.v_key](uncond).repeat(batch_prompt, 1, 1)
+
+            if weight_type.startswith("linear"):
+                ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0) * weight
+                ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0) * weight
+            else:
+                ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0)
+                ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0)
+
+                if weight_type.startswith("channel"):
+                    # code by Lvmin Zhang at Stanford University as also seen on Fooocus IPAdapter implementation
+                    # please read licensing notes https://github.com/lllyasviel/Fooocus/blob/69a23c4d60c9e627409d0cb0f8862cdb015488eb/extras/ip_adapter.py#L234
+                    ip_v_mean = torch.mean(ip_v, dim=1, keepdim=True)
+                    ip_v_offset = ip_v - ip_v_mean
+                    _, _, C = ip_k.shape
+                    channel_penalty = float(C) / 1280.0
+                    W = weight * channel_penalty
+                    ip_k = ip_k * W
+                    ip_v = ip_v_offset + ip_v_mean * W
+
+            out_ip = optimized_attention(q, ip_k, ip_v, extra_options["n_heads"])           
+            if weight_type.startswith("original"):
+                out_ip = out_ip * weight
+
+            if mask is not None:
+                # TODO: needs checking
+                mask_h = max(1, round(lh / math.sqrt(lh * lw / qs)))
+                mask_w = qs // mask_h
+
+                # check if using AnimateDiff and sliding context window
+                if (mask.shape[0] > 1 and ad_params is not None and ad_params["sub_idxs"] is not None):
+                    # if mask length matches or exceeds full_length, just get sub_idx masks, resize, and continue
+                    if mask.shape[0] >= ad_params["full_length"]:
+                        mask_downsample = torch.Tensor(mask[ad_params["sub_idxs"]])
+                        mask_downsample = F.interpolate(mask_downsample.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
+                    # otherwise, need to do more to get proper sub_idxs masks
+                    else:
+                        # resize to needed attention size (to save on memory)
                         mask_downsample = F.interpolate(mask.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
+                        # check if mask length matches full_length - if not, make it match
+                        if mask_downsample.shape[0] < ad_params["full_length"]:
+                            mask_downsample = torch.cat((mask_downsample, mask_downsample[-1:].repeat((ad_params["full_length"]-mask_downsample.shape[0], 1, 1))), dim=0)
+                        # if we have too many remove the excess (should not happen, but just in case)
+                        if mask_downsample.shape[0] > ad_params["full_length"]:
+                            mask_downsample = mask_downsample[:ad_params["full_length"]]
+                        # now, select sub_idxs masks
+                        mask_downsample = mask_downsample[ad_params["sub_idxs"]]
+                # otherwise, perform usual mask interpolation
+                else:
+                    mask_downsample = F.interpolate(mask.unsqueeze(1), size=(mask_h, mask_w), mode="bicubic").squeeze(1)
 
-                    # if we don't have enough masks repeat the last one until we reach the right size
-                    if mask_downsample.shape[0] < batch_prompt:
-                        mask_downsample = torch.cat((mask_downsample, mask_downsample[-1:, :, :].repeat((batch_prompt-mask_downsample.shape[0], 1, 1))), dim=0)
-                    # if we have too many remove the exceeding
-                    elif mask_downsample.shape[0] > batch_prompt:
-                        mask_downsample = mask_downsample[:batch_prompt, :, :]
-                    
-                    # repeat the masks
-                    mask_downsample = mask_downsample.repeat(len(cond_or_uncond), 1, 1)
-                    mask_downsample = mask_downsample.view(mask_downsample.shape[0], -1, 1).repeat(1, 1, out.shape[2])
+                # if we don't have enough masks repeat the last one until we reach the right size
+                if mask_downsample.shape[0] < batch_prompt:
+                    mask_downsample = torch.cat((mask_downsample, mask_downsample[-1:, :, :].repeat((batch_prompt-mask_downsample.shape[0], 1, 1))), dim=0)
+                # if we have too many remove the exceeding
+                elif mask_downsample.shape[0] > batch_prompt:
+                    mask_downsample = mask_downsample[:batch_prompt, :, :]
+                
+                # repeat the masks
+                mask_downsample = mask_downsample.repeat(len(cond_or_uncond), 1, 1)
+                mask_downsample = mask_downsample.view(mask_downsample.shape[0], -1, 1).repeat(1, 1, out.shape[2])
 
-                    out_ip = out_ip * mask_downsample
+                out_ip = out_ip * mask_downsample
 
-                out = out + out_ip
+            out = out + out_ip
 
         return out.to(dtype=org_dtype)
 
@@ -424,6 +411,7 @@ class IPAdapterApply:
 
     def apply_ipadapter(self, ipadapter, model, weight, clip_vision=None, image=None, weight_type="original", noise=None, embeds=None, attn_mask=None, start_at=0.0, end_at=1.0, unfold_batch=False):
         self.dtype = model.model.diffusion_model.dtype
+        self.embeds_dtype = comfy.model_management.text_encoder_dtype(comfy.model_management.text_encoder_device()) # text and image embeds should have the same dtype
         self.device = comfy.model_management.get_torch_device()
         self.weight = weight
         self.is_full = "proj.0.weight" in ipadapter["image_proj"]
@@ -473,9 +461,9 @@ class IPAdapterApply:
         
         self.ipadapter.to(self.device, dtype=self.dtype)
 
-        image_prompt_embeds, uncond_image_prompt_embeds = self.ipadapter.get_image_embeds(clip_embed.to(self.device, self.dtype), clip_embed_zeroed.to(self.device, self.dtype))
-        image_prompt_embeds = image_prompt_embeds.to(self.device, dtype=self.dtype)
-        uncond_image_prompt_embeds = uncond_image_prompt_embeds.to(self.device, dtype=self.dtype)
+        image_prompt_embeds, uncond_image_prompt_embeds = self.ipadapter.get_image_embeds(clip_embed.to(self.device, dtype=self.embeds_dtype), clip_embed_zeroed.to(self.device, dtype=self.embeds_dtype))
+        image_prompt_embeds = image_prompt_embeds.to(self.device, dtype=self.embeds_dtype)
+        uncond_image_prompt_embeds = uncond_image_prompt_embeds.to(self.device, dtype=self.embeds_dtype)
 
         work_model = model.clone()
 
@@ -489,8 +477,6 @@ class IPAdapterApply:
             "number": 0,
             "weight": self.weight,
             "ipadapter": self.ipadapter,
-            "device": self.device,
-            "dtype": self.dtype,
             "cond": image_prompt_embeds,
             "uncond": uncond_image_prompt_embeds,
             "weight_type": weight_type,

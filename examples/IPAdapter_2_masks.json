@@ -332,69 +332,6 @@
       }
     },
     {
-      "id": 50,
-      "type": "IPAdapterApply",
-      "pos": [
-        1030,
-        -220
-      ],
-      "size": {
-        "0": 210,
-        "1": 190
-      },
-      "flags": {},
-      "order": 19,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "ipadapter",
-          "type": "IPADAPTER",
-          "link": 79
-        },
-        {
-          "name": "clip_vision",
-          "type": "CLIP_VISION",
-          "link": 80
-        },
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 92
-        },
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 90
-        },
-        {
-          "name": "attn_mask",
-          "type": "MASK",
-          "link": 83
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            84
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterApply"
-      },
-      "widgets_values": [
-        0.7000000000000001,
-        0.5,
-        "channel penalty"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
       "id": 52,
       "type": "PrepImageForClipVision",
       "pos": [
@@ -778,69 +715,6 @@
       "bgcolor": "#353"
     },
     {
-      "id": 51,
-      "type": "IPAdapterApply",
-      "pos": [
-        468,
-        -169
-      ],
-      "size": {
-        "0": 210,
-        "1": 190
-      },
-      "flags": {},
-      "order": 18,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "ipadapter",
-          "type": "IPADAPTER",
-          "link": 85
-        },
-        {
-          "name": "clip_vision",
-          "type": "CLIP_VISION",
-          "link": 86
-        },
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 87
-        },
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 88
-        },
-        {
-          "name": "attn_mask",
-          "type": "MASK",
-          "link": 89
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            90
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterApply"
-      },
-      "widgets_values": [
-        0.7000000000000001,
-        0.5,
-        "channel penalty"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
       "id": 27,
       "type": "LoadImage",
       "pos": [
@@ -975,6 +849,138 @@
         "karras",
         1
       ]
+    },
+    {
+      "id": 51,
+      "type": "IPAdapterApply",
+      "pos": [
+        523,
+        -214
+      ],
+      "size": {
+        "0": 210,
+        "1": 258
+      },
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "ipadapter",
+          "type": "IPADAPTER",
+          "link": 85
+        },
+        {
+          "name": "clip_vision",
+          "type": "CLIP_VISION",
+          "link": 86
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 87
+        },
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 88
+        },
+        {
+          "name": "attn_mask",
+          "type": "MASK",
+          "link": 89
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            90
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterApply"
+      },
+      "widgets_values": [
+        0.7000000000000001,
+        0.5,
+        "channel penalty",
+        0,
+        1,
+        false
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 50,
+      "type": "IPAdapterApply",
+      "pos": [
+        1030,
+        -220
+      ],
+      "size": {
+        "0": 210,
+        "1": 258
+      },
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "ipadapter",
+          "type": "IPADAPTER",
+          "link": 79
+        },
+        {
+          "name": "clip_vision",
+          "type": "CLIP_VISION",
+          "link": 80
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 92
+        },
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 90
+        },
+        {
+          "name": "attn_mask",
+          "type": "MASK",
+          "link": 83
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            84
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterApply"
+      },
+      "widgets_values": [
+        0.7000000000000001,
+        0.5,
+        "channel penalty",
+        0,
+        1,
+        false
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
     }
   ],
   "links": [

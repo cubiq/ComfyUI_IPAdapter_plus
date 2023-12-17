@@ -344,87 +344,6 @@
       ]
     },
     {
-      "id": 3,
-      "type": "IPAdapterModelLoader",
-      "pos": [
-        450,
-        -210
-      ],
-      "size": [
-        260,
-        60
-      ],
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IPADAPTER",
-          "type": "IPADAPTER",
-          "links": [
-            17
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterModelLoader"
-      },
-      "widgets_values": [
-        "ip-adapter_sd15.bin"
-      ]
-    },
-    {
-      "id": 13,
-      "type": "IPAdapterApplyEncoded",
-      "pos": [
-        790,
-        30
-      ],
-      "size": [
-        240,
-        100
-      ],
-      "flags": {},
-      "order": 10,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "ipadapter",
-          "type": "IPADAPTER",
-          "link": 17
-        },
-        {
-          "name": "embeds",
-          "type": "EMBEDS",
-          "link": 18
-        },
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 19
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            22
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterApplyEncoded"
-      },
-      "widgets_values": [
-        1
-      ]
-    },
-    {
       "id": 2,
       "type": "VAELoader",
       "pos": [
@@ -436,7 +355,7 @@
         "1": 60
       },
       "flags": {},
-      "order": 6,
+      "order": 5,
       "mode": 0,
       "outputs": [
         {
@@ -463,10 +382,10 @@
         500,
         -100
       ],
-      "size": [
-        210,
-        260
-      ],
+      "size": {
+        "0": 210,
+        "1": 260
+      },
       "flags": {},
       "order": 9,
       "mode": 0,
@@ -578,6 +497,96 @@
         "ddim",
         "ddim_uniform",
         1
+      ]
+    },
+    {
+      "id": 3,
+      "type": "IPAdapterModelLoader",
+      "pos": [
+        450,
+        -210
+      ],
+      "size": {
+        "0": 260,
+        "1": 60
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IPADAPTER",
+          "type": "IPADAPTER",
+          "links": [
+            17
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterModelLoader"
+      },
+      "widgets_values": [
+        "ip-adapter_sd15.safetensors"
+      ]
+    },
+    {
+      "id": 13,
+      "type": "IPAdapterApplyEncoded",
+      "pos": [
+        804,
+        -87
+      ],
+      "size": [
+        235.1999969482422,
+        214
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "ipadapter",
+          "type": "IPADAPTER",
+          "link": 17
+        },
+        {
+          "name": "embeds",
+          "type": "EMBEDS",
+          "link": 18
+        },
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 19
+        },
+        {
+          "name": "attn_mask",
+          "type": "MASK",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            22
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterApplyEncoded"
+      },
+      "widgets_values": [
+        1,
+        "original",
+        0,
+        1,
+        false
       ]
     }
   ],

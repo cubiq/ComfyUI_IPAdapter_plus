@@ -370,52 +370,18 @@
       ]
     },
     {
-      "id": 10,
-      "type": "IPAdapterModelLoader",
-      "pos": [
-        490,
-        -80
-      ],
-      "size": {
-        "0": 300,
-        "1": 60
-      },
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IPADAPTER",
-          "type": "IPADAPTER",
-          "links": [
-            85
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterModelLoader"
-      },
-      "widgets_values": [
-        "ip-adapter-plus_sd15.bin"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
       "id": 12,
       "type": "LoadImage",
       "pos": [
         230,
         -80
       ],
-      "size": [
-        230,
-        320
-      ],
+      "size": {
+        "0": 230,
+        "1": 320
+      },
       "flags": {},
-      "order": 5,
+      "order": 4,
       "mode": 0,
       "outputs": [
         {
@@ -448,15 +414,40 @@
       "bgcolor": "#335"
     },
     {
+      "id": 8,
+      "type": "PreviewImage",
+      "pos": [
+        1365,
+        369
+      ],
+      "size": {
+        "0": 675.9465942382812,
+        "1": 480.1444091796875
+      },
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 9
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
       "id": 51,
       "type": "IPAdapterApply",
       "pos": [
-        830,
-        40
+        829,
+        -23
       ],
       "size": [
         210,
-        190
+        258
       ],
       "flags": {},
       "order": 9,
@@ -505,35 +496,47 @@
       "widgets_values": [
         0.7000000000000001,
         0,
-        "linear"
+        "linear",
+        0,
+        1,
+        false
       ],
       "color": "#223",
       "bgcolor": "#335"
     },
     {
-      "id": 8,
-      "type": "PreviewImage",
+      "id": 10,
+      "type": "IPAdapterModelLoader",
       "pos": [
-        1365,
-        369
+        490,
+        -80
       ],
-      "size": [
-        675.9466064453127,
-        480.1444152832032
-      ],
+      "size": {
+        "0": 300,
+        "1": 60
+      },
       "flags": {},
-      "order": 12,
+      "order": 5,
       "mode": 0,
-      "inputs": [
+      "outputs": [
         {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 9
+          "name": "IPADAPTER",
+          "type": "IPADAPTER",
+          "links": [
+            85
+          ],
+          "shape": 3,
+          "slot_index": 0
         }
       ],
       "properties": {
-        "Node name for S&R": "PreviewImage"
-      }
+        "Node name for S&R": "IPAdapterModelLoader"
+      },
+      "widgets_values": [
+        "ip-adapter-plus_sd15.safetensors"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
     }
   ],
   "links": [
