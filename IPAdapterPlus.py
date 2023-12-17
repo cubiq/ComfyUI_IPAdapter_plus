@@ -411,8 +411,7 @@ class IPAdapterApply:
     CATEGORY = "ipadapter"
 
     def apply_ipadapter(self, ipadapter, model, weight, clip_vision=None, image=None, weight_type="original", noise=None, embeds=None, attn_mask=None, start_at=0.0, end_at=1.0, unfold_batch=False):
-        self.dtype = model.model.diffusion_model.dtype
-        self.embeds_dtype = comfy.model_management.text_encoder_dtype(comfy.model_management.text_encoder_device()) # text and image embeds should have the same dtype
+        self.dtype = torch.float16 if comfy.model_management.should_use_fp16() else torch.float32
         self.device = comfy.model_management.get_torch_device()
         self.weight = weight
         self.is_full = "proj.0.weight" in ipadapter["image_proj"]
@@ -460,11 +459,11 @@ class IPAdapterApply:
             is_full=self.is_full,
         )
         
-        self.ipadapter.to(self.device, dtype=self.embeds_dtype)
+        self.ipadapter.to(self.device, dtype=self.dtype)
 
-        image_prompt_embeds, uncond_image_prompt_embeds = self.ipadapter.get_image_embeds(clip_embed.to(self.device, dtype=self.embeds_dtype), clip_embed_zeroed.to(self.device, dtype=self.embeds_dtype))
-        image_prompt_embeds = image_prompt_embeds.to(self.device, dtype=self.embeds_dtype)
-        uncond_image_prompt_embeds = uncond_image_prompt_embeds.to(self.device, dtype=self.embeds_dtype)
+        image_prompt_embeds, uncond_image_prompt_embeds = self.ipadapter.get_image_embeds(clip_embed.to(self.device, dtype=self.dtype), clip_embed_zeroed.to(self.device, dtype=self.dtype))
+        image_prompt_embeds = image_prompt_embeds.to(self.device, dtype=self.dtype)
+        uncond_image_prompt_embeds = uncond_image_prompt_embeds.to(self.device, dtype=self.dtype)
 
         work_model = model.clone()
 
