@@ -8,6 +8,7 @@ import comfy.model_management
 from comfy.clip_vision import clip_preprocess
 from comfy.ldm.modules.attention import optimized_attention
 import folder_paths
+from insightface.app import FaceAnalysis
 
 from torch import nn
 from PIL import Image
@@ -24,6 +25,32 @@ if "ipadapter" not in folder_paths.folder_names_and_paths:
 else:
     current_paths, _ = folder_paths.folder_names_and_paths["ipadapter"]
 folder_paths.folder_names_and_paths["ipadapter"] = (current_paths, folder_paths.supported_pt_extensions)
+
+def tensor2cv(image):
+    import cv2
+    import numpy as np
+    image_np = np.clip(255. * image.cpu().numpy().squeeze(), 0, 255).astype(np.uint8)      
+    return cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+class MLPProjModelFaceId(torch.nn.Module):
+    """SD model with image prompt"""
+    def __init__(self, cross_attention_dim=768, id_embeddings_dim=512, num_tokens=4):
+        super().__init__()
+        
+        self.cross_attention_dim = cross_attention_dim
+        self.num_tokens = num_tokens
+        
+        self.proj = torch.nn.Sequential(
+            torch.nn.Linear(id_embeddings_dim, id_embeddings_dim*2),
+            torch.nn.GELU(),
+            torch.nn.Linear(id_embeddings_dim*2, cross_attention_dim*num_tokens),
+        )
+        self.norm = torch.nn.LayerNorm(cross_attention_dim)
+        
+    def forward(self, id_embeds):
+        x = self.proj(id_embeds)
+        x = x.reshape(-1, self.num_tokens, self.cross_attention_dim)
+        x = self.norm(x)
+        return x
 
 class MLPProjModel(torch.nn.Module):
     """SD model with image prompt"""
@@ -154,7 +181,7 @@ def contrast_adaptive_sharpening(image, amount):
     return (output)
 
 class IPAdapter(nn.Module):
-    def __init__(self, ipadapter_model, cross_attention_dim=1024, output_cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4, is_sdxl=False, is_plus=False, is_full=False):
+    def __init__(self, ipadapter_model, cross_attention_dim=1024, output_cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4, is_sdxl=False, is_plus=False, is_full=False, is_face_id=False):
         super().__init__()
 
         self.clip_embeddings_dim = clip_embeddings_dim
@@ -164,9 +191,23 @@ class IPAdapter(nn.Module):
         self.is_sdxl = is_sdxl
         self.is_full = is_full
 
-        self.image_proj_model = self.init_proj() if not is_plus else self.init_proj_plus()
+        if is_face_id:
+            self.image_proj_model = self.init_proj_faceid() 
+        elif is_plus:
+            self.image_proj_model = self.init_proj_plus()
+        elif is_plus:
+            self.image_proj_model = self.init_proj()
+
         self.image_proj_model.load_state_dict(ipadapter_model["image_proj"])
         self.ip_layers = To_KV(ipadapter_model["ip_adapter"])
+
+    def init_proj_faceid(self):
+        image_proj_model = MLPProjModelFaceId(
+            cross_attention_dim=self.cross_attention_dim,
+            id_embeddings_dim=512,
+            num_tokens=4, # TODO
+        )
+        return image_proj_model
 
     def init_proj(self):
         image_proj_model = ImageProjModel(
@@ -385,6 +426,7 @@ class IPAdapterModelLoader:
 
         return (model,)
 
+IPADAPTER_INSIGHT_FACE_APP = None
 class IPAdapterApply:
     @classmethod
     def INPUT_TYPES(s):
@@ -400,6 +442,7 @@ class IPAdapterApply:
                 "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "unfold_batch": ("BOOLEAN", { "default": False }),
+                "face_id": ("BOOLEAN", { "default": False }),
             },
             "optional": {
                 "attn_mask": ("MASK",),
@@ -410,10 +453,11 @@ class IPAdapterApply:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, ipadapter, model, weight, clip_vision=None, image=None, weight_type="original", noise=None, embeds=None, attn_mask=None, start_at=0.0, end_at=1.0, unfold_batch=False):
+    def apply_ipadapter(self, ipadapter, model, weight, clip_vision=None, image=None, weight_type="original", noise=None, embeds=None, attn_mask=None, start_at=0.0, end_at=1.0, unfold_batch=False, face_id=False):
         self.dtype = torch.float16 if comfy.model_management.should_use_fp16() else torch.float32
         self.device = comfy.model_management.get_torch_device()
         self.weight = weight
+        self.is_face_id = face_id
         self.is_full = "proj.0.weight" in ipadapter["image_proj"]
         self.is_plus = self.is_full or "latents" in ipadapter["image_proj"]
 
@@ -427,24 +471,37 @@ class IPAdapterApply:
             clip_embed = embeds[0].cpu()
             clip_embed_zeroed = embeds[1].cpu()
         else:
-            if image.shape[1] != image.shape[2]:
-                print("\033[33mINFO: the IPAdapter reference image is not a square, CLIPImageProcessor will resize and crop it at the center. If the main focus of the picture is not in the middle the result might not be what you are expecting.\033[0m")
+            if self.is_face_id:
+                global IPADAPTER_INSIGHT_FACE_APP
+                if IPADAPTER_INSIGHT_FACE_APP is None:
+                    app = FaceAnalysis(name="buffalo_l", providers=['ROCMExecutionProvider', 'CPUExecutionProvider'])
+                    app.prepare(ctx_id=0, det_size=(640, 640))
+                    IPADAPTER_INSIGHT_FACE_APP = app
 
-            clip_embed = clip_vision.encode_image(image)
-            neg_image = image_add_noise(image, noise) if noise > 0 else None
-            
-            if self.is_plus:
-                clip_embed = clip_embed.penultimate_hidden_states
-                if noise > 0:
-                    clip_embed_zeroed = clip_vision.encode_image(neg_image).penultimate_hidden_states
-                else:
-                    clip_embed_zeroed = zeroed_hidden_states(clip_vision, image.shape[0])
+                faces = IPADAPTER_INSIGHT_FACE_APP.get(tensor2cv(image))
+
+                clip_embed = torch.from_numpy(faces[0].normed_embedding).unsqueeze(0)
+                clip_embed_zeroed = torch.zeros_like(clip_embed)
+
             else:
-                clip_embed = clip_embed.image_embeds
-                if noise > 0:
-                    clip_embed_zeroed = clip_vision.encode_image(neg_image).image_embeds
+                if image.shape[1] != image.shape[2]:
+                    print("\033[33mINFO: the IPAdapter reference image is not a square, CLIPImageProcessor will resize and crop it at the center. If the main focus of the picture is not in the middle the result might not be what you are expecting.\033[0m")
+
+                clip_embed = clip_vision.encode_image(image)
+                neg_image = image_add_noise(image, noise) if noise > 0 else None
+                
+                if self.is_plus:
+                    clip_embed = clip_embed.penultimate_hidden_states
+                    if noise > 0:
+                        clip_embed_zeroed = clip_vision.encode_image(neg_image).penultimate_hidden_states
+                    else:
+                        clip_embed_zeroed = zeroed_hidden_states(clip_vision, image.shape[0])
                 else:
-                    clip_embed_zeroed = torch.zeros_like(clip_embed)
+                    clip_embed = clip_embed.image_embeds
+                    if noise > 0:
+                        clip_embed_zeroed = clip_vision.encode_image(neg_image).image_embeds
+                    else:
+                        clip_embed_zeroed = torch.zeros_like(clip_embed)
 
         clip_embeddings_dim = clip_embed.shape[-1]
 
@@ -457,6 +514,8 @@ class IPAdapterApply:
             is_sdxl=self.is_sdxl,
             is_plus=self.is_plus,
             is_full=self.is_full,
+            is_face_id=self.is_face_id
+
         )
         
         self.ipadapter.to(self.device, dtype=self.dtype)
