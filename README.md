@@ -5,6 +5,8 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 ## Important updates
 
+**2023/12/22**: Added support for FaceID models. [Read the documentation](#faceid) for details.
+
 **2023/12/05**: Added `batch embeds` node. This lets you encode images in batches and merge them together into an `IPAdapter Apply Encoded` node. Useful mostly for animations because the clip vision encoder takes a lot of VRAM. My suggestion is to split the animation in batches of about 120 frames.
 
 **2023/11/29**: Added `unfold_batch` option to send the reference images sequentially to a latent batch. Useful for animations.
@@ -20,8 +22,6 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 **2023/11/07**: Added three ways to apply the weight. [See below](#weight-types) for more info. **This might break things!** Please let me know if you are having issues. When loading an old workflow try to reload the page a couple of times or delete the `IPAdapter Apply` node and insert a new one.
 
 **2023/11/02**: Added compatibility with the new models in safetensors format (available on [huggingface](https://huggingface.co/h94/IP-Adapter)).
-
-**2023/10/12**: Added image weighting in the `IPAdapterEncoder` node. This update is somewhat breaking; if you use `IPAdapterEncoder` and `PrepImageForClipVision` nodes you need to remove them from your workflow, refresh and recreate them. In the examples you'll find a [workflow](examples/IPAdapter_weighted.json) for weighted images.
 
 *(previous updates removed for better readability)*
 
@@ -80,6 +80,12 @@ Additionally you need the image encoders to be placed in the `ComfyUI/models/cli
 You can rename them to something easier to remember or put them into a sub-directory.
 
 **Note:** the image encoders are actually [ViT-H](https://huggingface.co/laion/CLIP-ViT-H-14-laion2B-s32B-b79K) and [ViT-bigG](https://huggingface.co/laion/CLIP-ViT-bigG-14-laion2B-39B-b160k) (used only for one SDXL model). You probably already have them.
+
+For **FaceID** you need:
+- The [main SD1.5 model](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sd15.bin) to be placed into the ipadapter models directory.
+- The [Lora](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sd15_lora.safetensors) to be planced into `ComfyUI/models/loras/` directory.
+
+**Note:** FaceID requires `insightface` and `onnxruntime` (you probably have the latter installer already) that you need to install inside your ComfyUI environment with `pip`. This is not a mandatory requirement, the extension will still work, just without FaceID support.
 
 ## How to
 
@@ -184,6 +190,26 @@ In the examples directory you'll find a couple of masking workflows: [simple](ex
 In the `Apply IPAdapter` node you can set a start and an end point. The IPAdapter will be applied exclusively in that timeframe of the generation. This is a very powerful tool to modulate the intesity of IPAdapter models.
 
 <img src="./examples/timestepping.jpg" width="100%" alt="timestepping" />
+
+### FaceID
+
+FaceID is a new IPAdapter model that takes the embeddings from [InsightFace](https://github.com/deepinsight/insightface). As such you need to install `insightface` in your ComfyUI python environment. You may also need `onnxruntime` and `onnxruntime-gpu`. Note that your CUDA version might not be compatible with onnxruntime, in that case you can select the "CPU" provider from the `Load InsightFace model` node.
+
+The first time you use InsightFace the model will be downloaded automatically, check the console to see the progress. If you get an error you need to donwload the [buffalo_l](https://github.com/deepinsight/insightface/releases) model manually inside the `ComfyUI/models/insightface/models` directory. Also every time you run the workflow for the first time InsightFace will take quite a few seconds to load.
+
+**The FaceID model is used in conjuction with its Lora!** Check the [installation instructions](#installation) for the links to all models.
+
+The reference image needs to be prepared differently compared to the other IPAdapter face models. While standard face models expects the face take basically the whole frame, FaceID prefers the subject to be a little further away. Don't cut the face too close and leave hair, beard, ears, neck in the picture.
+
+**InsightFace will often fail to detect the face** and it will throw an error. Try with a different picture possibly cut to half-bust. FaceID generally works with drawings/illustrations too and the result is often very nice.
+
+I just implemented the FaceID code so I don't have best practices yet and more testing is needed. It's important to understand that **FaceID can (and should) be used as a first pass for an additional IPAdapter Face model**.
+
+In the [examples directory](./examples/) you'll find a few workflows to get you started with FaceID.
+
+The following would be a basic workflow that includes FaceID enhanced by a Plus Face model.
+
+<img src="./examples/face_id_wf.jpg" width="100%" alt="timestepping" />
 
 ## Troubleshooting
 
