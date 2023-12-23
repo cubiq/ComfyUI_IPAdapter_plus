@@ -33,7 +33,9 @@ The IPAdapter are very powerful models for image-to-image conditioning. Given a 
 
 ![IPAdapter Example workflow](./ipadapter_workflow.png)
 
-## Video Introduction
+The [example directory](./examples/) has many workflows that cover all IPAdapter functionalities.
+
+## Video Tutorials
 
 <a href="https://youtu.be/7m9ZZFU3HWo" target="_blank">
  <img src="https://img.youtube.com/vi/7m9ZZFU3HWo/hqdefault.jpg" alt="Watch the video" />
@@ -49,43 +51,35 @@ The IPAdapter are very powerful models for image-to-image conditioning. Given a 
 
 ## Installation
 
-Download or git clone this repository inside `ComfyUI/custom_nodes/` directory.
+Download or git clone this repository inside `ComfyUI/custom_nodes/` directory or use the Manager. Beware that the automatic update of the manager sometimes doesn't work and you may need to upgrade manually.
 
 The pre-trained models are available on [huggingface](https://huggingface.co/h94/IP-Adapter), download and place them in the `ComfyUI/models/ipadapter` directory (create it if not present). You can also use any custom location setting an `ipadapter` entry in the `extra_model_paths.yaml` file.
 
-Note: the legacy `ComfyUI/custom_nodes/ComfyUI_IPAdapter_plus/models` is still supported and it will be ignored only if the global directory is present.
+IPAdapter also needs the image encoders. You need the [CLIP-**ViT-H**-14-laion2B-s32B-b79K](https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors) and [CLIP-**ViT-bigG**-14-laion2B-39B-b160k](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/image_encoder/model.safetensors) image encoders, you may already have them. If you don't, download them but **be careful because the file name is the same!** Rename them to something easy to remember and place them in the `ComfyUI/models/clip_vision/` directory.
 
-For SD1.5 you need:
+The following table shows the combination of Checkpoint and Image encoder to use for each IPAdapter Model. Any Tensor size error you may get it is likely caused by a wrong combination.
 
-- [ip-adapter_sd15.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15.bin)
-- [ip-adapter_sd15_light.bin](https://huggingface.co/h94/IP-Adapter/blob/main/models/ip-adapter_sd15_light.safetensors), use this when text prompt is more important than reference images
-- [ip-adapter-plus_sd15.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-plus_sd15.bin)
-- [ip-adapter-plus-face_sd15.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-plus-face_sd15.bin)
-- [ip-adapter-full-face_sd15.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-full-face_sd15.bin)
-- [ip-adapter_sd15_vit-G.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15_vit-G.bin), this model requires the vit-bigG image encoder (the SDXL one below)
+| SD v. | IPadapter | Img encoder | Nodes |
+|---|---|---|---|
+| v1.5 | [ip-adapter_sd15](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15.safetensors) | ViT-H | Basic model, average strength |
+| v1.5 | [ip-adapter_sd15_light](https://huggingface.co/h94/IP-Adapter/blob/main/models/ip-adapter_sd15_light.safetensors) | ViT-H | Light model, very light impact |
+| v1.5 | [ip-adapter-plus_sd15](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-plus_sd15.safetensors) | ViT-H | Plus model, very strong |
+| v1.5 | [ip-adapter-plus-face_sd15](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-plus-face_sd15.safetensors) | ViT-H | Face model, use only for faces |
+| v1.5 | [ip-adapter-full-face_sd15](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-full-face_sd15.safetensors) | ViT-H | Strongher face model, not necessarily better |
+| v1.5 | [ip-adapter_sd15_vit-Gn](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15_vit-G.safetensors) | ViT-bigG | Base model trained with a bigG encoder |
+| SDXL | [ip-adapter_sdxl](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl.safetensors) | ViT-bigG | Base SDXL model, mostly deprecated |
+| SDXL | [ip-adapter_sdxl_vit-h](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.safetensors) | ViT-H | New base SDXL model |
+| SDXL | [ip-adapter-plus_sdxl_vit-h](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors) | ViT-H | SDXL plus model, stronger |
+| SDXL | [ip-adapter-plus-face_sdxl_vit-h](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus-face_sdxl_vit-h.safetensors) | ViT-H | SDXL face model |
 
-For SDXL you need:
-- [ip-adapter_sdxl.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl.bin)
-- [ip-adapter_sdxl_vit-h.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.bin) **This model requires the use of the SD1.5 encoder despite being for SDXL checkpoints**
-- [ip-adapter-plus_sdxl_vit-h.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.bin) Same as above, use the SD1.5 encoder
-- [ip-adapter-plus-face_sdxl_vit-h.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus-face_sdxl_vit-h.bin) As always, use the SD1.5 encoder
+**FaceID** requires `insightface` and `onnxruntime`, you need to install them in your ComfyUI environment with `pip`, it's also a good idea to try to upgrade them with `pip install --upgrade ...`.
 
-Please note that now the models are also available in safetensors format, you can find them on [huggingface](https://huggingface.co/h94/IP-Adapter).
+When the dependencies are satisfied you need:
 
-Additionally you need the image encoders to be placed in the `ComfyUI/models/clip_vision/` directory:
-
-- [SD 1.5 model](https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors) (use this also for all models ending with **_vit-h**)
-- [SDXL model](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/image_encoder/model.safetensors)
-
-You can rename them to something easier to remember or put them into a sub-directory.
-
-**Note:** the image encoders are actually [ViT-H](https://huggingface.co/laion/CLIP-ViT-H-14-laion2B-s32B-b79K) and [ViT-bigG](https://huggingface.co/laion/CLIP-ViT-bigG-14-laion2B-39B-b160k) (used only for one SDXL model). You probably already have them.
-
-For **FaceID** you need:
 - The [main SD1.5 model](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sd15.bin) to be placed into the ipadapter models directory.
 - The [Lora](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sd15_lora.safetensors) to be planced into `ComfyUI/models/loras/` directory.
 
-**Note:** FaceID requires `insightface` and `onnxruntime` (you probably have the latter installer already) that you need to install inside your ComfyUI environment with `pip`. This is not a mandatory requirement, the extension will still work, just without FaceID support.
+**There is no SDXL model at the moment.**
 
 ## How to
 
@@ -199,7 +193,7 @@ The first time you use InsightFace the model will be downloaded automatically, c
 
 **The FaceID model is used in conjuction with its Lora!** Check the [installation instructions](#installation) for the links to all models.
 
-The reference image needs to be prepared differently compared to the other IPAdapter face models. While standard face models expects the face take basically the whole frame, FaceID prefers the subject to be a little further away. Don't cut the face too close and leave hair, beard, ears, neck in the picture.
+The reference image needs to be prepared differently compared to the other IPAdapter face models. While standard face models expect the face to take basically the whole frame, FaceID prefers the subject to be a little further away. Don't cut the face too close and leave hair, beard, ears, neck in the picture.
 
 **InsightFace will often fail to detect the face** and it will throw an error. Try with a different picture possibly cut to half-bust. FaceID generally works with drawings/illustrations too and the result is often very nice.
 
