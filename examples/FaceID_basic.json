@@ -1,6 +1,6 @@
 {
-  "last_node_id": 30,
-  "last_link_id": 78,
+  "last_node_id": 32,
+  "last_link_id": 80,
   "nodes": [
     {
       "id": 6,
@@ -14,7 +14,7 @@
         "1": 50
       },
       "flags": {},
-      "order": 11,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
@@ -75,74 +75,6 @@
       ]
     },
     {
-      "id": 12,
-      "type": "InsightFaceLoader",
-      "pos": [
-        710,
-        240
-      ],
-      "size": {
-        "0": 210,
-        "1": 58
-      },
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "CLIP_VISION",
-          "type": "CLIP_VISION",
-          "links": [
-            11
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "InsightFaceLoader"
-      },
-      "widgets_values": [
-        "CPU"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 9,
-      "type": "IPAdapterModelLoader",
-      "pos": [
-        630,
-        130
-      ],
-      "size": {
-        "0": 300,
-        "1": 60
-      },
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IPADAPTER",
-          "type": "IPADAPTER",
-          "links": [
-            10
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterModelLoader"
-      },
-      "widgets_values": [
-        "ip-adapter-faceid_sd15.bin"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
       "id": 2,
       "type": "CheckpointLoaderSimple",
       "pos": [
@@ -154,7 +86,7 @@
         "1": 100
       },
       "flags": {},
-      "order": 3,
+      "order": 1,
       "mode": 0,
       "outputs": [
         {
@@ -200,7 +132,7 @@
         "1": 160
       },
       "flags": {},
-      "order": 7,
+      "order": 8,
       "mode": 0,
       "inputs": [
         {
@@ -240,7 +172,7 @@
         "1": 160
       },
       "flags": {},
-      "order": 8,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -280,7 +212,7 @@
         "1": 110
       },
       "flags": {},
-      "order": 4,
+      "order": 2,
       "mode": 0,
       "outputs": [
         {
@@ -308,12 +240,12 @@
         180,
         -50
       ],
-      "size": [
-        390.73314006347687,
-        482.01744979858427
-      ],
+      "size": {
+        "0": 390.733154296875,
+        "1": 482.0174560546875
+      },
       "flags": {},
-      "order": 5,
+      "order": 3,
       "mode": 0,
       "outputs": [
         {
@@ -349,12 +281,12 @@
         770,
         410
       ],
-      "size": [
-        210,
-        82
-      ],
+      "size": {
+        "0": 210,
+        "1": 82
+      },
       "flags": {},
-      "order": 6,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
@@ -393,10 +325,10 @@
       ],
       "size": {
         "0": 240,
-        "1": 260
+        "1": 262
       },
       "flags": {},
-      "order": 10,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
@@ -450,12 +382,12 @@
         1861,
         542
       ],
-      "size": [
-        527.0097535195305,
-        548.0778934960933
-      ],
+      "size": {
+        "0": 527.009765625,
+        "1": 548.077880859375
+      },
       "flags": {},
-      "order": 12,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
@@ -477,10 +409,10 @@
       ],
       "size": {
         "0": 210,
-        "1": 258
+        "1": 278
       },
       "flags": {},
-      "order": 9,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
@@ -491,7 +423,8 @@
         {
           "name": "clip_vision",
           "type": "CLIP_VISION",
-          "link": 11
+          "link": 79,
+          "slot_index": 1
         },
         {
           "name": "image",
@@ -507,6 +440,12 @@
           "name": "attn_mask",
           "type": "MASK",
           "link": null
+        },
+        {
+          "name": "insightface",
+          "type": "INSIGHTFACE",
+          "link": 80,
+          "slot_index": 5
         }
       ],
       "outputs": [
@@ -530,6 +469,106 @@
         0,
         1,
         false
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 9,
+      "type": "IPAdapterModelLoader",
+      "pos": [
+        650,
+        90
+      ],
+      "size": [
+        290,
+        60
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IPADAPTER",
+          "type": "IPADAPTER",
+          "links": [
+            10
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterModelLoader"
+      },
+      "widgets_values": [
+        "ip-adapter-faceid_sd15.bin"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 31,
+      "type": "CLIPVisionLoader",
+      "pos": [
+        650,
+        190
+      ],
+      "size": [
+        290,
+        60
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "CLIP_VISION",
+          "type": "CLIP_VISION",
+          "links": [
+            79
+          ],
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPVisionLoader"
+      },
+      "widgets_values": [
+        "IPAdapter_image_encoder_sd15.safetensors"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 32,
+      "type": "InsightFaceLoader",
+      "pos": [
+        650,
+        290
+      ],
+      "size": [
+        290,
+        60
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "INSIGHTFACE",
+          "type": "INSIGHTFACE",
+          "links": [
+            80
+          ],
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InsightFaceLoader"
+      },
+      "widgets_values": [
+        "CPU"
       ],
       "color": "#223",
       "bgcolor": "#335"
@@ -601,14 +640,6 @@
       "IPADAPTER"
     ],
     [
-      11,
-      12,
-      0,
-      11,
-      1,
-      "CLIP_VISION"
-    ],
-    [
       15,
       2,
       0,
@@ -647,6 +678,22 @@
       1,
       0,
       "MODEL"
+    ],
+    [
+      79,
+      31,
+      0,
+      11,
+      1,
+      "CLIP_VISION"
+    ],
+    [
+      80,
+      32,
+      0,
+      11,
+      5,
+      "INSIGHTFACE"
     ]
   ],
   "groups": [],

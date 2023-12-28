@@ -1,6 +1,6 @@
 {
   "last_node_id": 32,
-  "last_link_id": 81,
+  "last_link_id": 80,
   "nodes": [
     {
       "id": 6,
@@ -14,7 +14,7 @@
         "1": 50
       },
       "flags": {},
-      "order": 15,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
@@ -75,74 +75,6 @@
       ]
     },
     {
-      "id": 19,
-      "type": "PrepImageForClipVision",
-      "pos": [
-        700,
-        80
-      ],
-      "size": {
-        "0": 243.60000610351562,
-        "1": 106
-      },
-      "flags": {},
-      "order": 11,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 29
-        }
-      ],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            30
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "PrepImageForClipVision"
-      },
-      "widgets_values": [
-        "LANCZOS",
-        "center",
-        0
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 22,
-      "type": "PreviewImage",
-      "pos": [
-        1880,
-        620
-      ],
-      "size": {
-        "0": 380,
-        "1": 410
-      },
-      "flags": {},
-      "order": 16,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 72
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "PreviewImage"
-      }
-    },
-    {
       "id": 2,
       "type": "CheckpointLoaderSimple",
       "pos": [
@@ -189,136 +121,6 @@
       ]
     },
     {
-      "id": 1,
-      "type": "KSampler",
-      "pos": [
-        1380,
-        620
-      ],
-      "size": {
-        "0": 240,
-        "1": 262
-      },
-      "flags": {},
-      "order": 14,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 36
-        },
-        {
-          "name": "positive",
-          "type": "CONDITIONING",
-          "link": 2
-        },
-        {
-          "name": "negative",
-          "type": "CONDITIONING",
-          "link": 3
-        },
-        {
-          "name": "latent_image",
-          "type": "LATENT",
-          "link": 4
-        }
-      ],
-      "outputs": [
-        {
-          "name": "LATENT",
-          "type": "LATENT",
-          "links": [
-            7
-          ],
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "KSampler"
-      },
-      "widgets_values": [
-        0,
-        "fixed",
-        25,
-        6,
-        "dpmpp_2m",
-        "karras",
-        1
-      ]
-    },
-    {
-      "id": 11,
-      "type": "IPAdapterApply",
-      "pos": [
-        730,
-        240
-      ],
-      "size": {
-        "0": 210,
-        "1": 278
-      },
-      "flags": {},
-      "order": 12,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "ipadapter",
-          "type": "IPADAPTER",
-          "link": 10
-        },
-        {
-          "name": "clip_vision",
-          "type": "CLIP_VISION",
-          "link": 81
-        },
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 77
-        },
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 16
-        },
-        {
-          "name": "attn_mask",
-          "type": "MASK",
-          "link": null
-        },
-        {
-          "name": "insightface",
-          "type": "INSIGHTFACE",
-          "link": 80
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            35
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterApply"
-      },
-      "widgets_values": [
-        0.9,
-        0,
-        "original",
-        0,
-        1,
-        false
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
       "id": 4,
       "type": "CLIPTextEncode",
       "pos": [
@@ -330,7 +132,7 @@
         "1": 160
       },
       "flags": {},
-      "order": 9,
+      "order": 8,
       "mode": 0,
       "inputs": [
         {
@@ -370,7 +172,7 @@
         "1": 160
       },
       "flags": {},
-      "order": 10,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -435,7 +237,7 @@
       "id": 10,
       "type": "LoadImage",
       "pos": [
-        -150,
+        180,
         -50
       ],
       "size": {
@@ -450,7 +252,6 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            29,
             77
           ],
           "shape": 3,
@@ -474,82 +275,124 @@
       "bgcolor": "#335"
     },
     {
-      "id": 14,
-      "type": "LoraLoaderModelOnly",
+      "id": 1,
+      "type": "KSampler",
       "pos": [
-        440,
-        410
+        1380,
+        620
       ],
       "size": {
-        "0": 210,
-        "1": 82
+        "0": 240,
+        "1": 262
       },
       "flags": {},
-      "order": 8,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
           "name": "model",
           "type": "MODEL",
-          "link": 15
+          "link": 78
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 2
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 3
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 4
         }
       ],
       "outputs": [
         {
-          "name": "MODEL",
-          "type": "MODEL",
+          "name": "LATENT",
+          "type": "LATENT",
           "links": [
-            16
+            7
           ],
-          "shape": 3,
           "slot_index": 0
         }
       ],
       "properties": {
-        "Node name for S&R": "LoraLoaderModelOnly"
+        "Node name for S&R": "KSampler"
       },
       "widgets_values": [
-        "ip-adapter-faceid_sd15_lora.safetensors",
-        0.6
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
+        2,
+        "fixed",
+        25,
+        6,
+        "dpmpp_2m",
+        "karras",
+        1
+      ]
     },
     {
-      "id": 16,
-      "type": "IPAdapterApply",
+      "id": 22,
+      "type": "PreviewImage",
       "pos": [
-        1070,
-        180
+        1861,
+        542
       ],
       "size": {
-        "0": 210,
-        "1": 278
+        "0": 527.009765625,
+        "1": 548.077880859375
       },
       "flags": {},
       "order": 13,
       "mode": 0,
       "inputs": [
         {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 72
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 11,
+      "type": "IPAdapterApply",
+      "pos": [
+        1060,
+        240
+      ],
+      "size": {
+        "0": 210,
+        "1": 278
+      },
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
           "name": "ipadapter",
           "type": "IPADAPTER",
-          "link": 28
+          "link": 10
         },
         {
           "name": "clip_vision",
           "type": "CLIP_VISION",
-          "link": 78,
+          "link": 79,
           "slot_index": 1
         },
         {
           "name": "image",
           "type": "IMAGE",
-          "link": 30
+          "link": 77
         },
         {
           "name": "model",
           "type": "MODEL",
-          "link": 35
+          "link": 16
         },
         {
           "name": "attn_mask",
@@ -559,7 +402,7 @@
         {
           "name": "insightface",
           "type": "INSIGHTFACE",
-          "link": null,
+          "link": 80,
           "slot_index": 5
         }
       ],
@@ -568,7 +411,7 @@
           "name": "MODEL",
           "type": "MODEL",
           "links": [
-            36
+            78
           ],
           "shape": 3,
           "slot_index": 0
@@ -578,8 +421,8 @@
         "Node name for S&R": "IPAdapterApply"
       },
       "widgets_values": [
-        0.35000000000000003,
-        0.33,
+        0.9,
+        0,
         "original",
         0,
         1,
@@ -592,13 +435,13 @@
       "id": 32,
       "type": "InsightFaceLoader",
       "pos": [
-        310,
-        260
+        650,
+        290
       ],
-      "size": [
-        290,
-        60
-      ],
+      "size": {
+        "0": 290,
+        "1": 60
+      },
       "flags": {},
       "order": 4,
       "mode": 0,
@@ -622,18 +465,93 @@
       "bgcolor": "#335"
     },
     {
+      "id": 14,
+      "type": "LoraLoaderModelOnly",
+      "pos": [
+        770,
+        410
+      ],
+      "size": {
+        "0": 210,
+        "1": 82
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 15
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            16
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoraLoaderModelOnly"
+      },
+      "widgets_values": [
+        "ip-adapter-faceid-plus_sd15_lora.safetensors",
+        0.6
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 31,
+      "type": "CLIPVisionLoader",
+      "pos": [
+        650,
+        190
+      ],
+      "size": {
+        "0": 290,
+        "1": 60
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "CLIP_VISION",
+          "type": "CLIP_VISION",
+          "links": [
+            79
+          ],
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPVisionLoader"
+      },
+      "widgets_values": [
+        "IPAdapter_image_encoder_sd15.safetensors"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
       "id": 9,
       "type": "IPAdapterModelLoader",
       "pos": [
-        310,
-        160
+        650,
+        90
       ],
-      "size": [
-        290,
-        60
-      ],
+      "size": {
+        "0": 290,
+        "1": 60
+      },
       "flags": {},
-      "order": 5,
+      "order": 6,
       "mode": 0,
       "outputs": [
         {
@@ -650,76 +568,7 @@
         "Node name for S&R": "IPAdapterModelLoader"
       },
       "widgets_values": [
-        "ip-adapter-faceid_sd15.bin"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 31,
-      "type": "CLIPVisionLoader",
-      "pos": [
-        310,
-        60
-      ],
-      "size": [
-        290,
-        60
-      ],
-      "flags": {},
-      "order": 6,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "CLIP_VISION",
-          "type": "CLIP_VISION",
-          "links": [
-            78,
-            81
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CLIPVisionLoader"
-      },
-      "widgets_values": [
-        "IPAdapter_image_encoder_sd15.safetensors"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 18,
-      "type": "IPAdapterModelLoader",
-      "pos": [
-        650,
-        -30
-      ],
-      "size": {
-        "0": 290,
-        "1": 60
-      },
-      "flags": {},
-      "order": 7,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IPADAPTER",
-          "type": "IPADAPTER",
-          "links": [
-            28
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterModelLoader"
-      },
-      "widgets_values": [
-        "ip-adapter-plus-face_sd15.safetensors"
+        "ip-adapter-faceid-plus_sd15.bin"
       ],
       "color": "#223",
       "bgcolor": "#335"
@@ -807,46 +656,6 @@
       "MODEL"
     ],
     [
-      28,
-      18,
-      0,
-      16,
-      0,
-      "IPADAPTER"
-    ],
-    [
-      29,
-      10,
-      0,
-      19,
-      0,
-      "IMAGE"
-    ],
-    [
-      30,
-      19,
-      0,
-      16,
-      2,
-      "IMAGE"
-    ],
-    [
-      35,
-      11,
-      0,
-      16,
-      3,
-      "MODEL"
-    ],
-    [
-      36,
-      16,
-      0,
-      1,
-      0,
-      "MODEL"
-    ],
-    [
       72,
       6,
       0,
@@ -864,9 +673,17 @@
     ],
     [
       78,
+      11,
+      0,
+      1,
+      0,
+      "MODEL"
+    ],
+    [
+      79,
       31,
       0,
-      16,
+      11,
       1,
       "CLIP_VISION"
     ],
@@ -877,14 +694,6 @@
       11,
       5,
       "INSIGHTFACE"
-    ],
-    [
-      81,
-      31,
-      0,
-      11,
-      1,
-      "CLIP_VISION"
     ]
   ],
   "groups": [],
