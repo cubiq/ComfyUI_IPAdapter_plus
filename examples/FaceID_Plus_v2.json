@@ -1,6 +1,6 @@
 {
   "last_node_id": 36,
-  "last_link_id": 92,
+  "last_link_id": 93,
   "nodes": [
     {
       "id": 6,
@@ -14,7 +14,7 @@
         "1": 50
       },
       "flags": {},
-      "order": 14,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
@@ -132,7 +132,7 @@
         "1": 160
       },
       "flags": {},
-      "order": 9,
+      "order": 8,
       "mode": 0,
       "inputs": [
         {
@@ -172,7 +172,7 @@
         "1": 160
       },
       "flags": {},
-      "order": 10,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -245,7 +245,7 @@
         "1": 82
       },
       "flags": {},
-      "order": 8,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
@@ -287,7 +287,7 @@
         "1": 548.077880859375
       },
       "flags": {},
-      "order": 15,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
@@ -301,6 +301,149 @@
       }
     },
     {
+      "id": 32,
+      "type": "InsightFaceLoader",
+      "pos": [
+        691,
+        291
+      ],
+      "size": {
+        "0": 290,
+        "1": 60
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "INSIGHTFACE",
+          "type": "INSIGHTFACE",
+          "links": [
+            84
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InsightFaceLoader"
+      },
+      "widgets_values": [
+        "CPU"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 31,
+      "type": "CLIPVisionLoader",
+      "pos": [
+        691,
+        172
+      ],
+      "size": {
+        "0": 290,
+        "1": 60
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "CLIP_VISION",
+          "type": "CLIP_VISION",
+          "links": [
+            82
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPVisionLoader"
+      },
+      "widgets_values": [
+        "IPAdapter_image_encoder_sd15.safetensors"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 10,
+      "type": "LoadImage",
+      "pos": [
+        180,
+        -50
+      ],
+      "size": {
+        "0": 390.733154296875,
+        "1": 482.0174560546875
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            83
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "cwf_portrait.jpg",
+        "image"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 9,
+      "type": "IPAdapterModelLoader",
+      "pos": [
+        691,
+        58
+      ],
+      "size": {
+        "0": 290,
+        "1": 60
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IPADAPTER",
+          "type": "IPADAPTER",
+          "links": [
+            81
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterModelLoader"
+      },
+      "widgets_values": [
+        "ip-adapter-faceid-plusv2_sd15.bin"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
       "id": 33,
       "type": "IPAdapterApplyFaceID",
       "pos": [
@@ -312,7 +455,7 @@
         "1": 326
       },
       "flags": {},
-      "order": 11,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
@@ -351,7 +494,7 @@
           "name": "MODEL",
           "type": "MODEL",
           "links": [
-            87
+            93
           ],
           "shape": 3,
           "slot_index": 0
@@ -361,192 +504,14 @@
         "Node name for S&R": "IPAdapterApplyFaceID"
       },
       "widgets_values": [
-        1,
+        0.9,
         0,
         "original",
         0,
         1,
-        false,
+        true,
         1,
         false
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 32,
-      "type": "InsightFaceLoader",
-      "pos": [
-        691,
-        291
-      ],
-      "size": {
-        "0": 290,
-        "1": 60
-      },
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "INSIGHTFACE",
-          "type": "INSIGHTFACE",
-          "links": [
-            84
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "InsightFaceLoader"
-      },
-      "widgets_values": [
-        "CPU"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 9,
-      "type": "IPAdapterModelLoader",
-      "pos": [
-        691,
-        58
-      ],
-      "size": {
-        "0": 290,
-        "1": 60
-      },
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IPADAPTER",
-          "type": "IPADAPTER",
-          "links": [
-            81
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterModelLoader"
-      },
-      "widgets_values": [
-        "ip-adapter-faceid_sd15.bin"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 31,
-      "type": "CLIPVisionLoader",
-      "pos": [
-        691,
-        172
-      ],
-      "size": {
-        "0": 290,
-        "1": 60
-      },
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "CLIP_VISION",
-          "type": "CLIP_VISION",
-          "links": [
-            82,
-            89
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CLIPVisionLoader"
-      },
-      "widgets_values": [
-        "IPAdapter_image_encoder_sd15.safetensors"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 10,
-      "type": "LoadImage",
-      "pos": [
-        180,
-        -50
-      ],
-      "size": {
-        "0": 390.733154296875,
-        "1": 482.0174560546875
-      },
-      "flags": {},
-      "order": 6,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            83,
-            91
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "cwf_portrait.jpg",
-        "image"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 36,
-      "type": "IPAdapterModelLoader",
-      "pos": [
-        1131,
-        28
-      ],
-      "size": [
-        294.14974698153355,
-        58
-      ],
-      "flags": {},
-      "order": 7,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IPADAPTER",
-          "type": "IPADAPTER",
-          "links": [
-            90
-          ],
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterModelLoader"
-      },
-      "widgets_values": [
-        "ip-adapter-plus-face_sd15.safetensors"
       ],
       "color": "#223",
       "bgcolor": "#335"
@@ -563,13 +528,13 @@
         "1": 262
       },
       "flags": {},
-      "order": 13,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
           "name": "model",
           "type": "MODEL",
-          "link": 92
+          "link": 93
         },
         {
           "name": "positive",
@@ -603,79 +568,12 @@
       "widgets_values": [
         1,
         "fixed",
-        30,
-        6,
+        25,
+        6.5,
         "dpmpp_2m",
         "karras",
         1
       ]
-    },
-    {
-      "id": 35,
-      "type": "IPAdapterApply",
-      "pos": [
-        1488,
-        107
-      ],
-      "size": {
-        "0": 315,
-        "1": 258
-      },
-      "flags": {},
-      "order": 12,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "ipadapter",
-          "type": "IPADAPTER",
-          "link": 90,
-          "slot_index": 0
-        },
-        {
-          "name": "clip_vision",
-          "type": "CLIP_VISION",
-          "link": 89
-        },
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 91
-        },
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 87
-        },
-        {
-          "name": "attn_mask",
-          "type": "MASK",
-          "link": null
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            92
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterApply"
-      },
-      "widgets_values": [
-        0.3,
-        0.33,
-        "original",
-        0,
-        0.8,
-        false
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
     }
   ],
   "links": [
@@ -792,40 +690,8 @@
       "MODEL"
     ],
     [
-      87,
+      93,
       33,
-      0,
-      35,
-      3,
-      "MODEL"
-    ],
-    [
-      89,
-      31,
-      0,
-      35,
-      1,
-      "CLIP_VISION"
-    ],
-    [
-      90,
-      36,
-      0,
-      35,
-      0,
-      "IPADAPTER"
-    ],
-    [
-      91,
-      10,
-      0,
-      35,
-      2,
-      "IMAGE"
-    ],
-    [
-      92,
-      35,
       0,
       1,
       0,

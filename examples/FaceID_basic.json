@@ -1,13 +1,13 @@
 {
-  "last_node_id": 32,
-  "last_link_id": 80,
+  "last_node_id": 36,
+  "last_link_id": 93,
   "nodes": [
     {
       "id": 6,
       "type": "VAEDecode",
       "pos": [
-        1670,
-        620
+        1800,
+        610
       ],
       "size": {
         "0": 140,
@@ -46,8 +46,8 @@
       "id": 7,
       "type": "VAELoader",
       "pos": [
-        1380,
-        920
+        1510,
+        910
       ],
       "size": {
         "0": 240,
@@ -234,47 +234,6 @@
       ]
     },
     {
-      "id": 10,
-      "type": "LoadImage",
-      "pos": [
-        180,
-        -50
-      ],
-      "size": {
-        "0": 390.733154296875,
-        "1": 482.0174560546875
-      },
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            77
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "cwf_portrait.jpg",
-        "image"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
       "id": 14,
       "type": "LoraLoaderModelOnly",
       "pos": [
@@ -300,7 +259,7 @@
           "name": "MODEL",
           "type": "MODEL",
           "links": [
-            16
+            85
           ],
           "shape": 3,
           "slot_index": 0
@@ -317,11 +276,179 @@
       "bgcolor": "#335"
     },
     {
+      "id": 22,
+      "type": "PreviewImage",
+      "pos": [
+        1990,
+        530
+      ],
+      "size": {
+        "0": 527.009765625,
+        "1": 548.077880859375
+      },
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 72
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 32,
+      "type": "InsightFaceLoader",
+      "pos": [
+        691,
+        291
+      ],
+      "size": {
+        "0": 290,
+        "1": 60
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "INSIGHTFACE",
+          "type": "INSIGHTFACE",
+          "links": [
+            84
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InsightFaceLoader"
+      },
+      "widgets_values": [
+        "CPU"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 9,
+      "type": "IPAdapterModelLoader",
+      "pos": [
+        691,
+        58
+      ],
+      "size": {
+        "0": 290,
+        "1": 60
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IPADAPTER",
+          "type": "IPADAPTER",
+          "links": [
+            81
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterModelLoader"
+      },
+      "widgets_values": [
+        "ip-adapter-faceid_sd15.bin"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 31,
+      "type": "CLIPVisionLoader",
+      "pos": [
+        691,
+        172
+      ],
+      "size": {
+        "0": 290,
+        "1": 60
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "CLIP_VISION",
+          "type": "CLIP_VISION",
+          "links": [
+            82
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPVisionLoader"
+      },
+      "widgets_values": [
+        "IPAdapter_image_encoder_sd15.safetensors"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 10,
+      "type": "LoadImage",
+      "pos": [
+        180,
+        -50
+      ],
+      "size": {
+        "0": 390.733154296875,
+        "1": 482.0174560546875
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            83
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "cwf_portrait.jpg",
+        "image"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
       "id": 1,
       "type": "KSampler",
       "pos": [
-        1380,
-        620
+        1510,
+        610
       ],
       "size": {
         "0": 240,
@@ -334,7 +461,7 @@
         {
           "name": "model",
           "type": "MODEL",
-          "link": 78
+          "link": 93
         },
         {
           "name": "positive",
@@ -366,9 +493,9 @@
         "Node name for S&R": "KSampler"
       },
       "widgets_values": [
-        2,
+        1,
         "fixed",
-        25,
+        30,
         6,
         "dpmpp_2m",
         "karras",
@@ -376,40 +503,15 @@
       ]
     },
     {
-      "id": 22,
-      "type": "PreviewImage",
+      "id": 33,
+      "type": "IPAdapterApplyFaceID",
       "pos": [
-        1861,
-        542
+        1095,
+        166
       ],
       "size": {
-        "0": 527.009765625,
-        "1": 548.077880859375
-      },
-      "flags": {},
-      "order": 13,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 72
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "PreviewImage"
-      }
-    },
-    {
-      "id": 11,
-      "type": "IPAdapterApply",
-      "pos": [
-        1060,
-        240
-      ],
-      "size": {
-        "0": 210,
-        "1": 278
+        "0": 315,
+        "1": 326
       },
       "flags": {},
       "order": 10,
@@ -418,34 +520,32 @@
         {
           "name": "ipadapter",
           "type": "IPADAPTER",
-          "link": 10
+          "link": 81
         },
         {
           "name": "clip_vision",
           "type": "CLIP_VISION",
-          "link": 79,
-          "slot_index": 1
+          "link": 82
+        },
+        {
+          "name": "insightface",
+          "type": "INSIGHTFACE",
+          "link": 84
         },
         {
           "name": "image",
           "type": "IMAGE",
-          "link": 77
+          "link": 83
         },
         {
           "name": "model",
           "type": "MODEL",
-          "link": 16
+          "link": 85
         },
         {
           "name": "attn_mask",
           "type": "MASK",
           "link": null
-        },
-        {
-          "name": "insightface",
-          "type": "INSIGHTFACE",
-          "link": 80,
-          "slot_index": 5
         }
       ],
       "outputs": [
@@ -453,122 +553,24 @@
           "name": "MODEL",
           "type": "MODEL",
           "links": [
-            78
+            93
           ],
           "shape": 3,
           "slot_index": 0
         }
       ],
       "properties": {
-        "Node name for S&R": "IPAdapterApply"
+        "Node name for S&R": "IPAdapterApplyFaceID"
       },
       "widgets_values": [
-        0.9,
+        1,
         0,
         "original",
         0,
         1,
+        false,
+        1,
         false
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 9,
-      "type": "IPAdapterModelLoader",
-      "pos": [
-        650,
-        90
-      ],
-      "size": [
-        290,
-        60
-      ],
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IPADAPTER",
-          "type": "IPADAPTER",
-          "links": [
-            10
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterModelLoader"
-      },
-      "widgets_values": [
-        "ip-adapter-faceid_sd15.bin"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 31,
-      "type": "CLIPVisionLoader",
-      "pos": [
-        650,
-        190
-      ],
-      "size": [
-        290,
-        60
-      ],
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "CLIP_VISION",
-          "type": "CLIP_VISION",
-          "links": [
-            79
-          ],
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CLIPVisionLoader"
-      },
-      "widgets_values": [
-        "IPAdapter_image_encoder_sd15.safetensors"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 32,
-      "type": "InsightFaceLoader",
-      "pos": [
-        650,
-        290
-      ],
-      "size": [
-        290,
-        60
-      ],
-      "flags": {},
-      "order": 6,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "INSIGHTFACE",
-          "type": "INSIGHTFACE",
-          "links": [
-            80
-          ],
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "InsightFaceLoader"
-      },
-      "widgets_values": [
-        "CPU"
       ],
       "color": "#223",
       "bgcolor": "#335"
@@ -632,27 +634,11 @@
       "VAE"
     ],
     [
-      10,
-      9,
-      0,
-      11,
-      0,
-      "IPADAPTER"
-    ],
-    [
       15,
       2,
       0,
       14,
       0,
-      "MODEL"
-    ],
-    [
-      16,
-      14,
-      0,
-      11,
-      3,
       "MODEL"
     ],
     [
@@ -664,36 +650,52 @@
       "IMAGE"
     ],
     [
-      77,
-      10,
+      81,
+      9,
       0,
-      11,
-      2,
-      "IMAGE"
+      33,
+      0,
+      "IPADAPTER"
     ],
     [
-      78,
-      11,
-      0,
-      1,
-      0,
-      "MODEL"
-    ],
-    [
-      79,
+      82,
       31,
       0,
-      11,
+      33,
       1,
       "CLIP_VISION"
     ],
     [
-      80,
+      83,
+      10,
+      0,
+      33,
+      3,
+      "IMAGE"
+    ],
+    [
+      84,
       32,
       0,
-      11,
-      5,
+      33,
+      2,
       "INSIGHTFACE"
+    ],
+    [
+      85,
+      14,
+      0,
+      33,
+      4,
+      "MODEL"
+    ],
+    [
+      93,
+      33,
+      0,
+      1,
+      0,
+      "MODEL"
     ]
   ],
   "groups": [],

@@ -5,7 +5,9 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 ## Important updates
 
-**2023/12/28**: Added support for FaceID Plus models. **Important:** this update breaks the previous implementation of FaceID. Check the updated workflows in the exmaple directory!
+**2023/12/30**: Added support for FaceID Plus v2 models. **Important:** this update again breaks the previous implementation. This time I had to make a new node just for FaceID. The base `IPAdapter Apply` node will work with all previous models; for all FaceID models you'll find an `IPAdapter Apply FaceID` node. **When using v2 remember to check the `v2` options otherwise it won't work as expected!** As always the examples directory is full of workflows for you to play with.
+
+**2023/12/28**: Added support for FaceID Plus models. **Important:** this update breaks the previous implementation of FaceID. Check the updated workflows in the example directory! Remember to refresh the browser ComfyUI page to clear up the local cache.
 
 **2023/12/22**: Added support for FaceID models. [Read the documentation](#faceid) for details.
 
@@ -20,10 +22,6 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 **2023/11/23**: Small but important update: the new default location for the IPAdapter models is `ComfyUI/models/ipadapter`. **No panic**: the legacy `ComfyUI/custom_nodes/ComfyUI_IPAdapter_plus/models` location still works and nothing will break.
 
 **2023/11/08**: Added [attention masking](#attention-masking).
-
-**2023/11/07**: Added three ways to apply the weight. [See below](#weight-types) for more info. **This might break things!** Please let me know if you are having issues. When loading an old workflow try to reload the page a couple of times or delete the `IPAdapter Apply` node and insert a new one.
-
-**2023/11/02**: Added compatibility with the new models in safetensors format (available on [huggingface](https://huggingface.co/h94/IP-Adapter)).
 
 *(previous updates removed for better readability)*
 
@@ -59,7 +57,7 @@ The pre-trained models are available on [huggingface](https://huggingface.co/h94
 
 IPAdapter also needs the image encoders. You need the [CLIP-**ViT-H**-14-laion2B-s32B-b79K](https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors) and [CLIP-**ViT-bigG**-14-laion2B-39B-b160k](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/image_encoder/model.safetensors) image encoders, you may already have them. If you don't, download them but **be careful because the file name is the same!** Rename them to something easy to remember and place them in the `ComfyUI/models/clip_vision/` directory.
 
-The following table shows the combination of Checkpoint and Image encoder to use for each IPAdapter Model. Any Tensor size error you may get it is likely caused by a wrong combination.
+The following table shows the combination of Checkpoint and Image encoder to use for each IPAdapter Model. Any Tensor size mismatch you may get it is likely caused by a wrong combination.
 
 | SD v. | IPadapter | Img encoder | Notes |
 |---|---|---|---|
@@ -82,6 +80,7 @@ When the dependencies are satisfied you need:
 |---|---|---|---|
 | v1.5 | [FaceID](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sd15.bin) | (not used¹) | [FaceID Lora](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sd15_lora.safetensors) |
 | v1.5 | [FaceID Plus](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plus_sd15.bin) | ViT-H | [FaceID Plus Lora](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plus_sd15_lora.safetensors) |
+| v1.5 | [FaceID Plus v2](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sd15.bin) | ViT-H | [FaceID Plus v2 Lora](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sd15_lora.safetensors) |
 
 ¹ The base FaceID model doesn't make use of a CLIP vision encoder.
 

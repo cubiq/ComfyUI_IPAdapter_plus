@@ -122,12 +122,14 @@ class ProjModelFaceIdPlus(torch.nn.Module):
             ff_mult=4,
         )
         
-    def forward(self, id_embeds, clip_embeds):
+    def forward(self, id_embeds, clip_embeds, scale=1.0, shortcut=False):
         x = self.proj(id_embeds)
         x = x.reshape(-1, self.num_tokens, self.cross_attention_dim)
         x = self.norm(x)
-        x = self.perceiver_resampler(x, clip_embeds)
-        return x
+        out = self.perceiver_resampler(x, clip_embeds)
+        if shortcut:
+            out = x + scale * out
+        return out
 
 class ImageProjModel(nn.Module):
     def __init__(self, cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4):
@@ -320,8 +322,8 @@ class IPAdapter(nn.Module):
         return image_prompt_embeds, uncond_image_prompt_embeds
 
     @torch.inference_mode()
-    def get_image_embeds_faceid_plus(self, face_embed, clip_embed):
-        embeds = self.image_proj_model(face_embed, clip_embed)
+    def get_image_embeds_faceid_plus(self, face_embed, clip_embed, s_scale, shortcut):
+        embeds = self.image_proj_model(face_embed, clip_embed, scale=s_scale, shortcut=shortcut)
         return embeds
 
 class CrossAttentionPatch:
@@ -486,7 +488,6 @@ class IPAdapterModelLoader:
 
     RETURN_TYPES = ("IPADAPTER",)
     FUNCTION = "load_ipadapter_model"
-
     CATEGORY = "ipadapter"
 
     def load_ipadapter_model(self, ipadapter_file):
@@ -519,7 +520,6 @@ class InsightFaceLoader:
 
     RETURN_TYPES = ("INSIGHTFACE",)
     FUNCTION = "load_insight_face"
-
     CATEGORY = "ipadapter"
 
     def load_insight_face(self, provider):
@@ -551,7 +551,6 @@ class IPAdapterApply:
             },
             "optional": {
                 "attn_mask": ("MASK",),
-                "insightface": ("INSIGHTFACE",),
             }
         }
 
@@ -559,7 +558,7 @@ class IPAdapterApply:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, ipadapter, model, weight, clip_vision=None, image=None, weight_type="original", noise=None, embeds=None, attn_mask=None, start_at=0.0, end_at=1.0, unfold_batch=False, insightface=None):
+    def apply_ipadapter(self, ipadapter, model, weight, clip_vision=None, image=None, weight_type="original", noise=None, embeds=None, attn_mask=None, start_at=0.0, end_at=1.0, unfold_batch=False, insightface=None, faceid_v2=False, weight_v2=False):
         self.dtype = torch.float16 if comfy.model_management.should_use_fp16() else torch.float32
         self.device = comfy.model_management.get_torch_device()
         self.weight = weight
@@ -649,8 +648,8 @@ class IPAdapterApply:
         self.ipadapter.to(self.device, dtype=self.dtype)
 
         if self.is_faceid and self.is_plus:
-            image_prompt_embeds = self.ipadapter.get_image_embeds_faceid_plus(face_embed.to(self.device, dtype=self.dtype), clip_embed.to(self.device, dtype=self.dtype))
-            uncond_image_prompt_embeds = self.ipadapter.get_image_embeds_faceid_plus(face_embed_zeroed.to(self.device, dtype=self.dtype), clip_embed_zeroed.to(self.device, dtype=self.dtype))
+            image_prompt_embeds = self.ipadapter.get_image_embeds_faceid_plus(face_embed.to(self.device, dtype=self.dtype), clip_embed.to(self.device, dtype=self.dtype), weight_v2, faceid_v2)
+            uncond_image_prompt_embeds = self.ipadapter.get_image_embeds_faceid_plus(face_embed_zeroed.to(self.device, dtype=self.dtype), clip_embed_zeroed.to(self.device, dtype=self.dtype), weight_v2, faceid_v2)
         else:
             image_prompt_embeds, uncond_image_prompt_embeds = self.ipadapter.get_image_embeds(clip_embed.to(self.device, dtype=self.dtype), clip_embed_zeroed.to(self.device, dtype=self.dtype))
 
@@ -701,7 +700,39 @@ class IPAdapterApply:
                 set_model_patch_replace(work_model, patch_kwargs, ("middle", 0, index))
                 patch_kwargs["number"] += 1
 
+        # manual GC (TODO: check if helps in any way)
+        image_prompt_embeds = None
+        uncond_image_prompt_embeds = None
+        face_embed = None
+        neg_image = None
+        clip_embed = None
+        clip_embed_zeroed = None
+
         return (work_model, )
+
+class IPAdapterApplyFaceID(IPAdapterApply):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "ipadapter": ("IPADAPTER", ),
+                "clip_vision": ("CLIP_VISION",),
+                "insightface": ("INSIGHTFACE",),
+                "image": ("IMAGE",),
+                "model": ("MODEL", ),
+                "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.05 }),
+                "noise": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01 }),
+                "weight_type": (["original", "linear", "channel penalty"], ),
+                "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "faceid_v2": ("BOOLEAN", { "default": False }),
+                "weight_v2": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.05 }),
+                "unfold_batch": ("BOOLEAN", { "default": False }),
+            },
+            "optional": {
+                "attn_mask": ("MASK",),
+            }
+        }
 
 def prepImage(image, interpolation="LANCZOS", crop_position="center", size=(224,224), sharpening=0.0, padding=0):
     _, oh, ow, _ = image.shape
@@ -953,12 +984,12 @@ class IPAdapterBatchEmbeds:
     CATEGORY = "ipadapter"
 
     def batch(self, embed1, embed2):
-        output = torch.cat((embed1, embed2), dim=1)
-        return (output, )
+        return (torch.cat((embed1, embed2), dim=1), )
 
 NODE_CLASS_MAPPINGS = {
     "IPAdapterModelLoader": IPAdapterModelLoader,
     "IPAdapterApply": IPAdapterApply,
+    "IPAdapterApplyFaceID": IPAdapterApplyFaceID,
     "IPAdapterApplyEncoded": IPAdapterApplyEncoded,
     "PrepImageForClipVision": PrepImageForClipVision,
     "IPAdapterEncoder": IPAdapterEncoder,
@@ -972,6 +1003,7 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterModelLoader": "Load IPAdapter Model",
     "IPAdapterApply": "Apply IPAdapter",
+    "IPAdapterApplyFaceID": "Apply Apply FaceID",
     "IPAdapterApplyEncoded": "Apply IPAdapter from Encoded",
     "PrepImageForClipVision": "Prepare Image For Clip Vision",
     "IPAdapterEncoder": "Encode IPAdapter Image",
