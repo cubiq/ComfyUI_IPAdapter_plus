@@ -234,48 +234,6 @@
       ]
     },
     {
-      "id": 14,
-      "type": "LoraLoaderModelOnly",
-      "pos": [
-        770,
-        410
-      ],
-      "size": {
-        "0": 210,
-        "1": 82
-      },
-      "flags": {},
-      "order": 7,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 15
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            85
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoraLoaderModelOnly"
-      },
-      "widgets_values": [
-        "ip-adapter-faceid_sd15_lora.safetensors",
-        0.6
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
       "id": 22,
       "type": "PreviewImage",
       "pos": [
@@ -574,6 +532,48 @@
         "karras",
         1
       ]
+    },
+    {
+      "id": 14,
+      "type": "LoraLoaderModelOnly",
+      "pos": [
+        770,
+        410
+      ],
+      "size": {
+        "0": 210,
+        "1": 82
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 15
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            85
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoraLoaderModelOnly"
+      },
+      "widgets_values": [
+        "ip-adapter-faceid-plusv2_sd15_lora.safetensors",
+        0.6
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
     }
   ],
   "links": [
