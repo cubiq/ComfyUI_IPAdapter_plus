@@ -1003,7 +1003,7 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterModelLoader": "Load IPAdapter Model",
     "IPAdapterApply": "Apply IPAdapter",
-    "IPAdapterApplyFaceID": "Apply Apply FaceID",
+    "IPAdapterApplyFaceID": "Apply IPAdapter FaceID",
     "IPAdapterApplyEncoded": "Apply IPAdapter from Encoded",
     "PrepImageForClipVision": "Prepare Image For Clip Vision",
     "IPAdapterEncoder": "Encode IPAdapter Image",
