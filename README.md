@@ -51,7 +51,16 @@ The [example directory](./examples/) has many workflows that cover all IPAdapter
 
 ## Installation
 
-Download or git clone this repository inside `ComfyUI/custom_nodes/` directory or use the Manager. Beware that the automatic update of the manager sometimes doesn't work and you may need to upgrade manually.
+Download or git clone this repository inside `ComfyUI/custom_nodes/` directory or use the Manager.
+For example, use:
+
+```sh
+$ cd ComfyUI/custom_nodes/
+
+$ git clone --depth=1 https://github.com/cubiq/ComfyUI_IPAdapter_plus.git
+```
+
+Beware that the automatic update of the manager sometimes doesn't work and you may need to upgrade manually.
 
 The pre-trained models are available on [huggingface](https://huggingface.co/h94/IP-Adapter), download and place them in the `ComfyUI/models/ipadapter` directory (create it if not present). You can also use any custom location setting an `ipadapter` entry in the `extra_model_paths.yaml` file.
 
