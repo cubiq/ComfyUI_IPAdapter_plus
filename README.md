@@ -170,8 +170,6 @@ The image below shows the difference (zoom in).
 
 In the examples directory you can find [a workflow](examples/IPAdapter_weight_types.json) that lets you easily compare the three methods.
 
-**Note:** I'm not still sure whether all methods will stay. `Linear` seems the most sensible but I wanted to keep the `original` for backward compatibility. `channel penalty` has a weird non-commercial clause but it's still part of a GNU GPLv3 software (ie: there's a licensing clash) so I'm trying to understand how to deal with that.
-
 ### Attention masking
 
 It's possible to add a mask to define the area where the IPAdapter will be applied to. Everything outside the mask will ignore the reference images and will only listen to the text prompt.

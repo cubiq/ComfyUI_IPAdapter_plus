@@ -525,8 +525,8 @@ class InsightFaceLoader:
     def load_insight_face(self, provider):
         try:
             from insightface.app import FaceAnalysis
-        except ImportError:
-            raise Exception('IPAdapter: InsightFace is not installed! Install the missing dependencies if you wish to use FaceID models.')
+        except ImportError as e:
+            raise Exception(e)
 
         model = FaceAnalysis(name="buffalo_l", root=INSIGHTFACE_DIR, providers=[provider + 'ExecutionProvider',])
         model.prepare(ctx_id=0, det_size=(640, 640))
