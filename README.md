@@ -88,8 +88,6 @@ When the dependencies are satisfied you need:
 
 The loras need to be placed into `ComfyUI/models/loras/` directory.
 
-**There is no SDXL model at the moment.**
-
 ## How to
 
 There's a basic workflow included in this repo and a few examples in the [examples](./examples/) directory. Usually it's a good idea to lower the `weight` to at least `0.8`.
