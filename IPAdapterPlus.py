@@ -565,6 +565,7 @@ class IPAdapterApply:
         self.is_full = "proj.3.weight" in ipadapter["image_proj"]
         self.is_faceid = "0.to_q_lora.down.weight" in ipadapter["ip_adapter"]
         self.is_plus = (self.is_full or "latents" in ipadapter["image_proj"] or "perceiver_resampler.proj_in.weight" in ipadapter["image_proj"])
+        face_model = None
 
         if self.is_faceid and not insightface:
             raise Exception('InsightFace must be provided for FaceID models.')
@@ -589,7 +590,8 @@ class IPAdapterApply:
                         insightface.det_model.input_size = size # TODO: hacky but seems to be working
                         face = insightface.get(face_img[i])
                         if face:
-                            face_embed.append(torch.from_numpy(face[0].normed_embedding).unsqueeze(0))
+                            face_model = face[0]
+                            face_embed.append(torch.from_numpy(face_model.normed_embedding).unsqueeze(0))
                             if 640 not in size:
                                 print(f"\033[33mINFO: InsightFace detection resolution lowered to {size}.\033[0m")
                             break
@@ -708,6 +710,9 @@ class IPAdapterApply:
         clip_embed = None
         clip_embed_zeroed = None
 
+        if face_model is not None:
+            return (work_model, face_model)
+
         return (work_model, )
 
 class IPAdapterApplyFaceID(IPAdapterApply):
@@ -733,6 +738,9 @@ class IPAdapterApplyFaceID(IPAdapterApply):
                 "attn_mask": ("MASK",),
             }
         }
+    
+    RETURN_TYPES = ("MODEL", "FACE_MODEL")
+    RETURN_NAMES = ("model", "face_model")
 
 def prepImage(image, interpolation="LANCZOS", crop_position="center", size=(224,224), sharpening=0.0, padding=0):
     _, oh, ow, _ = image.shape
