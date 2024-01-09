@@ -701,12 +701,12 @@ class IPAdapterApply:
                 patch_kwargs["number"] += 1
 
         # manual GC (TODO: check if helps in any way)
-        image_prompt_embeds = None
-        uncond_image_prompt_embeds = None
-        face_embed = None
-        neg_image = None
-        clip_embed = None
-        clip_embed_zeroed = None
+        #image_prompt_embeds = None
+        #uncond_image_prompt_embeds = None
+        #face_embed = None
+        #neg_image = None
+        #clip_embed = None
+        #clip_embed_zeroed = None
 
         return (work_model, )
 
