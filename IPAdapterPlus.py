@@ -700,14 +700,6 @@ class IPAdapterApply:
                 set_model_patch_replace(work_model, patch_kwargs, ("middle", 0, index))
                 patch_kwargs["number"] += 1
 
-        # manual GC (TODO: check if helps in any way)
-        #image_prompt_embeds = None
-        #uncond_image_prompt_embeds = None
-        #face_embed = None
-        #neg_image = None
-        #clip_embed = None
-        #clip_embed_zeroed = None
-
         return (work_model, )
 
 class IPAdapterApplyFaceID(IPAdapterApply):
@@ -857,13 +849,9 @@ class IPAdapterEncoder:
 
     def preprocess(self, clip_vision, image_1, ipadapter_plus, noise, weight_1, image_2=None, image_3=None, image_4=None, weight_2=1.0, weight_3=1.0, weight_4=1.0):
         weight_1 *= (0.1 + (weight_1 - 0.1))
-        weight_1 = 1.19e-05 if weight_1 <= 1.19e-05 else weight_1
         weight_2 *= (0.1 + (weight_2 - 0.1))
-        weight_2 = 1.19e-05 if weight_2 <= 1.19e-05 else weight_2
         weight_3 *= (0.1 + (weight_3 - 0.1))
-        weight_3 = 1.19e-05 if weight_3 <= 1.19e-05 else weight_3
         weight_4 *= (0.1 + (weight_4 - 0.1))
-        weight_5 = 1.19e-05 if weight_4 <= 1.19e-05 else weight_4
 
         image = image_1
         weight = [weight_1]*image_1.shape[0]
