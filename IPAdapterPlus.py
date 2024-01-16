@@ -250,6 +250,13 @@ def tensorToNP(image):
 
     return out
 
+def NPToTensor(image):
+    out = torch.from_numpy(image)
+    out = torch.clamp(out.to(torch.float)/255., 0.0, 1.0)
+    out = out[..., [2, 1, 0]]
+
+    return out
+
 class IPAdapter(nn.Module):
     def __init__(self, ipadapter_model, cross_attention_dim=1024, output_cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4, is_sdxl=False, is_plus=False, is_full=False, is_faceid=False):
         super().__init__()
@@ -509,6 +516,7 @@ class IPAdapterModelLoader:
 
         return (model,)
 
+insightface_face_align = None
 class InsightFaceLoader:
     @classmethod
     def INPUT_TYPES(s):
@@ -527,6 +535,10 @@ class InsightFaceLoader:
             from insightface.app import FaceAnalysis
         except ImportError as e:
             raise Exception(e)
+        
+        from insightface.utils import face_align
+        global insightface_face_align
+        insightface_face_align = face_align
 
         model = FaceAnalysis(name="buffalo_l", root=INSIGHTFACE_DIR, providers=[provider + 'ExecutionProvider',])
         model.prepare(ctx_id=0, det_size=(640, 640))
@@ -554,7 +566,7 @@ class IPAdapterApply:
             }
         }
 
-    RETURN_TYPES = ("MODEL",)
+    RETURN_TYPES = ("MODEL", )
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
@@ -583,6 +595,7 @@ class IPAdapterApply:
                 insightface.det_model.input_size = (640,640) # reset the detection size
                 face_img = tensorToNP(image)
                 face_embed = []
+                face_clipvision = []
 
                 for i in range(face_img.shape[0]):
                     for size in [(size, size) for size in range(640, 128, -64)]:
@@ -590,13 +603,17 @@ class IPAdapterApply:
                         face = insightface.get(face_img[i])
                         if face:
                             face_embed.append(torch.from_numpy(face[0].normed_embedding).unsqueeze(0))
+                            face_clipvision.append(NPToTensor(insightface_face_align.norm_crop(face_img[i], landmark=face[0].kps, image_size=224)))
+
                             if 640 not in size:
                                 print(f"\033[33mINFO: InsightFace detection resolution lowered to {size}.\033[0m")
                             break
                     else:
-                        print("\033[33mWARNING!!! InsightFace didn't detect any face.\033[0m")
+                        raise Exception('InsightFace: No face detected.')
 
                 face_embed = torch.stack(face_embed, dim=0)
+                image = torch.stack(face_clipvision, dim=0)
+
                 neg_image = image_add_noise(image, noise) if noise > 0 else None
                
                 if self.is_plus:

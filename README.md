@@ -5,6 +5,8 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 ## Important updates
 
+**2023/01/16**: Notably increased quality of FaceID Plus/v2 models. Check the [comparison](https://github.com/cubiq/ComfyUI_IPAdapter_plus/issues/195) of all face models.
+
 **2023/12/30**: Added support for FaceID Plus v2 models. **Important:** this update again breaks the previous implementation. This time I had to make a new node just for FaceID. The base `IPAdapter Apply` node will work with all previous models; for all FaceID models you'll find an `IPAdapter Apply FaceID` node. **When using v2 remember to check the `v2` options otherwise it won't work as expected!** As always the examples directory is full of workflows for you to play with.
 
 **2023/12/28**: Added support for FaceID Plus models. **Important:** this update breaks the previous implementation of FaceID. Check the updated workflows in the example directory! Remember to refresh the browser ComfyUI page to clear up the local cache.
