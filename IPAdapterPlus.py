@@ -583,7 +583,7 @@ class IPAdapterApply:
 
         output_cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
         self.is_sdxl = output_cross_attention_dim == 2048
-        cross_attention_dim = 1280 if self.is_plus and self.is_sdxl else output_cross_attention_dim
+        cross_attention_dim = 1280 if self.is_plus and self.is_sdxl and not self.is_faceid else output_cross_attention_dim
         clip_extra_context_tokens = 16 if self.is_plus else 4
 
         if embeds is not None:
