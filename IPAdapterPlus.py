@@ -575,7 +575,8 @@ class IPAdapterApply:
         self.device = comfy.model_management.get_torch_device()
         self.weight = weight
         self.is_full = "proj.3.weight" in ipadapter["image_proj"]
-        self.is_faceid = "0.to_q_lora.down.weight" in ipadapter["ip_adapter"]
+        self.is_portrait = "proj.2.weight" in ipadapter["image_proj"] and not "proj.3.weight" in ipadapter["image_proj"] and not "0.to_q_lora.down.weight" in ipadapter["ip_adapter"]
+        self.is_faceid = self.is_portrait or "0.to_q_lora.down.weight" in ipadapter["ip_adapter"]
         self.is_plus = (self.is_full or "latents" in ipadapter["image_proj"] or "perceiver_resampler.proj_in.weight" in ipadapter["image_proj"])
 
         if self.is_faceid and not insightface:
@@ -584,7 +585,7 @@ class IPAdapterApply:
         output_cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
         self.is_sdxl = output_cross_attention_dim == 2048
         cross_attention_dim = 1280 if self.is_plus and self.is_sdxl and not self.is_faceid else output_cross_attention_dim
-        clip_extra_context_tokens = 16 if self.is_plus else 4
+        clip_extra_context_tokens = 16 if self.is_plus or self.is_portrait else 4
 
         if embeds is not None:
             embeds = torch.unbind(embeds)
