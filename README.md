@@ -5,6 +5,8 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 ## Important updates
 
+**2024/02/02**: Added experimental [tiled IPAdapter](#tiled-ipadapter). It lets you easily handle reference images that are not square. Can be useful for upscaling.
+
 **2024/01/19**: Support for FaceID Portrait models.
 
 **2024/01/16**: Notably increased quality of FaceID Plus/v2 models. Check the [comparison](https://github.com/cubiq/ComfyUI_IPAdapter_plus/issues/195) of all face models.
@@ -18,12 +20,6 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 **2023/12/05**: Added `batch embeds` node. This lets you encode images in batches and merge them together into an `IPAdapter Apply Encoded` node. Useful mostly for animations because the clip vision encoder takes a lot of VRAM. My suggestion is to split the animation in batches of about 120 frames.
 
 **2023/11/29**: Added `unfold_batch` option to send the reference images sequentially to a latent batch. Useful for animations.
-
-**2023/11/26**: Added [timestepping](#timestepping). You may need to delete the old nodes and recreate them. **Important:** For this to work you need to update ComfyUI to the latest version.
-
-**2023/11/24**: Support for multiple attention masks.
-
-**2023/11/23**: Small but important update: the new default location for the IPAdapter models is `ComfyUI/models/ipadapter`. **No panic**: the legacy `ComfyUI/custom_nodes/ComfyUI_IPAdapter_plus/models` location still works and nothing will break.
 
 *(previous updates removed for better readability)*
 
@@ -194,6 +190,22 @@ In the `Apply IPAdapter` node you can set a start and an end point. The IPAdapte
 
 <img src="./examples/timestepping.jpg" width="100%" alt="timestepping" />
 
+### Tiled IPAdapter
+
+This is an experimental node that automatically splits a reference image in quadrants. It can be especially useful when the reference image is not in 1:1 ratio as the Clip Vision encoder only works with 224x224 square images.
+
+The `short_side_tiles` parameter defines the number of tiles to use for ther shorter side of the reference image; the number of tiles for the other side are calculated automatically. If the image is in landscape or portrait mode that generally means that only 2 tiles are created. If the image is a square, the value must be at least `2` for the node to have any meaninful effect.
+
+**If the aspect ratio of the refence image and the latent are very diffirent the image will almost certainly be stretched or squished.**
+
+`tile_weight` is very important any time the `short_side_tiles` value is greater than 1. The default value of `0.6` should be good for most scenarios but you may need to lower it a little (0.5) for SDXL. **This parameter has no effect if the `short_side_tiles` is = 1.**
+
+The main IPAdapter `weight` should also be lowered, `0.7` is a good starting point.
+
+**Important:** With a high number of tiles we are going to reiterate on the same _concept_ multiple times so I suggest to lower the CFG or better use the CFG Rescale node. Please check the workflow in the examples directory for reference.
+
+The node is experimental and will likely change in the future.
+
 ### FaceID
 
 FaceID is a new IPAdapter model that takes the embeddings from [InsightFace](https://github.com/deepinsight/insightface). As such you need to install `insightface` in your ComfyUI python environment. You may also need `onnxruntime` and `onnxruntime-gpu`. Note that your CUDA version might not be compatible with onnxruntime, in that case you can select the "CPU" provider from the `Load InsightFace model` node.
@@ -229,10 +241,3 @@ If you are interested I've also implemented the same features for [Huggingface D
 - [laksjdjf](https://github.com/laksjdjf/IPAdapter-ComfyUI/)
 - [fooocus](https://github.com/lllyasviel/Fooocus/blob/main/fooocus_extras/ip_adapter.py)
 
-## IPAdapter in the wild
-
-Let me know if you spot the IPAdapter in the wild or tag @latentvision in the video description!
-
-- For German speakers you can find interesting YouTube tutorials on [A Latent Place](https://www.youtube.com/watch?v=rAWn_0YOBU0).
-- In Chinese [Introversify](https://www.youtube.com/watch?v=xl8f3oxZgY8)
-- [Scott Detweiler](https://www.youtube.com/watch?v=xzGdynQDzsM) covered this extension.

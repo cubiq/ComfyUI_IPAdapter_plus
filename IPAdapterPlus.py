@@ -1,15 +1,15 @@
 import torch
-import contextlib
 import os
 import math
 
 import comfy.utils
 import comfy.model_management
-from comfy.clip_vision import clip_preprocess
+from comfy.clip_vision import clip_preprocess, Output
 from comfy.ldm.modules.attention import optimized_attention
+from nodes import MAX_RESOLUTION
 import folder_paths
 
-from torch import nn
+import torch.nn as nn
 from PIL import Image
 import torch.nn.functional as F
 import torchvision.transforms as TT
@@ -167,6 +167,82 @@ def set_model_patch_replace(model, patch_kwargs, key):
     else:
         to["patches_replace"]["attn2"][key].set_new_condition(**patch_kwargs)
 
+def masked_tiling(image, short_side_tiles, weight=0.6, blur=0):
+    _, orig_height, orig_width, _ = image.shape
+    tile_size = 224
+
+    if orig_width < orig_height:
+        num_tiles_x = short_side_tiles
+        new_width = tile_size * num_tiles_x
+        new_height = orig_height * new_width // orig_width
+        num_tiles_y = new_height // tile_size
+    else:
+        num_tiles_y = short_side_tiles
+        new_height = tile_size * num_tiles_y
+        new_width = orig_width * new_height // orig_height
+        num_tiles_x = new_width // tile_size
+
+    start_x = start_y = 0
+    if (new_height % tile_size) >= tile_size//4:
+        num_tiles_y += 1
+    else:
+        start_y = (new_height - tile_size*num_tiles_y) // 2
+
+    if (new_width % tile_size) >= tile_size//4:
+        num_tiles_x += 1
+    else:
+        start_x = (new_width - tile_size*num_tiles_x) // 2
+
+    weight = 1.0 if num_tiles_x == 1 or num_tiles_y == 1 else weight
+
+    ref_image = F.interpolate(image.permute([0,3,1,2]), size=(new_height, new_width), mode="bicubic").permute([0,2,3,1])
+
+    tiles = []
+    attn_mask = []
+
+    for i in range(num_tiles_y):
+        for j in range(num_tiles_x):
+            start_height = i * tile_size + start_y
+            end_height = start_height + tile_size + start_y
+            start_width = j * tile_size + start_x
+            end_width = start_width + tile_size + start_x
+
+            if end_height > new_height:
+                start_height = new_height - tile_size
+                end_height = new_height
+            if end_width > new_width:
+                start_width = new_width - tile_size
+                end_width = new_width
+
+            tile = ref_image[:1, start_height:end_height, start_width:end_width, :]
+            tiles.append(tile.squeeze(0))
+
+            # create mask
+            mask = torch.zeros([new_height, new_width], dtype=image.dtype, device=image.device)
+            mask[start_height:end_height, start_width:end_width] = weight
+
+            attn_mask.append(mask)
+
+    image = torch.stack(tiles, dim=0)
+    attn_mask = torch.stack(attn_mask, dim=0)
+
+    # If we have a lot of tiles we add bigger tiles with a higher weight to give clipvision a better idea of the overall image
+    if num_tiles_x != 1 and num_tiles_y != 1:
+        comp_tiles, comp_attn_mask = masked_tiling(ref_image, 1, 1.0, blur)
+
+        if image.shape[1:3] != comp_tiles.shape[1:3]:
+            comp_tiles = F.interpolate(comp_tiles.permute([0,3,1,2]), size=(image.shape[1], image.shape[2]), mode="bicubic").permute([0,2,3,1])
+        image = torch.cat([comp_tiles, image], dim=0)
+        
+        if attn_mask.shape[1:3] != comp_attn_mask.shape[1:3]:
+            comp_attn_mask = F.interpolate(comp_attn_mask.unsqueeze(1), size=(attn_mask.shape[1], attn_mask.shape[2]), mode="bicubic").squeeze(1)
+        attn_mask = torch.cat([comp_attn_mask, attn_mask], dim=0)
+
+    if blur > 0:
+        attn_mask = TT.GaussianBlur(int(6*blur+1), blur)(attn_mask.unsqueeze(1)).permute([0,2,3,1]).squeeze(-1)
+
+    return image, attn_mask
+
 def image_add_noise(image, noise):
     image = image.permute([0,3,1,2])
     torch.manual_seed(0) # use a fixed random for reproducible results
@@ -187,8 +263,23 @@ def zeroed_hidden_states(clip_vision, batch_size):
     comfy.model_management.load_model_gpu(clip_vision.patcher)
     pixel_values = clip_preprocess(image.to(clip_vision.load_device)).float()
     outputs = clip_vision.model(pixel_values=pixel_values, intermediate_output=-2)
+
     # we only need the penultimate hidden states
-    outputs = outputs[1].to(comfy.model_management.intermediate_device())
+    return outputs[1].to(comfy.model_management.intermediate_device())
+
+def encode_image_masked(clip_vision, image, mask=None):
+    comfy.model_management.load_model_gpu(clip_vision.patcher)
+    pixel_values = clip_preprocess(image.to(clip_vision.load_device)).float()
+
+    if mask is not None:
+        pixel_values = pixel_values * mask.to(clip_vision.load_device)
+
+    out = clip_vision.model(pixel_values=pixel_values, intermediate_output=-2)
+
+    outputs = Output()
+    outputs["last_hidden_state"] = out[0].to(comfy.model_management.intermediate_device())
+    outputs["image_embeds"] = out[2].to(comfy.model_management.intermediate_device())
+    outputs["penultimate_hidden_states"] = out[1].to(comfy.model_management.intermediate_device())
     return outputs
 
 def min_(tensor_list):
@@ -238,8 +329,8 @@ def contrast_adaptive_sharpening(image, amount):
     div = torch.reciprocal(1 + 4*w)
 
     output = ((b + d + f + h)*w + e) * div
-    output = output.clamp(0, 1)
     output = torch.nan_to_num(output)
+    output = output.clamp(0, 1)
 
     return (output)
 
@@ -430,7 +521,6 @@ class CrossAttentionPatch:
 
                 if weight_type.startswith("channel"):
                     # code by Lvmin Zhang at Stanford University as also seen on Fooocus IPAdapter implementation
-                    # please read licensing notes https://github.com/lllyasviel/Fooocus/blob/69a23c4d60c9e627409d0cb0f8862cdb015488eb/extras/ip_adapter.py#L234
                     ip_v_mean = torch.mean(ip_v, dim=1, keepdim=True)
                     ip_v_offset = ip_v - ip_v_mean
                     _, _, C = ip_k.shape
@@ -510,7 +600,7 @@ class IPAdapterModelLoader:
                 elif key.startswith("ip_adapter."):
                     st_model["ip_adapter"][key.replace("ip_adapter.", "")] = model[key]
             model = st_model
-                    
+
         if not "ip_adapter" in model.keys() or not model["ip_adapter"]:
             raise Exception("invalid IPAdapter model {}".format(ckpt_path))
 
@@ -566,11 +656,32 @@ class IPAdapterApply:
             }
         }
 
-    RETURN_TYPES = ("MODEL", )
+    RETURN_TYPES = ("MODEL",)
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, ipadapter, model, weight, clip_vision=None, image=None, weight_type="original", noise=None, embeds=None, attn_mask=None, start_at=0.0, end_at=1.0, unfold_batch=False, insightface=None, faceid_v2=False, weight_v2=False):
+    def apply_ipadapter(self, 
+                        ipadapter, 
+                        model,
+                        weight, 
+                        clip_vision=None, 
+                        image=None, 
+                        weight_type="original", 
+                        noise=None, 
+                        embeds=None, 
+                        attn_mask=None, 
+                        start_at=0.0, 
+                        end_at=1.0, 
+                        unfold_batch=False, 
+                        insightface=None, 
+                        faceid_v2=False, 
+                        weight_v2=False,
+                        clip_vision_mask=None,
+                        short_side_tiles=0,
+                        tile_weight=0.0,
+                        tile_blur=0,
+                        ):
+        
         self.dtype = torch.float16 if comfy.model_management.should_use_fp16() else torch.float32
         self.device = comfy.model_management.get_torch_device()
         self.weight = weight
@@ -578,6 +689,10 @@ class IPAdapterApply:
         self.is_portrait = "proj.2.weight" in ipadapter["image_proj"] and not "proj.3.weight" in ipadapter["image_proj"] and not "0.to_q_lora.down.weight" in ipadapter["ip_adapter"]
         self.is_faceid = self.is_portrait or "0.to_q_lora.down.weight" in ipadapter["ip_adapter"]
         self.is_plus = (self.is_full or "latents" in ipadapter["image_proj"] or "perceiver_resampler.proj_in.weight" in ipadapter["image_proj"])
+        is_tiled = True if short_side_tiles > 0 else False
+
+        if is_tiled:
+            image, attn_mask = masked_tiling(image, short_side_tiles, tile_weight, tile_blur)
 
         if self.is_faceid and not insightface:
             raise Exception('InsightFace must be provided for FaceID models.')
@@ -633,7 +748,7 @@ class IPAdapterApply:
                 if image.shape[1] != image.shape[2]:
                     print("\033[33mINFO: the IPAdapter reference image is not a square, CLIPImageProcessor will resize and crop it at the center. If the main focus of the picture is not in the middle the result might not be what you are expecting.\033[0m")
 
-                clip_embed = clip_vision.encode_image(image)
+                clip_embed = encode_image_masked(clip_vision, image, clip_vision_mask)
                 neg_image = image_add_noise(image, noise) if noise > 0 else None
                 
                 if self.is_plus:
@@ -674,52 +789,92 @@ class IPAdapterApply:
         image_prompt_embeds = image_prompt_embeds.to(self.device, dtype=self.dtype)
         uncond_image_prompt_embeds = uncond_image_prompt_embeds.to(self.device, dtype=self.dtype)
 
-        work_model = model.clone()
+        self.work_model = model.clone()
 
         if attn_mask is not None:
             attn_mask = attn_mask.to(self.device)
 
-        sigma_start = model.model.model_sampling.percent_to_sigma(start_at)
-        sigma_end = model.model.model_sampling.percent_to_sigma(end_at)
+        sigma_start = self.work_model.model.model_sampling.percent_to_sigma(start_at)
+        sigma_end = self.work_model.model.model_sampling.percent_to_sigma(end_at)
+        
+        if is_tiled:
+            for i in range(image_prompt_embeds.shape[0]): #TODO: check if we can apply one mask per image in the attention patch phase
+                patch_kwargs = {
+                    "number": 0,
+                    "weight": self.weight,
+                    "ipadapter": self.ipadapter,
+                    "cond": image_prompt_embeds[i].unsqueeze(0),
+                    "uncond": uncond_image_prompt_embeds[i].unsqueeze(0),
+                    "weight_type": weight_type,
+                    "mask": attn_mask[i].unsqueeze(0),
+                    "sigma_start": sigma_start,
+                    "sigma_end": sigma_end,
+                    "unfold_batch": unfold_batch,
+                }
+                self.apply_patch(patch_kwargs)
+        else:
+            patch_kwargs = {
+                "number": 0,
+                "weight": self.weight,
+                "ipadapter": self.ipadapter,
+                "cond": image_prompt_embeds,
+                "uncond": uncond_image_prompt_embeds,
+                "weight_type": weight_type,
+                "mask": attn_mask,
+                "sigma_start": sigma_start,
+                "sigma_end": sigma_end,
+                "unfold_batch": unfold_batch,
+            }
+            self.apply_patch(patch_kwargs)
 
-        patch_kwargs = {
-            "number": 0,
-            "weight": self.weight,
-            "ipadapter": self.ipadapter,
-            "cond": image_prompt_embeds,
-            "uncond": uncond_image_prompt_embeds,
-            "weight_type": weight_type,
-            "mask": attn_mask,
-            "sigma_start": sigma_start,
-            "sigma_end": sigma_end,
-            "unfold_batch": unfold_batch,
-        }
+        return (self.work_model, attn_mask, image,)
 
+    def apply_patch(self, patch_kwargs):
         if not self.is_sdxl:
             for id in [1,2,4,5,7,8]: # id of input_blocks that have cross attention
-                set_model_patch_replace(work_model, patch_kwargs, ("input", id))
+                set_model_patch_replace(self.work_model, patch_kwargs, ("input", id))
                 patch_kwargs["number"] += 1
             for id in [3,4,5,6,7,8,9,10,11]: # id of output_blocks that have cross attention
-                set_model_patch_replace(work_model, patch_kwargs, ("output", id))
+                set_model_patch_replace(self.work_model, patch_kwargs, ("output", id))
                 patch_kwargs["number"] += 1
-            set_model_patch_replace(work_model, patch_kwargs, ("middle", 0))
+            set_model_patch_replace(self.work_model, patch_kwargs, ("middle", 0))
         else:
             for id in [4,5,7,8]: # id of input_blocks that have cross attention
                 block_indices = range(2) if id in [4, 5] else range(10) # transformer_depth
                 for index in block_indices:
-                    set_model_patch_replace(work_model, patch_kwargs, ("input", id, index))
+                    set_model_patch_replace(self.work_model, patch_kwargs, ("input", id, index))
                     patch_kwargs["number"] += 1
             for id in range(6): # id of output_blocks that have cross attention
                 block_indices = range(2) if id in [3, 4, 5] else range(10) # transformer_depth
                 for index in block_indices:
-                    set_model_patch_replace(work_model, patch_kwargs, ("output", id, index))
+                    set_model_patch_replace(self.work_model, patch_kwargs, ("output", id, index))
                     patch_kwargs["number"] += 1
             for index in range(10):
-                set_model_patch_replace(work_model, patch_kwargs, ("middle", 0, index))
+                set_model_patch_replace(self.work_model, patch_kwargs, ("middle", 0, index))
                 patch_kwargs["number"] += 1
 
-        return (work_model, )
+class IPAdapterTilesMasked(IPAdapterApply):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "ipadapter": ("IPADAPTER", ),
+                "clip_vision": ("CLIP_VISION",),
+                "image": ("IMAGE",),
+                "model": ("MODEL", ),
+                "weight": ("FLOAT", { "default": 0.7, "min": -1, "max": 3, "step": 0.05 }),
+                "noise": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01 }),
+                "weight_type": (["original", "linear", "channel penalty"], ),
+                "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "short_side_tiles": ("INT", { "default": 1, "min": 0, "max": 12, "step": 1 }),
+                "tile_weight": ("FLOAT", { "default": 0.6, "min": 0.0, "max": 1.0, "step": 0.05 }),
+                #"tile_blur": ("INT", { "default": 0, "min": 0, "max": 112, "step": 1 }),
+            },
+        }
 
+    RETURN_TYPES = ("MODEL",)
+    
 class IPAdapterApplyFaceID(IPAdapterApply):
     @classmethod
     def INPUT_TYPES(s):
@@ -995,6 +1150,7 @@ class IPAdapterBatchEmbeds:
 NODE_CLASS_MAPPINGS = {
     "IPAdapterModelLoader": IPAdapterModelLoader,
     "IPAdapterApply": IPAdapterApply,
+    "IPAdapterTilesMasked": IPAdapterTilesMasked,
     "IPAdapterApplyFaceID": IPAdapterApplyFaceID,
     "IPAdapterApplyEncoded": IPAdapterApplyEncoded,
     "PrepImageForClipVision": PrepImageForClipVision,
@@ -1009,6 +1165,7 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterModelLoader": "Load IPAdapter Model",
     "IPAdapterApply": "Apply IPAdapter",
+    "IPAdapterTilesMasked": "IPAdapter Masked Tiles (experimental)",
     "IPAdapterApplyFaceID": "Apply IPAdapter FaceID",
     "IPAdapterApplyEncoded": "Apply IPAdapter from Encoded",
     "PrepImageForClipVision": "Prepare Image For Clip Vision",
