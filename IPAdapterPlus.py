@@ -161,7 +161,7 @@ def set_model_patch_replace(model, patch_kwargs, key):
         to["patches_replace"] = {}
     if "attn2" not in to["patches_replace"]:
         to["patches_replace"]["attn2"] = {}
-    if key not in to["patches_replace"]["attn2"]:
+    if key not in to["patches_replace"]["attn2"] or not isinstance(to["patches_replace"]["attn2"][key], CrossAttentionPatch):
         patch = CrossAttentionPatch(**patch_kwargs)
         to["patches_replace"]["attn2"][key] = patch
     else:
@@ -719,7 +719,7 @@ class IPAdapterApply:
                         face = insightface.get(face_img[i])
                         if face:
                             face_embed.append(torch.from_numpy(face[0].normed_embedding).unsqueeze(0))
-                            face_clipvision.append(NPToTensor(insightface_face_align.norm_crop(face_img[i], landmark=face[0].kps, image_size=224)))
+                            face_clipvision.append(NPToTensor(insightface_face_align.norm_crop(face_img[i], landmark=face[0].kps, image_size=256)))
 
                             if 640 not in size:
                                 print(f"\033[33mINFO: InsightFace detection resolution lowered to {size}.\033[0m")
