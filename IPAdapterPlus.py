@@ -161,9 +161,8 @@ def set_model_patch_replace(model, patch_kwargs, key):
         to["patches_replace"] = {}
     if "attn2" not in to["patches_replace"]:
         to["patches_replace"]["attn2"] = {}
-    if key not in to["patches_replace"]["attn2"] or not isinstance(to["patches_replace"]["attn2"][key], CrossAttentionPatch):
-        patch = CrossAttentionPatch(**patch_kwargs)
-        to["patches_replace"]["attn2"][key] = patch
+    if key not in to["patches_replace"]["attn2"]:
+        to["patches_replace"]["attn2"][key] = CrossAttentionPatch(**patch_kwargs)
     else:
         to["patches_replace"]["attn2"][key].set_new_condition(**patch_kwargs)
 
@@ -426,7 +425,7 @@ class IPAdapter(nn.Module):
 
 class CrossAttentionPatch:
     # forward for patching
-    def __init__(self, weight, ipadapter, number, cond, uncond, weight_type, mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False):
+    def __init__(self, weight, ipadapter, number, cond, uncond, weight_type="original", mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False):
         self.weights = [weight]
         self.ipadapters = [ipadapter]
         self.conds = [cond]
@@ -441,7 +440,7 @@ class CrossAttentionPatch:
         self.k_key = str(self.number*2+1) + "_to_k_ip"
         self.v_key = str(self.number*2+1) + "_to_v_ip"
     
-    def set_new_condition(self, weight, ipadapter, number, cond, uncond, weight_type, mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False):
+    def set_new_condition(self, weight, ipadapter, number, cond, uncond, weight_type="original", mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False):
         self.weights.append(weight)
         self.ipadapters.append(ipadapter)
         self.conds.append(cond)
