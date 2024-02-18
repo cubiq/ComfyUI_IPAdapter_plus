@@ -454,8 +454,9 @@ class CrossAttentionPatch:
     def __call__(self, n, context_attn2, value_attn2, extra_options):
         org_dtype = n.dtype
         cond_or_uncond = extra_options["cond_or_uncond"]
-        sigma = extra_options["sigmas"][0] if 'sigmas' in extra_options else None
-        sigma = sigma.item() if sigma is not None else 999999999.9
+        # Split the operation into two parts for a temporary fix of issue-109 (comfyui won't start generating)
+        temp_sigma = extra_options["sigmas"] if 'sigmas' in extra_options else None
+        sigma = temp_sigma[0].item() if temp_sigma else 999999999.9
 
         # extra options for AnimateDiff
         ad_params = extra_options['ad_params'] if "ad_params" in extra_options else None
