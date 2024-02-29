@@ -696,7 +696,7 @@ class IPAdapterApply:
         if is_tiled:
             image, attn_mask = masked_tiling(image, short_side_tiles, tile_weight, tile_blur)
 
-        if self.is_faceid and not insightface:
+        if self.is_faceid and not insightface and not face_embeds:
             raise Exception('InsightFace must be provided for FaceID models.')
 
         output_cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
