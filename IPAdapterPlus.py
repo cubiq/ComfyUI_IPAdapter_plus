@@ -1110,6 +1110,7 @@ class IPAdapterApplyFaceIDEncoded(IPAdapterApply):
         return {
             "required": {
                 "ipadapter": ("IPADAPTER", ),
+                "clip_vision": ("CLIP_VISION",),
                 "face_embeds": ("FACE_EMBEDS",),
                 "face_image": ("FACE_IMAGE",),
                 "model": ("MODEL", ),
