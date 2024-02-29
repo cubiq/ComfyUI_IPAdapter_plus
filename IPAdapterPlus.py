@@ -1166,7 +1166,7 @@ class IPAdapterLoadEmbeds:
 
     def load(self, embeds):
         path = folder_paths.get_annotated_filepath(embeds)
-        output = torch.load(path)
+        output = torch.load(path).cpu()
         
         return (output, )
     
@@ -1183,7 +1183,7 @@ class IPAdapterLoadFaceEmbeds:
 
     def load(self, embeds):
         path = folder_paths.get_annotated_filepath(embeds)
-        output = torch.load(path).cpu()
+        output = torch.load(path)
         face_embed = output["face_embed"].cpu()
         face_image = output["image"].cpu()
 
