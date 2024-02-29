@@ -680,7 +680,7 @@ class IPAdapterApply:
                         short_side_tiles=0,
                         tile_weight=0.0,
                         tile_blur=0,
-                        face_embeds=None,
+                        face_embed=None,
                         face_image=None
                         ):
         
@@ -696,7 +696,7 @@ class IPAdapterApply:
         if is_tiled:
             image, attn_mask = masked_tiling(image, short_side_tiles, tile_weight, tile_blur)
 
-        if self.is_faceid and not insightface and face_embeds is None:
+        if self.is_faceid and not insightface and face_embed is None:
             raise Exception('InsightFace must be provided for FaceID models.')
 
         output_cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
@@ -708,7 +708,7 @@ class IPAdapterApply:
             embeds = torch.unbind(embeds)
             clip_embed = embeds[0].cpu()
             clip_embed_zeroed = embeds[1].cpu()
-        elif face_embeds is not None:
+        elif face_embed is not None:
             neg_image = image_add_noise(face_image, noise) if noise > 0 else None
             if self.is_plus:
                 clip_embed = clip_vision.encode_image(face_image).penultimate_hidden_states
@@ -1111,7 +1111,7 @@ class IPAdapterApplyFaceIDEncoded(IPAdapterApply):
             "required": {
                 "ipadapter": ("IPADAPTER", ),
                 "clip_vision": ("CLIP_VISION",),
-                "face_embeds": ("FACE_EMBEDS",),
+                "face_embed": ("FACE_EMBED",),
                 "face_image": ("FACE_IMAGE",),
                 "model": ("MODEL", ),
                 "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.05 }),
@@ -1178,7 +1178,7 @@ class IPAdapterLoadFaceEmbeds:
         files = [os.path.relpath(os.path.join(root, file), input_dir) for root, dirs, files in os.walk(input_dir) for file in files if file.endswith('.pt')]
         return {"required": {"embeds": [sorted(files), ]}, }
 
-    RETURN_TYPES = ("FACE_EMBEDS", "FACE_IMAGE")
+    RETURN_TYPES = ("FACE_EMBED", "FACE_IMAGE")
     FUNCTION = "load"
     CATEGORY = "ipadapter"
 
