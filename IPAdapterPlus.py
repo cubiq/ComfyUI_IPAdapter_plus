@@ -680,6 +680,8 @@ class IPAdapterApply:
                         short_side_tiles=0,
                         tile_weight=0.0,
                         tile_blur=0,
+                        face_embeds=None,
+                        face_image=None
                         ):
         
         self.dtype = torch.float16 if comfy.model_management.should_use_fp16() else torch.float32
@@ -706,6 +708,20 @@ class IPAdapterApply:
             embeds = torch.unbind(embeds)
             clip_embed = embeds[0].cpu()
             clip_embed_zeroed = embeds[1].cpu()
+        elif face_embeds is not None:
+            neg_image = image_add_noise(face_image, noise) if noise > 0 else None
+            if self.is_plus:
+                clip_embed = clip_vision.encode_image(face_image).penultimate_hidden_states
+                if noise > 0:
+                    clip_embed_zeroed = clip_vision.encode_image(neg_image).penultimate_hidden_states
+                else:
+                    clip_embed_zeroed = zeroed_hidden_states(clip_vision, face_image.shape[0])
+                
+                # TODO: check noise to the uncods too
+                face_embed_zeroed = torch.zeros_like(face_embed)
+            else:
+                clip_embed = face_embed
+                clip_embed_zeroed = torch.zeros_like(clip_embed)
         else:
             if self.is_faceid:
                 insightface.det_model.input_size = (640,640) # reset the detection size
@@ -1088,6 +1104,28 @@ class IPAdapterApplyEncoded(IPAdapterApply):
             }
         }
 
+class IPAdapterApplyFaceIDEncoded(IPAdapterApply):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "ipadapter": ("IPADAPTER", ),
+                "face_embeds": ("FACE_EMBEDS",),
+                "face_image": ("FACE_IMAGE",),
+                "model": ("MODEL", ),
+                "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.05 }),
+                "weight_type": (["original", "linear", "channel penalty"], ),
+                "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "faceid_v2": ("BOOLEAN", { "default": False }),
+                "weight_v2": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.05 }),
+                "unfold_batch": ("BOOLEAN", { "default": False }),
+            },
+            "optional": {
+                "attn_mask": ("MASK",),
+            }
+        }
+
 class IPAdapterSaveEmbeds:
     def __init__(self):
         self.output_dir = folder_paths.get_output_directory()
@@ -1127,9 +1165,28 @@ class IPAdapterLoadEmbeds:
 
     def load(self, embeds):
         path = folder_paths.get_annotated_filepath(embeds)
-        output = torch.load(path).cpu()
-
+        output = torch.load(path)
+        
         return (output, )
+    
+class IPAdapterLoadFaceEmbeds:
+    @classmethod
+    def INPUT_TYPES(s):
+        input_dir = folder_paths.get_input_directory()
+        files = [os.path.relpath(os.path.join(root, file), input_dir) for root, dirs, files in os.walk(input_dir) for file in files if file.endswith('.pt')]
+        return {"required": {"embeds": [sorted(files), ]}, }
+
+    RETURN_TYPES = ("FACE_EMBEDS", "FACE_IMAGE")
+    FUNCTION = "load"
+    CATEGORY = "ipadapter"
+
+    def load(self, embeds):
+        path = folder_paths.get_annotated_filepath(embeds)
+        output = torch.load(path).cpu()
+        face_embed = output["face_embed"].cpu()
+        face_image = output["image"].cpu()
+
+        return (face_embed, face_image)
 
 
 class IPAdapterBatchEmbeds:
@@ -1160,6 +1217,8 @@ NODE_CLASS_MAPPINGS = {
     "IPAdapterBatchEmbeds": IPAdapterBatchEmbeds,
     "InsightFaceLoader": InsightFaceLoader,
     "PrepImageForInsightFace": PrepImageForInsightFace,
+    "IPAdapterLoadFaceEmbeds": IPAdapterLoadFaceEmbeds,
+    "IPAdapterApplyFaceIDEncoded": IPAdapterApplyFaceIDEncoded
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -1175,4 +1234,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterBatchEmbeds": "IPAdapter Batch Embeds",
     "InsightFaceLoader": "Load InsightFace",
     "PrepImageForInsightFace": "Prepare Image For InsightFace",
+    "IPAdapterLoadFaceEmbeds": "Load Face Embeds",
+    "IPAdapterApplyFaceIDEncoded": "Apply IPAdapter FaceID from Encoded"
 }
