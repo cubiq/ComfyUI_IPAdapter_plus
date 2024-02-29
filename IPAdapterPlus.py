@@ -709,6 +709,7 @@ class IPAdapterApply:
             clip_embed = embeds[0].cpu()
             clip_embed_zeroed = embeds[1].cpu()
         elif face_embed is not None:
+            print(face_embed)
             neg_image = image_add_noise(face_image, noise) if noise > 0 else None
             if self.is_plus:
                 clip_embed = clip_vision.encode_image(face_image).penultimate_hidden_states
@@ -745,7 +746,7 @@ class IPAdapterApply:
 
                 face_embed = torch.stack(face_embed, dim=0)
                 image = torch.stack(face_clipvision, dim=0)
-
+                print(face_embed)
                 neg_image = image_add_noise(image, noise) if noise > 0 else None
                
                 if self.is_plus:
