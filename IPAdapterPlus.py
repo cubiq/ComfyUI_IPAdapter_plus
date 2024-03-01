@@ -733,6 +733,7 @@ class IPAdapterApply:
                 for i in range(face_img.shape[0]):
                     for size in [(size, size) for size in range(640, 128, -64)]:
                         insightface.det_model.input_size = size # TODO: hacky but seems to be working
+                        print(face_img[i])
                         face = insightface.get(face_img[i])
                         if face:
                             face_embed.append(torch.from_numpy(face[0].normed_embedding).unsqueeze(0))
