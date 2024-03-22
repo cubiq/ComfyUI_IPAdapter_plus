@@ -1122,7 +1122,6 @@ class IPAdapterLoadEmbeds:
             raise FileNotFoundError(f"Directory {embeds_dir} does not exist.")
         
         files = [f for f in os.listdir(embeds_dir) if f.endswith(".ipadpt") and os.path.isfile(os.path.join(embeds_dir, f))]
-        print(files)
         return {"required": {"embeds": [sorted(files), ]}, }
 
     RETURN_TYPES = ("EMBEDS", )
