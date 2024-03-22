@@ -1116,9 +1116,13 @@ class IPAdapterSaveEmbeds:
 
 class IPAdapterLoadEmbeds:
     @classmethod
-    def INPUT_TYPES(s):
-        input_dir = folder_paths.get_input_directory()
-        files = [os.path.relpath(os.path.join(root, file), input_dir) for root, dirs, files in os.walk(input_dir) for file in files if file.endswith('.ipadpt')]
+    def INPUT_TYPES(cls):
+        embeds_dir = os.path.join(folder_paths.get_output_directory(), "embeds")
+        if not os.path.exists(embeds_dir):
+            raise FileNotFoundError(f"Directory {embeds_dir} does not exist.")
+        
+        files = [f for f in os.listdir(embeds_dir) if f.endswith(".ipadpt") and os.path.isfile(os.path.join(embeds_dir, f))]
+        print(files)
         return {"required": {"embeds": [sorted(files), ]}, }
 
     RETURN_TYPES = ("EMBEDS", )
@@ -1126,9 +1130,12 @@ class IPAdapterLoadEmbeds:
     CATEGORY = "ipadapter"
 
     def load(self, embeds):
-        path = folder_paths.get_annotated_filepath(embeds)
+        embeds_dir = os.path.join(folder_paths.get_output_directory(), "embeds")
+        path = os.path.join(embeds_dir, embeds)  # Concatenate embeds_dir with embeds
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"File {path} does not exist.")
+        
         output = torch.load(path).cpu()
-
         return (output, )
 
 
