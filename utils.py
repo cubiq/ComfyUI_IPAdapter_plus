@@ -5,7 +5,10 @@ import folder_paths
 from comfy.clip_vision import clip_preprocess, Output
 import comfy.utils
 import comfy.model_management as model_management
-import torchvision.transforms.v2 as T
+try:
+    import torchvision.transforms.v2 as T
+except ImportError:
+    import torchvision.transforms as T
 
 def get_clipvision_file(preset):
     preset = preset.lower()
