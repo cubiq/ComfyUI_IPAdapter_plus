@@ -1,8 +1,4 @@
-# modified from https://github.com/mlfoundations/open_flamingo/blob/main/open_flamingo/src/helpers.py
-# and https://github.com/lucidrains/imagen-pytorch/blob/main/imagen_pytorch/imagen_pytorch.py
-
 import math
-
 import torch
 import torch.nn as nn
 from einops import rearrange
@@ -156,3 +152,124 @@ def masked_mean(t, *, dim, mask=None):
     masked_t = t.masked_fill(~mask, 0.0)
 
     return masked_t.sum(dim=dim) / denom.clamp(min=1e-5)
+
+
+class FacePerceiverResampler(nn.Module):
+    def __init__(
+        self,
+        *,
+        dim=768,
+        depth=4,
+        dim_head=64,
+        heads=16,
+        embedding_dim=1280,
+        output_dim=768,
+        ff_mult=4,
+    ):
+        super().__init__()
+
+        self.proj_in = nn.Linear(embedding_dim, dim)
+        self.proj_out = nn.Linear(dim, output_dim)
+        self.norm_out = nn.LayerNorm(output_dim)
+        self.layers = nn.ModuleList([])
+        for _ in range(depth):
+            self.layers.append(
+                nn.ModuleList(
+                    [
+                        PerceiverAttention(dim=dim, dim_head=dim_head, heads=heads),
+                        FeedForward(dim=dim, mult=ff_mult),
+                    ]
+                )
+            )
+
+    def forward(self, latents, x):
+        x = self.proj_in(x)
+        for attn, ff in self.layers:
+            latents = attn(x, latents) + latents
+            latents = ff(latents) + latents
+        latents = self.proj_out(latents)
+        return self.norm_out(latents)
+
+
+class MLPProjModel(nn.Module):
+    def __init__(self, cross_attention_dim=1024, clip_embeddings_dim=1024):
+        super().__init__()
+
+        self.proj = nn.Sequential(
+            nn.Linear(clip_embeddings_dim, clip_embeddings_dim),
+            nn.GELU(),
+            nn.Linear(clip_embeddings_dim, cross_attention_dim),
+            nn.LayerNorm(cross_attention_dim)
+        )
+
+    def forward(self, image_embeds):
+        clip_extra_context_tokens = self.proj(image_embeds)
+        return clip_extra_context_tokens
+
+class MLPProjModelFaceId(nn.Module):
+    def __init__(self, cross_attention_dim=768, id_embeddings_dim=512, num_tokens=4):
+        super().__init__()
+
+        self.cross_attention_dim = cross_attention_dim
+        self.num_tokens = num_tokens
+
+        self.proj = nn.Sequential(
+            nn.Linear(id_embeddings_dim, id_embeddings_dim*2),
+            nn.GELU(),
+            nn.Linear(id_embeddings_dim*2, cross_attention_dim*num_tokens),
+        )
+        self.norm = nn.LayerNorm(cross_attention_dim)
+
+    def forward(self, id_embeds):
+        x = self.proj(id_embeds)
+        x = x.reshape(-1, self.num_tokens, self.cross_attention_dim)
+        x = self.norm(x)
+        return x
+
+class ProjModelFaceIdPlus(nn.Module):
+    def __init__(self, cross_attention_dim=768, id_embeddings_dim=512, clip_embeddings_dim=1280, num_tokens=4):
+        super().__init__()
+
+        self.cross_attention_dim = cross_attention_dim
+        self.num_tokens = num_tokens
+
+        self.proj = nn.Sequential(
+            nn.Linear(id_embeddings_dim, id_embeddings_dim*2),
+            nn.GELU(),
+            nn.Linear(id_embeddings_dim*2, cross_attention_dim*num_tokens),
+        )
+        self.norm = nn.LayerNorm(cross_attention_dim)
+
+        self.perceiver_resampler = FacePerceiverResampler(
+            dim=cross_attention_dim,
+            depth=4,
+            dim_head=64,
+            heads=cross_attention_dim // 64,
+            embedding_dim=clip_embeddings_dim,
+            output_dim=cross_attention_dim,
+            ff_mult=4,
+        )
+
+    def forward(self, id_embeds, clip_embeds, scale=1.0, shortcut=False):
+        x = self.proj(id_embeds)
+        x = x.reshape(-1, self.num_tokens, self.cross_attention_dim)
+        x = self.norm(x)
+        out = self.perceiver_resampler(x, clip_embeds)
+        if shortcut:
+            out = x + scale * out
+        return out
+
+class ImageProjModel(nn.Module):
+    def __init__(self, cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4):
+        super().__init__()
+
+        self.cross_attention_dim = cross_attention_dim
+        self.clip_extra_context_tokens = clip_extra_context_tokens
+        self.proj = nn.Linear(clip_embeddings_dim, self.clip_extra_context_tokens * cross_attention_dim)
+        self.norm = nn.LayerNorm(cross_attention_dim)
+
+    def forward(self, image_embeds):
+        embeds = image_embeds
+        x = self.proj(embeds).reshape(-1, self.clip_extra_context_tokens, self.cross_attention_dim)
+        x = self.norm(x)
+        return x
