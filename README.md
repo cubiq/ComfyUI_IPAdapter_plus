@@ -11,7 +11,7 @@ I'm an open source advocate and I'm happy to share all my code for free but main
 
 **I'm not expecting donations but if you are making a profit from my projects it is only fair that you give something back.** I'm talking especially to companies here, I know the struggles of being a freelancer.
 
-Please contact me if you are interested in a sponsorship at _matt3o@gmail_ or consider a contribution via [PayPal](paypal.me/matt3o) (Matteo "matt3o" Spinelli, Firenze, IT). That will help mainining the code, adding new features and working on better documentation.
+Please contact me if you are interested in a sponsorship at _matt3o@gmail_ or consider a contribution via [PayPal](https://www.paypal.com/paypalme/matt3o) (Matteo "matt3o" Spinelli, Firenze, IT). That will help mainining the code, adding new features and working on better documentation.
 
 And in that regard I really need to thank [Nathan Shipley](https://www.nathanshipley.com/) for his generous donation. Go check his website, he's terribly talented.
 
