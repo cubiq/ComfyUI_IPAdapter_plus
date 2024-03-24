@@ -715,9 +715,7 @@ class IPAdapterTiled:
         overlap_x = max(0, (tiles_x * tile_size - ow) / (tiles_x - 1 if tiles_x > 1 else 1))
         overlap_y = max(0, (tiles_y * tile_size - oh) / (tiles_y - 1 if tiles_y > 1 else 1))
 
-        base_mask = None
-        if attn_mask is None:
-            base_mask = torch.zeros([1, oh, ow], dtype=image.dtype, device=image.device)
+        base_mask = torch.zeros([1, oh, ow], dtype=image.dtype, device=image.device)
 
         # extract all the tiles from the image and create the masks
         tiles = []
@@ -727,10 +725,10 @@ class IPAdapterTiled:
                 start_x = int(x * (tile_size - overlap_x))
                 start_y = int(y * (tile_size - overlap_y))
                 tiles.append(image[:, start_y:start_y+tile_size, start_x:start_x+tile_size, :])
+                mask = base_mask.clone()
                 if attn_mask is not None:
-                    mask = attn_mask[:, start_y:start_y+tile_size, start_x:start_x+tile_size]
+                    mask[:, start_y:start_y+tile_size, start_x:start_x+tile_size] = attn_mask[:, start_y:start_y+tile_size, start_x:start_x+tile_size]
                 else:
-                    mask = base_mask.clone()
                     mask[:, start_y:start_y+tile_size, start_x:start_x+tile_size] = 1
                 masks.append(mask)
         del mask
