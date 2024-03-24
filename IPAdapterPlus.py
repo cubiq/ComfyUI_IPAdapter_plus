@@ -10,7 +10,10 @@ import comfy.utils
 
 import torch.nn as nn
 from PIL import Image
-import torchvision.transforms.v2 as T
+try:
+    import torchvision.transforms.v2 as T
+except ImportError:
+    import torchvision.transforms as T
 
 from .image_proj_models import MLPProjModel, MLPProjModelFaceId, ProjModelFaceIdPlus, Resampler, ImageProjModel
 from .CrossAttentionPatch import CrossAttentionPatch
