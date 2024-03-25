@@ -6,7 +6,7 @@ from .utils import tensor_to_size
 
 class CrossAttentionPatch:
     # forward for patching
-    def __init__(self, ipadapter=None, number=0, weight=1.0, cond=None, uncond=None, weight_type="linear", mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False):
+    def __init__(self, ipadapter=None, number=0, weight=1.0, cond=None, uncond=None, weight_type="linear", mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False, embeds_scaling='V only'):
         self.weights = [weight]
         self.ipadapters = [ipadapter]
         self.conds = [cond]
@@ -16,13 +16,14 @@ class CrossAttentionPatch:
         self.sigma_starts = [sigma_start]
         self.sigma_ends = [sigma_end]
         self.unfold_batch = [unfold_batch]
+        self.embeds_scaling = [embeds_scaling]
         self.number = number
         self.layers = 10 if '101_to_k_ip' in ipadapter.ip_layers.to_kvs else 15
 
         self.k_key = str(self.number*2+1) + "_to_k_ip"
         self.v_key = str(self.number*2+1) + "_to_v_ip"
 
-    def set_new_condition(self, ipadapter=None, number=0, weight=1.0, cond=None, uncond=None, weight_type="linear", mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False):
+    def set_new_condition(self, ipadapter=None, number=0, weight=1.0, cond=None, uncond=None, weight_type="linear", mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False, embeds_scaling='V only'):
         self.weights.append(weight)
         self.ipadapters.append(ipadapter)
         self.conds.append(cond)
@@ -32,6 +33,7 @@ class CrossAttentionPatch:
         self.sigma_starts.append(sigma_start)
         self.sigma_ends.append(sigma_end)
         self.unfold_batch.append(unfold_batch)
+        self.embeds_scaling.append(embeds_scaling)
 
     def __call__(self, q, k, v, extra_options):
         dtype = q.dtype
@@ -50,7 +52,7 @@ class CrossAttentionPatch:
         out = optimized_attention(q, k, v, extra_options["n_heads"])
         _, _, oh, ow = extra_options["original_shape"]
 
-        for weight, cond, uncond, ipadapter, mask, weight_type, sigma_start, sigma_end, unfold_batch in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks, self.weight_types, self.sigma_starts, self.sigma_ends, self.unfold_batch):
+        for weight, cond, uncond, ipadapter, mask, weight_type, sigma_start, sigma_end, unfold_batch, embeds_scaling in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks, self.weight_types, self.sigma_starts, self.sigma_ends, self.unfold_batch, self.embeds_scaling):
             if sigma <= sigma_start and sigma >= sigma_end:
                 if unfold_batch and cond.shape[0] > 1:
                     # Check AnimateDiff context window
@@ -79,11 +81,6 @@ class CrossAttentionPatch:
                     v_cond = ipadapter.ip_layers.to_kvs[self.v_key](cond).repeat(batch_prompt, 1, 1)
                     v_uncond = ipadapter.ip_layers.to_kvs[self.v_key](uncond).repeat(batch_prompt, 1, 1)
 
-                ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0)
-                ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0)
-
-                out_ip = optimized_attention(q, ip_k, ip_v, extra_options["n_heads"])
-
                 if weight_type == 'ease in':
                     weight = weight * (0.05 + 0.95 * (1 - t_idx / self.layers))
                 elif weight_type == 'ease out':
@@ -100,6 +97,32 @@ class CrossAttentionPatch:
                     weight = weight * 0.2
                 elif weight_type == 'strong middle' and (block_type == 'input' or block_type == 'output'):
                     weight = weight * 0.2
+
+                ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0)
+                ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0)
+                
+                if embeds_scaling == 'K+mean(V) w/ C penalty':
+                    scaling = float(ip_k.shape[2]) / 1280.0
+                    weight = weight * scaling
+                    ip_k = ip_k * weight
+                    ip_v_mean = torch.mean(ip_v, dim=1, keepdim=True)
+                    ip_v = (ip_v - ip_v_mean) + ip_v_mean * weight
+                    out_ip = optimized_attention(q, ip_k, ip_v, extra_options["n_heads"])
+                    del ip_v_mean
+                elif embeds_scaling == 'K+V w/ C penalty':
+                    scaling = float(ip_k.shape[2]) / 1280.0
+                    weight = weight * scaling
+                    ip_k = ip_k * weight
+                    ip_v = ip_v * weight
+                    out_ip = optimized_attention(q, ip_k, ip_v, extra_options["n_heads"])
+                elif embeds_scaling == 'K+V':
+                    ip_k = ip_k * weight
+                    ip_v = ip_v * weight
+                    out_ip = optimized_attention(q, ip_k, ip_v, extra_options["n_heads"])
+                else:
+                    #ip_v = ip_v * weight
+                    out_ip = optimized_attention(q, ip_k, ip_v, extra_options["n_heads"])
+                    out_ip = out_ip * weight # I'm doing this to get the same results as before
 
                 if mask is not None:
                     mask_h = oh / math.sqrt(oh * ow / seq_len)
@@ -136,7 +159,6 @@ class CrossAttentionPatch:
 
                     out_ip = out_ip * mask
 
-                out_ip = out_ip * weight
                 out = out + out_ip
 
         return out.to(dtype=dtype)

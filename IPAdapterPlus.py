@@ -158,7 +158,8 @@ def ipadapter_execute(model,
                       attn_mask=None,
                       pos_embed=None,
                       neg_embed=None,
-                      unfold_batch=False,):
+                      unfold_batch=False,
+                      embeds_scaling='V only'):
     dtype = torch.float16 if model_management.should_use_fp16() else torch.bfloat16 if model_management.should_use_bf16() else torch.float32
     device = model_management.get_torch_device()
 
@@ -306,6 +307,7 @@ def ipadapter_execute(model,
         "sigma_start": sigma_start,
         "sigma_end": sigma_end,
         "unfold_batch": unfold_batch,
+        "embeds_scaling": embeds_scaling,
     }
 
     if not is_sdxl:
@@ -525,6 +527,7 @@ class IPAdapterAdvanced:
                 "combine_embeds": (["concat", "add", "subtract", "average", "norm average"],),
                 "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
             },
             "optional": {
                 "image_negative": ("IMAGE",),
@@ -537,7 +540,7 @@ class IPAdapterAdvanced:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, model, ipadapter, image, weight, weight_type, start_at, end_at, combine_embeds="concat", weight_faceidv2=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None):
+    def apply_ipadapter(self, model, ipadapter, image, weight, weight_type, start_at, end_at, combine_embeds="concat", weight_faceidv2=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None, embeds_scaling='V only'):
         ipa_args = {
             "image": image,
             "image_negative": image_negative,
@@ -549,6 +552,7 @@ class IPAdapterAdvanced:
             "end_at": end_at,
             "attn_mask": attn_mask,
             "unfold_batch": self.unfold_batch,
+            "embeds_scaling": embeds_scaling,
             "insightface": insightface if insightface is not None else ipadapter['insightface']['model'] if 'insightface' in ipadapter else None
         }
 
@@ -581,6 +585,7 @@ class IPAdapterBatch(IPAdapterAdvanced):
                 "weight_type": (WEIGHT_TYPES, ),
                 "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
             },
             "optional": {
                 "image_negative": ("IMAGE",),
@@ -603,6 +608,7 @@ class IPAdapterFaceID(IPAdapterAdvanced):
                 "combine_embeds": (["concat", "add", "subtract", "average", "norm average"],),
                 "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
             },
             "optional": {
                 "image_negative": ("IMAGE",),
@@ -633,6 +639,7 @@ class IPAdapterTiled:
                 "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "sharpening": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.05 }),
+                "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
             },
             "optional": {
                 "image_negative": ("IMAGE",),
@@ -646,7 +653,7 @@ class IPAdapterTiled:
     FUNCTION = "apply_tiled"
     CATEGORY = "ipadapter"
 
-    def apply_tiled(self, model, ipadapter, image, weight, weight_type, start_at, end_at, sharpening, combine_embeds="concat", image_negative=None, attn_mask=None, clip_vision=None):
+    def apply_tiled(self, model, ipadapter, image, weight, weight_type, start_at, end_at, sharpening, combine_embeds="concat", image_negative=None, attn_mask=None, clip_vision=None, embeds_scaling='V only'):
         # 1. Select the models
         if 'ipadapter' in ipadapter:
             ipadapter_model = ipadapter['ipadapter']['model']
@@ -746,6 +753,7 @@ class IPAdapterTiled:
                 "end_at": end_at,
                 "attn_mask": masks[i],
                 "unfold_batch": self.unfold_batch,
+                "embeds_scaling": embeds_scaling,
             }
             # apply the ipadapter to the model without cloning it
             model = ipadapter_execute(model, ipadapter_model, clip_vision, **ipa_args)
@@ -768,6 +776,7 @@ class IPAdapterTiledBatch(IPAdapterTiled):
                 "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "sharpening": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.05 }),
+                "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
             },
             "optional": {
                 "image_negative": ("IMAGE",),
@@ -788,6 +797,7 @@ class IPAdapterEmbeds:
                 "weight_type": (WEIGHT_TYPES, ),
                 "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
             },
             "optional": {
                 "neg_embed": ("EMBEDS",),
@@ -800,7 +810,7 @@ class IPAdapterEmbeds:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, model, ipadapter, pos_embed, weight, weight_type, start_at, end_at, neg_embed=None, attn_mask=None, clip_vision=None):
+    def apply_ipadapter(self, model, ipadapter, pos_embed, weight, weight_type, start_at, end_at, neg_embed=None, attn_mask=None, clip_vision=None, embeds_scaling='V only'):
         ipa_args = {
             "pos_embed": pos_embed,
             "neg_embed": neg_embed,
@@ -809,6 +819,7 @@ class IPAdapterEmbeds:
             "start_at": start_at,
             "end_at": end_at,
             "attn_mask": attn_mask,
+            "embeds_scaling": embeds_scaling,
         }
 
         if 'ipadapter' in ipadapter:
