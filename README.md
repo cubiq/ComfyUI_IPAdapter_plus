@@ -45,11 +45,13 @@ The [example directory](./examples/) has many workflows that cover all IPAdapter
 
 ## Video Tutorials
 
-The following are mostly outdated now but the overall concepts are still valid.
-
-<a href="https://youtu.be/7m9ZZFU3HWo" target="_blank">
- <img src="https://img.youtube.com/vi/7m9ZZFU3HWo/hqdefault.jpg" alt="Watch the video" />
+<a href="https://youtu.be/_JzDcgKgghY" target="_blank">
+ <img src="https://img.youtube.com/vi/_JzDcgKgghY/hqdefault.jpg" alt="Watch the video" />
 </a>
+
+**:star: [New IPAdapter features](https://youtu.be/_JzDcgKgghY)**
+
+The following videos are about the previous version of IPAdapter, but they still contain valuable information.
 
 **:nerd_face: [Basic usage video](https://youtu.be/7m9ZZFU3HWo)**
 
