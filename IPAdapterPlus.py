@@ -1026,14 +1026,15 @@ class PrepImageForClipVision:
         _, oh, ow, _ = image.shape
         output = image.permute([0,3,1,2])
 
-        if crop_position == "pad" and oh != ow:
-            if oh > ow:
-                pad = (oh - ow) // 2
-                pad = (pad, 0, pad, 0)
-            elif ow > oh:
-                pad = (ow - oh) // 2
-                pad = (0, pad, 0, pad)
-            output = T.functional.pad(output, pad, fill=0)
+        if crop_position == "pad":
+            if oh != ow:
+                if oh > ow:
+                    pad = (oh - ow) // 2
+                    pad = (pad, 0, pad, 0)
+                elif ow > oh:
+                    pad = (ow - oh) // 2
+                    pad = (0, pad, 0, pad)
+                output = T.functional.pad(output, pad, fill=0)
         else:
             crop_size = min(oh, ow)
             x = (ow-crop_size) // 2
