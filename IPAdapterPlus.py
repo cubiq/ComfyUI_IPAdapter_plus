@@ -346,6 +346,7 @@ class IPAdapterUnifiedLoader:
         self.lora = None
         self.clipvision = { "file": None, "model": None }
         self.ipadapter = { "file": None, "model": None }
+        self.insightface = { "provider": None, "model": None }
 
     @classmethod
     def INPUT_TYPES(s):
@@ -410,6 +411,7 @@ class IPAdapterUnifiedLoader:
 
             if lora_model is None:
                 lora_model = comfy.utils.load_torch_file(lora_file, safe_load=True)
+                self.lora = { 'file': lora_file, 'model': lora_model }
                 print(f"\033[33mINFO: LoRA model loaded from {lora_file}\033[0m")
 
             if lora_strength > 0:
@@ -417,12 +419,15 @@ class IPAdapterUnifiedLoader:
 
         # 4. Load the insightface model if needed
         if is_insightface:
-            if pipeline['insightface']['provider'] != provider:
-                pipeline['insightface']['provider'] = provider
-                pipeline['insightface']['model'] = insightface_loader(provider)
-                print(f"\033[33mINFO: InsightFace model loaded with {provider} provider\033[0m")
+            if provider != self.insightface['provider']:
+                if pipeline['insightface']['provider'] != provider:
+                    self.insightface['provider'] = provider
+                    self.insightface['model'] = insightface_loader(provider)
+                    print(f"\033[33mINFO: InsightFace model loaded with {provider} provider\033[0m")
+                else:
+                    self.insightface = pipeline['insightface']
 
-        return (model, { 'clipvision': self.clipvision, 'ipadapter': self.ipadapter, 'insightface': pipeline['insightface'] }, )
+        return (model, { 'clipvision': self.clipvision, 'ipadapter': self.ipadapter, 'insightface': self.insightface }, )
 
 class IPAdapterUnifiedLoaderFaceID(IPAdapterUnifiedLoader):
     @classmethod
