@@ -1026,7 +1026,7 @@ class PrepImageForClipVision:
         _, oh, ow, _ = image.shape
         output = image.permute([0,3,1,2])
 
-        if crop_position == "pad":
+        if crop_position == "pad" and oh != ow:
             if oh > ow:
                 pad = (oh - ow) // 2
                 pad = (pad, 0, pad, 0)
