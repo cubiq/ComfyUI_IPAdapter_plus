@@ -37,7 +37,7 @@ else:
     current_paths, _ = folder_paths.folder_names_and_paths["ipadapter"]
 folder_paths.folder_names_and_paths["ipadapter"] = (current_paths, folder_paths.supported_pt_extensions)
 
-WEIGHT_TYPES = ["linear", "ease in", "ease out", 'ease in-out', 'reverse in-out', 'weak input', 'weak output', 'weak middle', 'strong middle']
+WEIGHT_TYPES = ["linear", "ease in", "ease out", 'ease in-out', 'reverse in-out', 'weak input', 'weak output', 'weak middle', 'strong middle', 'style transfer (SDXL)']
 
 """
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -151,7 +151,7 @@ def ipadapter_execute(model,
                       image_negative=None,
                       weight=1.0,
                       weight_faceidv2=None,
-                      weight_type="original",
+                      weight_type="linear",
                       combine_embeds="concat",
                       start_at=0.0,
                       end_at=1.0,
@@ -168,15 +168,19 @@ def ipadapter_execute(model,
     is_faceid = is_portrait or "0.to_q_lora.down.weight" in ipadapter["ip_adapter"]
     is_plus = is_full or "latents" in ipadapter["image_proj"] or "perceiver_resampler.proj_in.weight" in ipadapter["image_proj"]
     is_faceidv2 = "faceidplusv2" in ipadapter
+    output_cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
+    is_sdxl = output_cross_attention_dim == 2048
 
-    if is_faceidv2:
-        weight_faceidv2 = weight_faceidv2 if weight_faceidv2 is not None else weight*2
+    if weight_type == "style transfer (SDXL)" and not is_sdxl:
+        weight_type = "linear"
+        print("\033[33mINFO: 'Style Transfer' weight type is only available for SDXL models, falling back to 'linear'.\033[0m")
 
     if is_faceid and not insightface:
         raise Exception("insightface model is required for FaceID models")
 
-    output_cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
-    is_sdxl = output_cross_attention_dim == 2048
+    if is_faceidv2:
+        weight_faceidv2 = weight_faceidv2 if weight_faceidv2 is not None else weight*2
+
     cross_attention_dim = 1280 if is_plus and is_sdxl and not is_faceid else output_cross_attention_dim
     clip_extra_context_tokens = 16 if (is_plus and not is_faceid) or is_portrait else 4
 
@@ -672,12 +676,12 @@ class IPAdapterTiled:
 
         del ipadapter
 
+        # 2. Extract the tiles
         tile_size = 256     # I'm using 256 instead of 224 as it is more likely divisible by the latent size, it will be downscaled to 224 by the clip vision encoder
         _, oh, ow, _ = image.shape
         if attn_mask is None:
             attn_mask = torch.ones([1, oh, ow], dtype=image.dtype, device=image.device)
 
-        # 2. Extract the tiles
         image = image.permute([0,3,1,2])
         attn_mask = attn_mask.unsqueeze(1)
         # the mask should have the same proportions as the reference image and the latent

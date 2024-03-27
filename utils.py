@@ -34,7 +34,7 @@ def get_ipadapter_file(preset, is_sdxl):
         if is_sdxl:
             raise Exception("light model is not supported for SDXL")
         pattern = 'sd15.light.v11\.(safetensors|bin)$'
-        # if light model v11 is not found, try to find the old version
+        # if light model v11 is not found, try with the old version
         if not [e for e in ipadapter_list if re.search(pattern, e, re.IGNORECASE)]:
             pattern = 'sd15.light\.(safetensors|bin)$'
     elif preset.startswith("standard"):
