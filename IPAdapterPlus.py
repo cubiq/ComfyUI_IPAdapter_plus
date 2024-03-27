@@ -1015,14 +1015,17 @@ class PrepImageForClipVision:
             "crop_position": (["top", "bottom", "left", "right", "center", "pad"],),
             "sharpening": ("FLOAT", {"default": 0.0, "min": 0, "max": 1, "step": 0.05}),
             },
+            "optional": {
+                "mask": ("MASK",),
+            }
         }
 
-    RETURN_TYPES = ("IMAGE",)
+    RETURN_TYPES = ("IMAGE", "MASK")
     FUNCTION = "prep_image"
 
     CATEGORY = "ipadapter"
 
-    def prep_image(self, image, interpolation="LANCZOS", crop_position="center", sharpening=0.0):
+    def prep_image(self, image, interpolation="LANCZOS", crop_position="center", sharpening=0.0, mask=None):
         size = (224, 224)
         _, oh, ow, _ = image.shape
         output = image.permute([0,3,1,2])
@@ -1036,6 +1039,8 @@ class PrepImageForClipVision:
                     pad = (ow - oh) // 2
                     pad = (0, pad, 0, pad)
                 output = T.functional.pad(output, pad, fill=0)
+                if mask is not None:
+                    mask = T.functional.pad(mask.unsqueeze(1), pad, fill=0).squeeze(1)
         else:
             crop_size = min(oh, ow)
             x = (ow-crop_size) // 2
@@ -1053,21 +1058,30 @@ class PrepImageForClipVision:
             y2 = y+crop_size
 
             output = output[:, :, y:y2, x:x2]
+            if mask is not None:
+                mask = mask[:, y:y2, x:x2]
 
         imgs = []
         for img in output:
             img = T.ToPILImage()(img) # using PIL for better results
             img = img.resize(size, resample=Image.Resampling[interpolation])
             imgs.append(T.ToTensor()(img))
-        output = torch.stack(imgs, dim=0)
+        output = torch.stack(imgs)
         del imgs, img
+
+        if mask is not None:
+            mask = T.Resize(size, interpolation=T.InterpolationMode.BICUBIC, antialias=True)(mask.unsqueeze(1)).squeeze(1)
 
         if sharpening > 0:
             output = contrast_adaptive_sharpening(output, sharpening)
 
         output = output.permute([0,2,3,1])
 
-        return (output, )
+        if mask is None:
+            mask = torch.ones((output.shape[0], *size), dtype=output.dtype, device=output.device)
+
+        return (output, mask)
+        
 
 class IPAdapterSaveEmbeds:
     def __init__(self):
