@@ -3,39 +3,44 @@
 
 IPAdapter implementation that follows the ComfyUI way of doing things. The code is memory efficient, fast, and shouldn't break with Comfy updates.
 
-# Open source for you but not free for me...
+# Sponsorship
 
-I started working on IPAdapter because I needed it for my work. As the project evolved I'm inevitably receiving feature requests, bug reports and support requests.
+If you like my work and wish to see updates and new features please consider sponsoring my projects.
 
-I'm an open source advocate and I'm happy to share all my code for free but maintaining the IPAdapter, the [Essentials](https://github.com/cubiq/ComfyUI_essentials), [InstantID](https://github.com/cubiq/ComfyUI_InstantID) and [Face Analysis](https://github.com/cubiq/ComfyUI_FaceAnalysis) takes time.
+- [ComfyUI IPAdapter Plus](https://github.com/cubiq/ComfyUI_IPAdapter_plus)
+- [ComfyUI InstantID (Native)](https://github.com/cubiq/ComfyUI_InstantID)
+- [ComgyUI Essentials]((https://github.com/cubiq/ComfyUI_essentials))
+- [ComfyUI FaceAnalysis](https://github.com/cubiq/Comfy_Dungeon)
+- [Comfy Dungeon](https://github.com/cubiq/Comfy_Dungeon)
 
-**I'm not expecting donations but if you are making a profit from my projects it is only fair that you give something back.** I'm talking especially to companies here, I know the struggles of being a freelancer.
+Not to mention the documentation and videos tutorials. Check my **ComfyUI Advanced Understanding** videos on YouTube for example.
 
-Please contact me if you are interested in a sponsorship at _matt3o@gmail_ or consider a contribution via [PayPal](https://paypal.me/matt3o) (Matteo "matt3o" Spinelli, Firenze, IT). That will help maintaining the code, adding new features and working on better documentation.
+- [ComfyUI Advanced Understanding part 1](https://www.youtube.com/watch?v=_C7kR2TFIX0)
+- [ComfyUI Advanced Understanding part 2](https://www.youtube.com/watch?v=ijqXnW_9gzc)
 
-And in that regard I really need to thank [Nathan Shipley](https://www.nathanshipley.com/) for his generous donation. Go check his website, he's terribly talented.
+I'm talking especially to companies here, **if you are making a profit out of Open Source code the only way to keep getting updates, bug fixes and documentation is by giving something back to those projects.**
 
-## :warning: IPAdapter V2: complete Code rewrite warning
+Please contact me if you are interested in a sponsorship at _matt3o@gmail_ or consider a contribution via [PayPal](https://paypal.me/matt3o) (Matteo "matt3o" Spinelli, Firenze, IT). For "donations" of $50+, add a comment if you'd like to be mentioned in this readme file.
 
-A code cleanup was long overdue and with the occasion I also added a few new important features. The code should be faster and should take less resources but with such an important code rewrite it's inevitable to have introduced some new bugs.
+# Current sponsors
 
-**At the moment I'm releasing this completely undocumented!** I will post better documentation and video tutorials in the coming days. In the meantime you can check the `example` directory for most of the old and new features.
+I really need to thank [Nathan Shipley](https://www.nathanshipley.com/) for his generous donation. Go check his website, he's terribly talented.
+
+## :warning: IPAdapter V2: complete Code rewrite warning :warning:
+
+The new code is not compatible with the previous version of IPAdapter. There is no `IPAdapter Apply` node anymore but the `IPAdapter Advanced` node is a drop in replacement. Delete the old node, add the new one and connect the pipelines as they were before. Everything should work.
+
+Check the `example` directory for most of the old and new features.
 
 ## Important updates
 
 **2024/03/23**: Complete code rewrite!. **This is a breaking update!** Your previous workflows won't work and you'll need to recreate them. You've been warned! After the update, refresh your browser, delete the old IPAdapter nodes and create the new ones.
 
-**2024/02/02**: Added experimental [tiled IPAdapter](#tiled-ipadapter). It lets you easily handle reference images that are not square. Can be useful for upscaling.
-
-**2024/01/19**: Support for FaceID Portrait models.
-
-**2024/01/16**: Notably increased quality of FaceID Plus/v2 models. Check the [comparison](https://github.com/cubiq/ComfyUI_IPAdapter_plus/issues/195) of all face models.
-
-*(previous updates removed for better readability)*
+*(I removed all previous updates because they were about the previous version of the extension)*
 
 ## What is it?
 
-The IPAdapter are very powerful models for image-to-image conditioning. Given one or more reference images you can do variations augmented by text prompt, controlnets and masks. Think of it as a 1-image lora.
+The IPAdapter are very powerful models for image-to-image conditioning. The subject or even just the style of the reference image can be applied to a generation. Think of it as a 1-image lora.
 
 ## Example workflow
 
@@ -63,61 +68,114 @@ The following videos are about the previous version of IPAdapter, but they still
 
 ## Installation
 
-Download or git clone this repository inside `ComfyUI/custom_nodes/` directory or use the Manager. Beware that the automatic update of the manager sometimes doesn't work and you may need to upgrade manually.
+Download or git clone this repository inside `ComfyUI/custom_nodes/` directory or use the Manager. IPAdapter always requires the latest version of ComfyUI. If something doesn't work be sure to upgrade. Beware that the automatic update of the manager sometimes doesn't work and you may need to upgrade manually.
 
-IPAdapter always requires the latest version of ComfyUI. If something doesn't work be sure to upgrade!
+There's now a *Unified Model Loader*, for it to work you need to name the files exactly as described below. The legacy loaders work with any file name but you have to select them manually. The models can be placed into sub-directories.
 
-There's now an *Unified Model Loader*, for it to work you need to name the files exactly how it is described below.
+Remember you can also use any custom location setting an `ipadapter` entry in the `extra_model_paths.yaml` file.
 
-The pre-trained models are available on [huggingface](https://huggingface.co/h94/IP-Adapter), download and place them in the `ComfyUI/models/ipadapter` directory (create it if not present). You can also use any custom location setting an `ipadapter` entry in the `extra_model_paths.yaml` file.
+- `/ComfyUI/models/clip_vision`
+    - [CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors), download and rename
+    - [CLIP-ViT-bigG-14-laion2B-39B-b160k.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/image_encoder/model.safetensors), download and rename
+- `/ComfyUI/models/ipadapter`, create it if not present
+    - [ip-adapter_sd15.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15.safetensors), Basic model, average strength
+    - [ip-adapter_sd15_light_v11.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15_light_v11.bin), Light impact model
+    - [ip-adapter-plus_sd15.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-plus_sd15.safetensors), Plus model, very strong
+    - [ip-adapter-plus-face_sd15.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-plus-face_sd15.safetensors), Face model, portraits
+    - [ip-adapter-full-face_sd15.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-full-face_sd15.safetensors), Stronger face model, not necessarily better
+    - [ip-adapter_sd15_vit-G.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15_vit-G.safetensors), Base model, **requires bigG clip vision encoder**
+    - [ip-adapter_sdxl_vit-h.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.safetensors), SDXL model
+    - [ip-adapter-plus_sdxl_vit-h.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors), SDXL plus model
+    - [ip-adapter-plus-face_sdxl_vit-h.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus-face_sdxl_vit-h.safetensors), SDXL face model
+    - [ip-adapter_sd15_light.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15_light.safetensors)
+    - [ip-adapter_sdxl.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl.safetensors), vit-G SDXL model, **requires bigG clip vision encoder**
+    - **Deprecated** [ip-adapter_sd15_light.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15_light_v11.bin), v1.0 Light impact model
 
-IPAdapter also needs the image encoders. You need the [CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors) and [CLIP-ViT-bigG-14-laion2B-39B-b160k.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/image_encoder/model.safetensors) image encoders, you may already have them. If you don't, download them but **be careful because the file name is the same for both!** Rename them and place them in the `ComfyUI/models/clip_vision/` directory.
+**FaceID** models require `insightface`, you need to install it in your ComfyUI environment. Check [this issue](https://github.com/cubiq/ComfyUI_IPAdapter_plus/issues/162) for help. Remember that most FaceID models also need a LoRA.
 
-The following table shows the combination of Checkpoint and Image encoder to use for each IPAdapter Model. Any Tensor size mismatch you may get it is likely caused by a wrong combination.
+For the Unified Loader to work the files need to be named exactly as shown in the table below.
 
-| SD v. | IPadapter | Img encoder | Notes |
-|---|---|---|---|
-| v1.5 | [ip-adapter_sd15](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15.safetensors) | ViT-H | Basic model, average strength |
-| v1.5 | [ip-adapter_sd15_light](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15_light.safetensors) | ViT-H | Light model, very light impact |
-| v1.5 | [ip-adapter_sd15_light_v11](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15_light_v11.bin) | ViT-H | Updated light model |
-| v1.5 | [ip-adapter-plus_sd15](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-plus_sd15.safetensors) | ViT-H | Plus model, very strong |
-| v1.5 | [ip-adapter-plus-face_sd15](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-plus-face_sd15.safetensors) | ViT-H | Face model, use only for faces |
-| v1.5 | [ip-adapter-full-face_sd15](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-full-face_sd15.safetensors) | ViT-H | Stronger face model, not necessarily better |
-| v1.5 | [ip-adapter_sd15_vit-G](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15_vit-G.safetensors) | ViT-bigG | Base model trained with a bigG encoder |
-| SDXL | [ip-adapter_sdxl](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl.safetensors) | ViT-bigG | Base SDXL model, mostly deprecated |
-| SDXL | [ip-adapter_sdxl_vit-h](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.safetensors) | ViT-H | New base SDXL model |
-| SDXL | [ip-adapter-plus_sdxl_vit-h](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors) | ViT-H | SDXL plus model, stronger |
-| SDXL | [ip-adapter-plus-face_sdxl_vit-h](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus-face_sdxl_vit-h.safetensors) | ViT-H | SDXL face model |
+- `/ComfyUI/models/ipadapter`
+    - [ip-adapter-faceid_sd15.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sd15.bin), base FaceID model
+    - [ip-adapter-faceid-plusv2_sd15.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sd15.bin), FaceID plus v2
+    - [ip-adapter-faceid-portrait-v11_sd15.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait-v11_sd15.bin), text prompt style transfer
+    - [ip-adapter-faceid_sdxl.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sdxl.bin), SDXL base FaceID
+    - [ip-adapter-faceid-plusv2_sdxl.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sdxl.bin), SDXL plus v2
+    - [ip-adapter-faceid-portrait_sdxl.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait_sdxl.bin), SDXL text prompt style transfer
+    - **Deprecated** [ip-adapter-faceid-plus_sd15.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plus_sd15.bin), FaceID plus v1 
+    - **Deprecated** [ip-adapter-faceid-portrait_sd15.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait-v11_sd15.bin), v1 of the portrait model
 
-**FaceID** requires `insightface`, you need to install them in your ComfyUI environment. Check [this issue](https://github.com/cubiq/ComfyUI_IPAdapter_plus/issues/162) for help.
+Most FaceID models require a LoRA. If you use the `IPAdapter Unified Loader FaceID` it will be loaded automatically if you follow the naming convention. Otherwise you have to load them manually, be careful each FaceID model has to be paired with its own specific LoRA.
 
-When the dependencies are satisfied you need:
+- `/ComfyUI/models/loras`
+    - [ip-adapter-faceid_sd15_lora.safetensors](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sd15_lora.safetensors)
+    - [ip-adapter-faceid-plusv2_sd15_lora.safetensors](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sd15_lora.safetensors)
+    - [ip-adapter-faceid_sdxl_lora.safetensors](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sdxl_lora.safetensors), SDXL FaceID LoRA
+    - [ip-adapter-faceid-plusv2_sdxl_lora.safetensors](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sdxl_lora.safetensors), SDXL plus v2 LoRA
+    - **Deprecated** [ip-adapter-faceid-plus_sd15_lora.safetensors](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plus_sd15_lora.safetensors), LoRA for the deprecated FaceID plus v1 model
 
-| SD v. | IPadapter | Img encoder | Lora |
-|---|---|---|---|
-| v1.5 | [FaceID](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sd15.bin) | (not used¹) | [FaceID Lora](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sd15_lora.safetensors) |
-| v1.5 | [FaceID Plus](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plus_sd15.bin) | ViT-H | [FaceID Plus Lora](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plus_sd15_lora.safetensors) |
-| v1.5 | [FaceID Plus v2](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sd15.bin) | ViT-H | [FaceID Plus v2 Lora](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sd15_lora.safetensors) |
-| v1.5 | [FaceID Portrait](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait_sd15.bin) | (not used¹)| not needed |
-| SDXL | [FaceID](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sdxl.bin) | (not used¹) | [FaceID SDXL Lora](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sdxl_lora.safetensors) |
-| SDXL | [FaceID Plus v2](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sdxl.bin) | ViT-H | [FaceID SDXL Lora](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sdxl_lora.safetensors) |
-
-
-¹ The base FaceID model doesn't make use of a CLIP vision encoder. Remember to pair any FaceID model together with any other Face model to make it more effective.
-
-The loras need to be placed into `ComfyUI/models/loras/` directory.
+All models can be found on [huggingface](https://huggingface.co/h94).
 
 ## Generic suggestions
 
-There's a basic workflow included in this repo and a few examples in the [examples](./examples/) directory. Usually it's a good idea to lower the `weight` to at least `0.8` and increase the steps a little.
+There are many workflows included in the [examples](./examples/) directory. Please check them before asking for support.
 
-## Documentation soon to come...
+Usually it's a good idea to lower the `weight` to at least `0.8` and increase the number steps. To increase adherece to the prompt you may try to change the **weight type** in the `IPAdapter Advanced` node.
 
-Working on it!
+## Nodes reference
+
+Below I'm trying to document all the nodes. It's still very incomplete, be sure to check back later.
+
+### :knot: IPAdapter Unified Loader
+
+Loads the full stack of models needed for IPAdapter to function. The returned object will contain information regarding the **ipadapter** and **clip vision models**.
+
+Multiple unified loaders should always be daisy chained through the `ipadapter` in/out. **Failing to do so will cause all models to be loaded twice.** For **the first** unified loader the `ipadapter` input **should never be connected**.
+
+#### Inputs
+- **model**, main ComfyUI model pipeline
+
+#### Optional Inputs
+- **ipadapter**, it's important to note that this is optional and used exclusively to daisy chain unified loaders. **The `ipadapter` input is never connected in the first `IPAdapter Unified Loader` of the chain.**
+
+#### Outputs
+- **model**, the model pipeline is used exclusively for configuration, the model comes out of this node untouched and it can be considered a reroute. Note that this is different  from the Unified Loader FaceID that actually alters the model with a LoRA.
+- **ipadapter**, connect this to any ipadater node. Each node will automatically detect if the `ipadapter` object contains the full stack of models or just one (like in the case [IPAdapter Model Loader](#ipadapter-model-loader)).
+
+### :knot: IPAdapter Model Loader
+
+Loads the IPAdapter model only. The returned object will be the IPAdapter model contrary to the [Unified loader](#ipadapter-unified-loader) that contains the full stack of models.
+
+#### Configuration parameters
+- **ipadapter_file**, the main IPAdapter model. It must be located into `ComfyUI/models/ipadapter` or in any path specified in the `extra_model_paths.yaml` configuration file.
+
+#### Outputs
+- **IPADAPTER**, contains the loaded model only. Note that `IPADAPTER` will have a different structure when loaded by the [Unified Loader](#ipadapter-unified-loader).
+
+### :knot: IPAdapter Advanced
+
+This node contains all the options to fine tune the IPAdapter models. It is a drop in replacement for the old `IPAdapter Apply` that is no longer available. If you have an old workflow, delete the existing `IPadapter Apply` node, add `IPAdapter Advanced` and connect all the pipes as before.
+
+#### Inputs
+- **model**, main model pipeline.
+- **ipadapter**, the IPAdapter model. It can be connected to the [IPAdapter Model Loader](#ipadapter-model-loader) or any of the Unified Loaders. If a Unified loader is used anywhere in the workflow and you don't need a different model, it's always adviced to reuse the previous `ipadapter` pipeline.
+- **image**, the reference image used to generate the positive conditioning. It should be a square image, other aspect ratios are automatically cropped in the center.
+
+#### Optional inputs
+- **image_negative**, image used to generate the negative conditioning. This is optional and normally handled by the code. It is possible to send noise or actually any image to instruct the model about what we don't want to see in the composition.
+- **attn_mask**, a mask that will be applied during the image generation. **The mask should have the same size or at least the same aspect ratio of the latent**. The mask will define the area of influence of the IPAdapter models on the final image. Black zones won't be affected, white zones will get maximum influence. It can be a grayscale mask.
+- **clip_vision**, this is optional if using any of the Unified loaders. If using the [IPAdapter Model Loader](#knot-ipadapter-model-loader) you also have to provide the clip vision model with a `Load CLIP Vision` node.
+
+#### Configuration parameters
+- **weight**, weight of the IPAdapter model. For `linear` `weight_type` (the default), a good starting point is 0.8. If you use other weight types you can experiment with higher values.
+- **weight_type**, this is how the IPAdapter is applied to the UNet block. For example `ease-in` means that the input blocks have higher weight than the output ones. `week input` means that the whole input block has lower weight. `style transfer (SDXL)` only works with SDXL and it's a very powerful tool to tranfer only the style of an image but not its content. This parameter hugely impacts how the composition reacts to the text prompting.
+- **combine_embeds**, when sending more than one reference image the embeddings can be sent one after the other (`concat`) or combined in various ways. For low spec GPUs it is adviced to `average` the embeds if you send multiple images. `subtract` subtracts the embeddings of the second image to the first; in case of 3 or more images they are averaged and subtracted to the first.
+- **start_at/end_at**, this is the timestepping. Defines at what percentage point of the generation to start applying the IPAdapter model. The initial steps are the most important so if you start later (eg: `start_at=0.3`) the generated image will have a very light conditioning.
+- **embeds_scaling**, the way the IPAdapter models are applied to the K,V. This parameter has a small impact on how the model reacts to text prompting. `K+mean(V) w/ C penalty` grants good quality at high weights (>1.0) without burning the image.
 
 ## Troubleshooting
 
-Please check the [troubleshooting](https://github.com/cubiq/ComfyUI_IPAdapter_plus/issues/108) before posting a new issue. Alse remember to check the previous closed issues.
+Please check the [troubleshooting](https://github.com/cubiq/ComfyUI_IPAdapter_plus/issues/108) before posting a new issue. Also remember to check the previous closed issues.
 
 ## Credits
 

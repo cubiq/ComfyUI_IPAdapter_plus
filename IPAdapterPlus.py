@@ -287,13 +287,13 @@ def ipadapter_execute(model,
 
     if is_faceid and is_plus:
         cond = ipa.get_image_embeds_faceid_plus(face_cond_embeds, img_cond_embeds, weight_faceidv2, is_faceidv2)
-        # TODO: check if noise helps with the uncod face embeds
-        uncod = ipa.get_image_embeds_faceid_plus(torch.zeros_like(face_cond_embeds), img_uncond_embeds, weight_faceidv2, is_faceidv2)
+        # TODO: check if noise helps with the uncond face embeds
+        uncond = ipa.get_image_embeds_faceid_plus(torch.zeros_like(face_cond_embeds), img_uncond_embeds, weight_faceidv2, is_faceidv2)
     else:
-        cond, uncod = ipa.get_image_embeds(img_cond_embeds, img_uncond_embeds)
+        cond, uncond = ipa.get_image_embeds(img_cond_embeds, img_uncond_embeds)
 
     cond = cond.to(device, dtype=dtype)
-    uncod = uncod.to(device, dtype=dtype)
+    uncond = uncond.to(device, dtype=dtype)
 
     del img_cond_embeds, img_uncond_embeds
 
@@ -305,7 +305,7 @@ def ipadapter_execute(model,
         "number": 0,
         "weight": weight,
         "cond": cond,
-        "uncond": uncod,
+        "uncond": uncond,
         "weight_type": weight_type,
         "mask": attn_mask,
         "sigma_start": sigma_start,
