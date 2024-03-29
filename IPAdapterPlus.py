@@ -172,8 +172,9 @@ def ipadapter_execute(model,
     is_sdxl = output_cross_attention_dim == 2048
 
     if weight_type == "style transfer (SDXL)" and not is_sdxl:
-        weight_type = "linear"
-        print("\033[33mINFO: 'Style Transfer' weight type is only available for SDXL models, falling back to 'linear'.\033[0m")
+        raise Exception("Style Transfer weight type is only available for SDXL models")
+        #weight_type = "linear"
+        #print("\033[33mINFO: 'Style Transfer' weight type is only available for SDXL models, falling back to 'linear'.\033[0m")
 
     if is_faceid and not insightface:
         raise Exception("insightface model is required for FaceID models")
@@ -493,6 +494,7 @@ class IPAdapterSimple:
                 "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.05 }),
                 "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "weight_type": (['standard', 'prompt is more important', 'style transfer (SDXL only)'], ),
             },
             "optional": {
                 "attn_mask": ("MASK",),
@@ -503,13 +505,21 @@ class IPAdapterSimple:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, model, ipadapter, image, weight, start_at, end_at, attn_mask=None):
+    def apply_ipadapter(self, model, ipadapter, image, weight, start_at, end_at, weight_type, attn_mask=None):
+        if weight_type == "style transfer (SDXL only)":
+            weight_type = "style transfer (SDXL)"
+        elif weight_type == "prompt is more important":
+            weight_type = "ease out"
+        else:
+            weight_type = "linear"
+
         ipa_args = {
             "image": image,
             "weight": weight,
             "start_at": start_at,
             "end_at": end_at,
             "attn_mask": attn_mask,
+            "weight_type": weight_type,
             "insightface": ipadapter['insightface']['model'] if 'insightface' in ipadapter else None,
         }
 
