@@ -5,6 +5,12 @@ IPAdapter implementation that follows the ComfyUI way of doing things. The code 
 
 # Sponsorship
 
+<div align="center">
+
+**[:heart: Github Sponsor](https://github.com/sponsors/cubiq) | [:coin: Paypal](https://paypal.me/matt3o)**
+
+</div>
+
 If you like my work and wish to see updates and new features please consider sponsoring my projects.
 
 - [ComfyUI IPAdapter Plus](https://github.com/cubiq/ComfyUI_IPAdapter_plus)
@@ -20,7 +26,7 @@ Not to mention the documentation and videos tutorials. Check my **ComfyUI Advanc
 
 I'm talking especially to companies here, **if you are making a profit out of Open Source code the only way to keep getting updates, bug fixes and documentation is by giving something back to those projects.**
 
-Please contact me if you are interested in a sponsorship at _matt3o@gmail_ or consider a contribution via [PayPal](https://paypal.me/matt3o) (Matteo "matt3o" Spinelli, Firenze, IT). For "donations" of $50+, add a comment if you'd like to be mentioned in this readme file.
+Please contact me if you are interested in a sponsorship at _matt3o@gmail_ or consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [PayPal](https://paypal.me/matt3o) (Matteo "matt3o" Spinelli). For *sponsorships* of $50+, let me know if you'd like to be mentioned in this readme file.
 
 # Current sponsors
 
