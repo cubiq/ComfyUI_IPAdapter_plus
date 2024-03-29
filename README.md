@@ -9,7 +9,7 @@ If you like my work and wish to see updates and new features please consider spo
 
 - [ComfyUI IPAdapter Plus](https://github.com/cubiq/ComfyUI_IPAdapter_plus)
 - [ComfyUI InstantID (Native)](https://github.com/cubiq/ComfyUI_InstantID)
-- [ComgyUI Essentials](https://github.com/cubiq/ComfyUI_essentials)
+- [ComfyUI Essentials](https://github.com/cubiq/ComfyUI_essentials)
 - [ComfyUI FaceAnalysis](https://github.com/cubiq/Comfy_Dungeon)
 - [Comfy Dungeon](https://github.com/cubiq/Comfy_Dungeon)
 
