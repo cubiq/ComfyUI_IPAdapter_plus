@@ -9,7 +9,7 @@ If you like my work and wish to see updates and new features please consider spo
 
 - [ComfyUI IPAdapter Plus](https://github.com/cubiq/ComfyUI_IPAdapter_plus)
 - [ComfyUI InstantID (Native)](https://github.com/cubiq/ComfyUI_InstantID)
-- [ComgyUI Essentials](https://github.com/cubiq/ComfyUI_essentials)
+- [ComfyUI Essentials](https://github.com/cubiq/ComfyUI_essentials)
 - [ComfyUI FaceAnalysis](https://github.com/cubiq/Comfy_Dungeon)
 - [Comfy Dungeon](https://github.com/cubiq/Comfy_Dungeon)
 
@@ -58,13 +58,7 @@ The [example directory](./examples/) has many workflows that cover all IPAdapter
 
 The following videos are about the previous version of IPAdapter, but they still contain valuable information.
 
-**:nerd_face: [Basic usage video](https://youtu.be/7m9ZZFU3HWo)**
-
-**:rocket: [Advanced features video](https://www.youtube.com/watch?v=mJQ62ly7jrg)**
-
-**:japanese_goblin: [Attention Masking video](https://www.youtube.com/watch?v=vqG1VXKteQg)**
-
-**:movie_camera: [Animation Features video](https://www.youtube.com/watch?v=ddYbhv3WgWw)**
+**:nerd_face: [Basic usage video](https://youtu.be/7m9ZZFU3HWo)**, **:rocket: [Advanced features video](https://www.youtube.com/watch?v=mJQ62ly7jrg)**, **:japanese_goblin: [Attention Masking video](https://www.youtube.com/watch?v=vqG1VXKteQg)**, **:movie_camera: [Animation Features video](https://www.youtube.com/watch?v=ddYbhv3WgWw)**
 
 ## Installation
 
@@ -87,9 +81,8 @@ Remember you can also use any custom location setting an `ipadapter` entry in th
     - [ip-adapter_sdxl_vit-h.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.safetensors), SDXL model
     - [ip-adapter-plus_sdxl_vit-h.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors), SDXL plus model
     - [ip-adapter-plus-face_sdxl_vit-h.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus-face_sdxl_vit-h.safetensors), SDXL face model
-    - [ip-adapter_sd15_light.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15_light.safetensors)
     - [ip-adapter_sdxl.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl.safetensors), vit-G SDXL model, **requires bigG clip vision encoder**
-    - **Deprecated** [ip-adapter_sd15_light.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15_light_v11.bin), v1.0 Light impact model
+    - **Deprecated** [ip-adapter_sd15_light.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15_light.safetensors), v1.0 Light impact model
 
 **FaceID** models require `insightface`, you need to install it in your ComfyUI environment. Check [this issue](https://github.com/cubiq/ComfyUI_IPAdapter_plus/issues/162) for help. Remember that most FaceID models also need a LoRA.
 
@@ -98,7 +91,7 @@ For the Unified Loader to work the files need to be named exactly as shown in th
 - `/ComfyUI/models/ipadapter`
     - [ip-adapter-faceid_sd15.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sd15.bin), base FaceID model
     - [ip-adapter-faceid-plusv2_sd15.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sd15.bin), FaceID plus v2
-    - [ip-adapter-faceid-portrait-v11_sd15.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait-v11_sd15.bin), text prompt style transfer
+    - [ip-adapter-faceid-portrait-v11_sd15.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait-v11_sd15.bin), text prompt style transfer for portraits
     - [ip-adapter-faceid_sdxl.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sdxl.bin), SDXL base FaceID
     - [ip-adapter-faceid-plusv2_sdxl.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sdxl.bin), SDXL plus v2
     - [ip-adapter-faceid-portrait_sdxl.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait_sdxl.bin), SDXL text prompt style transfer
