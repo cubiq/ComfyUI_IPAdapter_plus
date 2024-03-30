@@ -115,6 +115,14 @@ Most FaceID models require a LoRA. If you use the `IPAdapter Unified Loader Face
 
 All models can be found on [huggingface](https://huggingface.co/h94).
 
+### Community's models
+
+The community has backed some interesting IPAdapter models, if you know of other IPAdapter models please let me know.
+
+- `/ComfyUI/models/ipadapter`
+    - [ip_plus_composition_sd15.safetensors](https://huggingface.co/ostris/ip-composition-adapter/resolve/main/ip_plus_composition_sd15.safetensors), general composition ignoring style and content, more about it [here](https://huggingface.co/ostris/ip-composition-adapter)
+    - [ip_plus_composition_sdxl.safetensors](https://huggingface.co/ostris/ip-composition-adapter/resolve/main/ip_plus_composition_sdxl.safetensors), SDXL version
+
 ## Generic suggestions
 
 There are many workflows included in the [examples](./examples/) directory. Please check them before asking for support.

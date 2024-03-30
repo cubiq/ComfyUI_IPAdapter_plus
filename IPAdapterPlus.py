@@ -449,6 +449,17 @@ class IPAdapterUnifiedLoaderFaceID(IPAdapterUnifiedLoader):
 
     RETURN_NAMES = ("MODEL", "ipadapter", )
 
+class IPAdapterUnifiedLoaderCommunity(IPAdapterUnifiedLoader):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "model": ("MODEL", ),
+            "preset": (['Composition',], ),
+        },
+        "optional": {
+            "ipadapter": ("IPADAPTER", ),
+        }}
+
 class IPAdapterModelLoader:
     @classmethod
     def INPUT_TYPES(s):
@@ -1140,6 +1151,7 @@ NODE_CLASS_MAPPINGS = {
     "IPAdapterUnifiedLoaderFaceID": IPAdapterUnifiedLoaderFaceID,
     "IPAdapterModelLoader": IPAdapterModelLoader,
     "IPAdapterInsightFaceLoader": IPAdapterInsightFaceLoader,
+    "IPAdapterUnifiedLoaderCommunity": IPAdapterUnifiedLoaderCommunity,
 
     # Helpers
     "IPAdapterEncoder": IPAdapterEncoder,
@@ -1166,6 +1178,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterUnifiedLoaderFaceID": "IPAdapter Unified Loader FaceID",
     "IPAdapterModelLoader": "IPAdapter Model Loader",
     "IPAdapterInsightFaceLoader": "IPAdapter InsightFace Loader",
+    "IPAdapterUnifiedLoaderCommunity": "IPAdapter Unified Loader Community",
 
     # Helpers
     "IPAdapterEncoder": "IPAdapter Encoder",

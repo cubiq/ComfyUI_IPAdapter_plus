@@ -92,6 +92,12 @@ def get_ipadapter_file(preset, is_sdxl):
             pattern = 'faceid.plusv2.sd15\.(safetensors|bin)$'
             lora_pattern = 'faceid.plusv2.sd15.lora\.safetensors$'
         is_insightface = True
+    # Community's models
+    elif preset.startswith("composition"):
+        if is_sdxl:
+            pattern = 'plus.composition.sdxl\.safetensors$'
+        else:
+            pattern = 'plus.composition.sd15\.safetensors$'
     else:
         raise Exception(f"invalid type '{preset}'")
 
