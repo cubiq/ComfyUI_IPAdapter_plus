@@ -226,7 +226,7 @@ def ipadapter_execute(model,
             img_uncond_embeds = encode_image_masked(clipvision, image_negative).penultimate_hidden_states
         else:
             img_cond_embeds = img_cond_embeds.image_embeds if not is_faceid else face_cond_embeds
-            if image_negative is not None:
+            if image_negative is not None and not is_faceid:
                 img_uncond_embeds = encode_image_masked(clipvision, image_negative).image_embeds
             else:
                 img_uncond_embeds = torch.zeros_like(img_cond_embeds)
