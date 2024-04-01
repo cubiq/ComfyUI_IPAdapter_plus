@@ -16,7 +16,7 @@ If you like my work and wish to see updates and new features please consider spo
 - [ComfyUI IPAdapter Plus](https://github.com/cubiq/ComfyUI_IPAdapter_plus)
 - [ComfyUI InstantID (Native)](https://github.com/cubiq/ComfyUI_InstantID)
 - [ComfyUI Essentials](https://github.com/cubiq/ComfyUI_essentials)
-- [ComfyUI FaceAnalysis](https://github.com/cubiq/Comfy_Dungeon)
+- [ComfyUI FaceAnalysis](https://github.com/cubiq/ComfyUI_FaceAnalysis)
 - [Comfy Dungeon](https://github.com/cubiq/Comfy_Dungeon)
 
 Not to mention the documentation and videos tutorials. Check my **ComfyUI Advanced Understanding** videos on YouTube for example.
