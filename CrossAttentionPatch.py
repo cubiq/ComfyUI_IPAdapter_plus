@@ -54,6 +54,29 @@ class CrossAttentionPatch:
 
         for weight, cond, uncond, ipadapter, mask, weight_type, sigma_start, sigma_end, unfold_batch, embeds_scaling in zip(self.weights, self.conds, self.unconds, self.ipadapters, self.masks, self.weight_types, self.sigma_starts, self.sigma_ends, self.unfold_batch, self.embeds_scaling):
             if sigma <= sigma_start and sigma >= sigma_end:
+                if weight_type == 'ease in':
+                    weight = weight * (0.05 + 0.95 * (1 - t_idx / self.layers))
+                elif weight_type == 'ease out':
+                    weight = weight * (0.05 + 0.95 * (t_idx / self.layers))
+                elif weight_type == 'ease in-out':
+                    weight = weight * (0.05 + 0.95 * (1 - abs(t_idx - (self.layers/2)) / (self.layers/2)))
+                elif weight_type == 'reverse in-out':
+                    weight = weight * (0.05 + 0.95 * (abs(t_idx - (self.layers/2)) / (self.layers/2)))
+                elif weight_type == 'weak input' and block_type == 'input':
+                    weight = weight * 0.2
+                elif weight_type == 'weak middle' and block_type == 'middle':
+                    weight = weight * 0.2
+                elif weight_type == 'weak output' and block_type == 'output':
+                    weight = weight * 0.2
+                elif weight_type == 'strong middle' and (block_type == 'input' or block_type == 'output'):
+                    weight = weight * 0.2
+                elif weight_type.startswith('style transfer'):
+                    if t_idx != 6:
+                        continue
+                elif weight_type.startswith('composition'):
+                    if t_idx != 3:
+                        continue
+            
                 if unfold_batch and cond.shape[0] > 1:
                     # Check AnimateDiff context window
                     if ad_params is not None and ad_params["sub_idxs"] is not None:
@@ -80,26 +103,6 @@ class CrossAttentionPatch:
                     k_uncond = ipadapter.ip_layers.to_kvs[self.k_key](uncond).repeat(batch_prompt, 1, 1)
                     v_cond = ipadapter.ip_layers.to_kvs[self.v_key](cond).repeat(batch_prompt, 1, 1)
                     v_uncond = ipadapter.ip_layers.to_kvs[self.v_key](uncond).repeat(batch_prompt, 1, 1)
-
-                if weight_type == 'ease in':
-                    weight = weight * (0.05 + 0.95 * (1 - t_idx / self.layers))
-                elif weight_type == 'ease out':
-                    weight = weight * (0.05 + 0.95 * (t_idx / self.layers))
-                elif weight_type == 'ease in-out':
-                    weight = weight * (0.05 + 0.95 * (1 - abs(t_idx - (self.layers/2)) / (self.layers/2)))
-                elif weight_type == 'reverse in-out':
-                    weight = weight * (0.05 + 0.95 * (abs(t_idx - (self.layers/2)) / (self.layers/2)))
-                elif weight_type == 'weak input' and block_type == 'input':
-                    weight = weight * 0.2
-                elif weight_type == 'weak middle' and block_type == 'middle':
-                    weight = weight * 0.2
-                elif weight_type == 'weak output' and block_type == 'output':
-                    weight = weight * 0.2
-                elif weight_type == 'strong middle' and (block_type == 'input' or block_type == 'output'):
-                    weight = weight * 0.2
-                elif weight_type.startswith('style transfer'):
-                    if t_idx != 6:
-                        weight = 0.0
 
                 ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0)
                 ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0)
