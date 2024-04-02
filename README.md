@@ -1,7 +1,7 @@
 # ComfyUI IPAdapter plus
 [ComfyUI](https://github.com/comfyanonymous/ComfyUI) reference implementation for [IPAdapter](https://github.com/tencent-ailab/IP-Adapter/) models.
 
-IPAdapter implementation that follows the ComfyUI way of doing things. The code is memory efficient, fast, and shouldn't break with Comfy updates.
+The IPAdapter are very powerful models for image-to-image conditioning. The subject or even just the style of the reference image(s) can be easily transferred to a generation. Think of it as a 1-image lora.
 
 # Sponsorship
 
@@ -21,7 +21,7 @@ If you like my work and wish to see updates and new features please consider spo
 
 Not to mention the documentation and videos tutorials. Check my **ComfyUI Advanced Understanding** videos on YouTube for example, [part 1](https://www.youtube.com/watch?v=_C7kR2TFIX0) and [part 2](https://www.youtube.com/watch?v=ijqXnW_9gzc)
 
-The only way to keep the code open and free is by sponsoring the code development. The more sponsorships the more time I can dedicate to my open source projects.
+The only way to keep the code open and free is by sponsoring its development. The more sponsorships the more time I can dedicate to my open source projects.
 
 Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [PayPal donation](https://paypal.me/matt3o) (Matteo "matt3o" Spinelli). For sponsorships of $50+, let me know if you'd like to be mentioned in this readme file, you can find me on [Discord](https://latent.vision/discord) or _matt3o:snail:gmail.com_.
 
@@ -35,13 +35,9 @@ Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [Pa
 
 *(I removed all previous updates because they were about the previous version of the extension)*
 
-## What is it?
-
-The IPAdapter are very powerful models for image-to-image conditioning. The subject or even just the style of the reference image can be applied to a generation. Think of it as a 1-image lora.
-
 ## Example workflows
 
-The [example directory](./examples/) has many workflows that cover all IPAdapter functionalities.
+The [examples directory](./examples/) has many workflows that cover all IPAdapter functionalities.
 
 ![IPAdapter Example workflow](./examples/demo_workflow.jpg)
 
