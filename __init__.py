@@ -9,7 +9,7 @@
  ▒ ░░░         ░   ▒    ░ ░  ░   ░   ▒   ░░         ░         ░     ░░   ░
  ░                 ░  ░   ░          ░  ░                     ░  ░   ░
                         ░
-             ·-—+ IPAdapter Plus Extension for ComfyUI +—-· ·
+             · -—+ IPAdapter Plus Extension for ComfyUI +—- ·
              Brought to you by Matteo "Matt3o/Cubiq" Spinelli
              https://github.com/cubiq/ComfyUI_IPAdapter_plus/
 """

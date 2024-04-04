@@ -148,6 +148,7 @@ def ipadapter_execute(model,
                       clipvision,
                       insightface=None,
                       image=None,
+                      image_composition=None,
                       image_negative=None,
                       weight=1.0,
                       weight_faceidv2=None,
@@ -171,8 +172,8 @@ def ipadapter_execute(model,
     output_cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
     is_sdxl = output_cross_attention_dim == 2048
 
-    if '(SDXL)' in weight_type and not is_sdxl:
-        raise Exception("Style Transfer and Composition weight types are available for SDXL models only")
+    if ('(SDXL)' in weight_type or image_composition is not None) and not is_sdxl:
+        raise Exception("Style and Composition transfer are available for SDXL models only")
         #weight_type = "linear"
         #print("\033[33mINFO: 'Style Transfer' weight type is only available for SDXL models, falling back to 'linear'.\033[0m")
 
@@ -188,6 +189,7 @@ def ipadapter_execute(model,
     if image is not None and image.shape[1] != image.shape[2]:
         print("\033[33mINFO: the IPAdapter reference image is not a square, CLIPImageProcessor will resize and crop it at the center. If the main focus of the picture is not in the middle the result might not be what you are expecting.\033[0m")
 
+    img_comp_cond_embeds = None
     face_cond_embeds = None
     if is_faceid:
         if insightface is None:
@@ -219,17 +221,24 @@ def ipadapter_execute(model,
 
     if image is not None:
         img_cond_embeds = encode_image_masked(clipvision, image)
+        if image_composition is not None:
+            img_comp_cond_embeds = encode_image_masked(clipvision, image_composition)
 
         if is_plus:
             img_cond_embeds = img_cond_embeds.penultimate_hidden_states
             image_negative = image_negative if image_negative is not None else torch.zeros([1, 224, 224, 3])
             img_uncond_embeds = encode_image_masked(clipvision, image_negative).penultimate_hidden_states
+            if image_composition is not None:
+                img_comp_cond_embeds = img_comp_cond_embeds.penultimate_hidden_states
         else:
             img_cond_embeds = img_cond_embeds.image_embeds if not is_faceid else face_cond_embeds
             if image_negative is not None and not is_faceid:
                 img_uncond_embeds = encode_image_masked(clipvision, image_negative).image_embeds
             else:
                 img_uncond_embeds = torch.zeros_like(img_cond_embeds)
+            if image_composition is not None:
+                img_comp_cond_embeds = img_comp_cond_embeds.image_embeds
+        del image, image_negative, image_composition
     elif pos_embed is not None:
         img_cond_embeds = pos_embed
 
@@ -240,14 +249,17 @@ def ipadapter_execute(model,
                 img_uncond_embeds = encode_image_masked(clipvision, torch.zeros([1, 224, 224, 3])).penultimate_hidden_states
             else:
                 img_uncond_embeds = torch.zeros_like(img_cond_embeds)
+        del pos_embed, neg_embed
     else:
         raise Exception("Images or Embeds are required")
-
+    
     # ensure that cond and uncond have the same batch size
     img_uncond_embeds = tensor_to_size(img_uncond_embeds, img_cond_embeds.shape[0])
 
     img_cond_embeds = img_cond_embeds.to(device, dtype=dtype)
     img_uncond_embeds = img_uncond_embeds.to(device, dtype=dtype)
+    if img_comp_cond_embeds is not None:
+        img_comp_cond_embeds = img_comp_cond_embeds.to(device, dtype=dtype)
 
     # combine the embeddings if needed
     if combine_embeds != "concat" and img_cond_embeds.shape[0] > 1 and not unfold_batch:
@@ -255,20 +267,29 @@ def ipadapter_execute(model,
             img_cond_embeds = torch.sum(img_cond_embeds, dim=0).unsqueeze(0)
             if face_cond_embeds is not None:
                 face_cond_embeds = torch.sum(face_cond_embeds, dim=0).unsqueeze(0)
+            if img_comp_cond_embeds is not None:
+                img_comp_cond_embeds = torch.sum(img_comp_cond_embeds, dim=0).unsqueeze(0)
         elif combine_embeds == "subtract":
             img_cond_embeds = img_cond_embeds[0] - torch.mean(img_cond_embeds[1:], dim=0)
             img_cond_embeds = img_cond_embeds.unsqueeze(0)
             if face_cond_embeds is not None:
                 face_cond_embeds = face_cond_embeds[0] - torch.mean(face_cond_embeds[1:], dim=0)
                 face_cond_embeds = face_cond_embeds.unsqueeze(0)
+            if img_comp_cond_embeds is not None:
+                img_comp_cond_embeds = img_comp_cond_embeds[0] - torch.mean(img_comp_cond_embeds[1:], dim=0)
+                img_comp_cond_embeds = img_comp_cond_embeds.unsqueeze(0)
         elif combine_embeds == "average":
             img_cond_embeds = torch.mean(img_cond_embeds, dim=0).unsqueeze(0)
             if face_cond_embeds is not None:
                 face_cond_embeds = torch.mean(face_cond_embeds, dim=0).unsqueeze(0)
+            if img_comp_cond_embeds is not None:
+                img_comp_cond_embeds = torch.mean(img_comp_cond_embeds, dim=0).unsqueeze(0)
         elif combine_embeds == "norm average":
             img_cond_embeds = torch.mean(img_cond_embeds / torch.norm(img_cond_embeds, dim=0, keepdim=True), dim=0).unsqueeze(0)
             if face_cond_embeds is not None:
                 face_cond_embeds = torch.mean(face_cond_embeds / torch.norm(face_cond_embeds, dim=0, keepdim=True), dim=0).unsqueeze(0)
+            if img_comp_cond_embeds is not None:
+                img_comp_cond_embeds = torch.mean(img_comp_cond_embeds / torch.norm(img_comp_cond_embeds, dim=0, keepdim=True), dim=0).unsqueeze(0)
         img_uncond_embeds = img_uncond_embeds[0].unsqueeze(0) # TODO: better strategy for uncond could be to average them
 
     if attn_mask is not None:
@@ -292,11 +313,16 @@ def ipadapter_execute(model,
         uncond = ipa.get_image_embeds_faceid_plus(torch.zeros_like(face_cond_embeds), img_uncond_embeds, weight_faceidv2, is_faceidv2)
     else:
         cond, uncond = ipa.get_image_embeds(img_cond_embeds, img_uncond_embeds)
+        if img_comp_cond_embeds is not None:
+            cond_comp = ipa.get_image_embeds(img_comp_cond_embeds, img_uncond_embeds)[0]
 
     cond = cond.to(device, dtype=dtype)
     uncond = uncond.to(device, dtype=dtype)
+    cond_alt = None
+    if img_comp_cond_embeds is not None:
+        cond_alt = { 3: cond_comp.to(device, dtype=dtype) }
 
-    del img_cond_embeds, img_uncond_embeds
+    del img_cond_embeds, img_uncond_embeds, img_comp_cond_embeds, face_cond_embeds
 
     sigma_start = model.model.model_sampling.percent_to_sigma(start_at)
     sigma_end = model.model.model_sampling.percent_to_sigma(end_at)
@@ -306,6 +332,7 @@ def ipadapter_execute(model,
         "number": 0,
         "weight": weight,
         "cond": cond,
+        "cond_alt": cond_alt,
         "uncond": uncond,
         "weight_type": weight_type,
         "mask": attn_mask,
@@ -552,7 +579,7 @@ class IPAdapterAdvanced:
                 "model": ("MODEL", ),
                 "ipadapter": ("IPADAPTER", ),
                 "image": ("IMAGE",),
-                "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.05 }),
+                "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 5, "step": 0.05 }),
                 "weight_type": (WEIGHT_TYPES, ),
                 "combine_embeds": (["concat", "add", "subtract", "average", "norm average"],),
                 "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
@@ -570,9 +597,18 @@ class IPAdapterAdvanced:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, model, ipadapter, image, weight, weight_type, start_at, end_at, combine_embeds="concat", weight_faceidv2=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None, embeds_scaling='V only'):
+    def apply_ipadapter(self, model, ipadapter, start_at, end_at, weight = 1.0, weight_style=1.0, weight_composition=1.0, expand_style=False, weight_type="linear", combine_embeds="concat", weight_faceidv2=None, image=None, image_style=None, image_composition=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None, embeds_scaling='V only'):
+        if image_style is not None:
+            image = image_style
+            if image_composition is not None:
+                if expand_style:
+                    weight = { 0: weight_style, 1: weight_style, 2: weight_style, 3: weight_composition, 4: weight_style, 5: weight_style, 6: weight_style, 7: weight_style, 8: weight_style, 9: weight_style, 10: weight_style }
+                else:
+                    weight = { 3: weight_composition, 6: weight_style }
+
         ipa_args = {
             "image": image,
+            "image_composition": image_composition,
             "image_negative": image_negative,
             "weight": weight,
             "weight_faceidv2": weight_faceidv2,
@@ -611,8 +647,32 @@ class IPAdapterBatch(IPAdapterAdvanced):
                 "model": ("MODEL", ),
                 "ipadapter": ("IPADAPTER", ),
                 "image": ("IMAGE",),
-                "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.05 }),
+                "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 5, "step": 0.05 }),
                 "weight_type": (WEIGHT_TYPES, ),
+                "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
+            },
+            "optional": {
+                "image_negative": ("IMAGE",),
+                "attn_mask": ("MASK",),
+                "clip_vision": ("CLIP_VISION",),
+            }
+        }
+
+class IPAdapterStyleComposition(IPAdapterAdvanced):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL", ),
+                "ipadapter": ("IPADAPTER", ),
+                "image_style": ("IMAGE",),
+                "image_composition": ("IMAGE",),
+                "weight_style": ("FLOAT", { "default": 1.0, "min": -1, "max": 5, "step": 0.05 }),
+                "weight_composition": ("FLOAT", { "default": 1.0, "min": -1, "max": 5, "step": 0.05 }),
+                "expand_style": ("BOOLEAN", { "default": False }),
+                "combine_embeds": (["concat", "add", "subtract", "average", "norm average"], {"default": "average"}),
                 "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
@@ -1145,6 +1205,7 @@ NODE_CLASS_MAPPINGS = {
     "IPAdapterTiled": IPAdapterTiled,
     "IPAdapterTiledBatch": IPAdapterTiledBatch,
     "IPAdapterEmbeds": IPAdapterEmbeds,
+    "IPAdapterStyleComposition": IPAdapterStyleComposition,
 
     # Loaders
     "IPAdapterUnifiedLoader": IPAdapterUnifiedLoader,
@@ -1172,6 +1233,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterTiled": "IPAdapter Tiled",
     "IPAdapterTiledBatch": "IPAdapter Tiled Batch",
     "IPAdapterEmbeds": "IPAdapter Embeds",
+    "IPAdapterStyleComposition": "IPAdapter Style & Composition SDXL",
 
     # Loaders
     "IPAdapterUnifiedLoader": "IPAdapter Unified Loader",

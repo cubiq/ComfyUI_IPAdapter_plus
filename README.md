@@ -27,6 +27,8 @@ Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [Pa
 
 ## Important updates
 
+**2024/04/04**: Added Style & Composition node. It's now possible to apply both Style and Composition from the same node
+
 **2024/04/01**: Added Composition only transfer weight type for SDXL
 
 **2024/03/27**: Added Style transfer weight type for SDXL
@@ -141,6 +143,7 @@ It's only thanks to generous sponsors that **the whole community** can enjoy ope
 ### One-time Extraordinaire
 
 - [Eric Rollei](https://github.com/EricRollei)
+- [francaleu](https://github.com/francaleu)
 - [Neta.art](https://github.com/talesofai)
 - [Samwise Wang](https://github.com/tzwm)
 
