@@ -138,6 +138,7 @@ It's only thanks to generous sponsors that **the whole community** can enjoy ope
 
 ### Esteemed individuals
 
+- [Jack Gane](https://github.com/ganeJackS)
 - [Nathan Shipley](https://www.nathanshipley.com/)
 
 ### One-time Extraordinaire
@@ -146,9 +147,11 @@ It's only thanks to generous sponsors that **the whole community** can enjoy ope
 - [francaleu](https://github.com/francaleu)
 - [Neta.art](https://github.com/talesofai)
 - [Samwise Wang](https://github.com/tzwm)
+- _And all private sponsors, you know who you are!_
 
 ## Credits
 
 - [IPAdapter](https://github.com/tencent-ailab/IP-Adapter/)
+- [InstantStyle](https://github.com/InstantStyle/InstantStyle)
 - [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
-- [laksjdjf](https://github.com/laksjdjf/IPAdapter-ComfyUI/)
+- [laksjdjf](https://github.com/laksjdjf/)
