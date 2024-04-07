@@ -153,5 +153,6 @@ It's only thanks to generous sponsors that **the whole community** can enjoy ope
 
 - [IPAdapter](https://github.com/tencent-ailab/IP-Adapter/)
 - [InstantStyle](https://github.com/InstantStyle/InstantStyle)
+- [B-Lora](https://github.com/yardenfren1996/B-LoRA/)
 - [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
 - [laksjdjf](https://github.com/laksjdjf/)

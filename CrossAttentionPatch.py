@@ -84,7 +84,7 @@ class CrossAttentionPatch:
 
                     weight = weight[t_idx]
 
-                    if t_idx in cond_alt:
+                    if cond_alt is not None and t_idx in cond_alt:
                         cond = cond_alt[t_idx]
                         del cond_alt
 

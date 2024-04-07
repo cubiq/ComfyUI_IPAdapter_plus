@@ -161,8 +161,8 @@ def ipadapter_execute(model,
                       neg_embed=None,
                       unfold_batch=False,
                       embeds_scaling='V only'):
-    dtype = torch.float16 if model_management.should_use_fp16() else torch.bfloat16 if model_management.should_use_bf16() else torch.float32
     device = model_management.get_torch_device()
+    dtype = model_management.unet_dtype()
 
     is_full = "proj.3.weight" in ipadapter["image_proj"]
     is_portrait = "proj.2.weight" in ipadapter["image_proj"] and not "proj.3.weight" in ipadapter["image_proj"] and not "0.to_q_lora.down.weight" in ipadapter["ip_adapter"]
@@ -324,8 +324,8 @@ def ipadapter_execute(model,
 
     del img_cond_embeds, img_uncond_embeds, img_comp_cond_embeds, face_cond_embeds
 
-    sigma_start = model.model.model_sampling.percent_to_sigma(start_at)
-    sigma_end = model.model.model_sampling.percent_to_sigma(end_at)
+    sigma_start = model.get_model_object("model_sampling").percent_to_sigma(start_at)
+    sigma_end = model.get_model_object("model_sampling").percent_to_sigma(end_at)
 
     patch_kwargs = {
         "ipadapter": ipa,
