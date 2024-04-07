@@ -163,6 +163,8 @@ def ipadapter_execute(model,
                       embeds_scaling='V only'):
     device = model_management.get_torch_device()
     dtype = model_management.unet_dtype()
+    if dtype not in [torch.float32, torch.float16, torch.bfloat16]:
+        dtype = torch.float16 if comfy.model_management.should_use_fp16() else torch.float32
 
     is_full = "proj.3.weight" in ipadapter["image_proj"]
     is_portrait = "proj.2.weight" in ipadapter["image_proj"] and not "proj.3.weight" in ipadapter["image_proj"] and not "0.to_q_lora.down.weight" in ipadapter["ip_adapter"]
