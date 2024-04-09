@@ -411,7 +411,7 @@ class IPAdapterUnifiedLoader:
                 self.clipvision = pipeline['clipvision']
 
         # 2. Load the ipadapter model
-        is_sdxl = isinstance(model.model, comfy.model_base.SDXL)
+        is_sdxl = isinstance(model.model, (comfy.model_base.SDXL, comfy.model_base.SDXLRefiner, comfy.model_base.SDXL_instructpix2pix))
         ipadapter_file, is_insightface, lora_pattern = get_ipadapter_file(preset, is_sdxl)
         if ipadapter_file is None:
             raise Exception("IPAdapter model not found.")
@@ -544,7 +544,7 @@ class IPAdapterSimple:
     CATEGORY = "ipadapter"
 
     def apply_ipadapter(self, model, ipadapter, image, weight, start_at, end_at, weight_type, attn_mask=None):
-        is_sdxl = isinstance(model.model, comfy.model_base.SDXL)
+        is_sdxl = isinstance(model.model, (comfy.model_base.SDXL, comfy.model_base.SDXLRefiner, comfy.model_base.SDXL_instructpix2pix))
 
         if weight_type.startswith("style"):
             weight_type = "style transfer"
@@ -601,7 +601,7 @@ class IPAdapterAdvanced:
     CATEGORY = "ipadapter"
 
     def apply_ipadapter(self, model, ipadapter, start_at, end_at, weight = 1.0, weight_style=1.0, weight_composition=1.0, expand_style=False, weight_type="linear", combine_embeds="concat", weight_faceidv2=None, image=None, image_style=None, image_composition=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None, embeds_scaling='V only'):
-        is_sdxl = isinstance(model.model, comfy.model_base.SDXL)
+        is_sdxl = isinstance(model.model, (comfy.model_base.SDXL, comfy.model_base.SDXLRefiner, comfy.model_base.SDXL_instructpix2pix))
 
         if image_style is not None: # we are doing style + composition transfer
             if not is_sdxl:
