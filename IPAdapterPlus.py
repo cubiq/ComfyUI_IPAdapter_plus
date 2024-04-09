@@ -747,7 +747,6 @@ class IPAdapterFaceID(IPAdapterAdvanced):
                 "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
-                "layer_weights": ("STRING", { "default": "0:1.0, 1:1.0, 2:1.0, 3:1.0, 4:1.0, 5:1.0, 6:1.0, 7:1.0, 8:1.0, 9:1.0, 10:1.0", "multiline": True }),
             },
             "optional": {
                 "image_negative": ("IMAGE",),
