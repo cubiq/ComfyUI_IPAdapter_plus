@@ -19,7 +19,7 @@ class CrossAttentionPatch:
         self.unfold_batch = [unfold_batch]
         self.embeds_scaling = [embeds_scaling]
         self.number = number
-        self.layers = 11 if '101_to_k_ip' in ipadapter.ip_layers.to_kvs else 15 # TODO: check if this is a valid condition to detect all models
+        self.layers = 11 if '101_to_k_ip' in ipadapter.ip_layers.to_kvs else 16 # TODO: check if this is a valid condition to detect all models
 
         self.k_key = str(self.number*2+1) + "_to_k_ip"
         self.v_key = str(self.number*2+1) + "_to_v_ip"
@@ -72,12 +72,6 @@ class CrossAttentionPatch:
                     weight = weight * 0.2
                 elif weight_type == 'strong middle' and (block_type == 'input' or block_type == 'output'):
                     weight = weight * 0.2
-                elif weight_type.startswith('style transfer'):
-                    if t_idx != 6:
-                        continue
-                elif weight_type.startswith('composition'):
-                    if t_idx != 3:
-                        continue
                 elif isinstance(weight, dict):
                     if t_idx not in weight:
                         continue

@@ -23,9 +23,11 @@ Not to mention the documentation and videos tutorials. Check my **ComfyUI Advanc
 
 The only way to keep the code open and free is by sponsoring its development. The more sponsorships the more time I can dedicate to my open source projects.
 
-Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [PayPal donation](https://paypal.me/matt3o) (Matteo "matt3o" Spinelli). For sponsorships of $50+, let me know if you'd like to be mentioned in this readme file, you can find me on [Discord](https://latent.vision/discord) or _matt3o:snail:gmail.com_.
+Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [PayPal donation](https://paypal.me/matt3o) (Matteo "matt3o" Spinelli). For sponsorships of $50+, let me know if you'd like to be mentioned in this readme file, you can find me on [Discord](https://latent.vision/discord) or _matt3o :snail: gmail.com_.
 
 ## Important updates
+
+**2024/04/09**: Added experimental Style/Composition transfer for SD1.5. The results are often not as good as SDXL. Optimal weight seems to be from 0.8 to 2.0. The **Style+Composition node doesn't work for SD1.5** at the moment, you can only alter either the Style or the Composition, I need more time for testing. Old workflows will still work **but you may need to refresh the page and re-select the weight type!**
 
 **2024/04/04**: Added Style & Composition node. It's now possible to apply both Style and Composition from the same node
 
@@ -91,7 +93,7 @@ For the Unified Loader to work the files need to be named exactly as shown in th
     - [ip-adapter-faceid-plusv2_sdxl.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sdxl.bin), SDXL plus v2
     - [ip-adapter-faceid-portrait_sdxl.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait_sdxl.bin), SDXL text prompt style transfer
     - **Deprecated** [ip-adapter-faceid-plus_sd15.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plus_sd15.bin), FaceID plus v1 
-    - **Deprecated** [ip-adapter-faceid-portrait_sd15.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait-v11_sd15.bin), v1 of the portrait model
+    - **Deprecated** [ip-adapter-faceid-portrait_sd15.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait_sd15.bin), v1 of the portrait model
 
 Most FaceID models require a LoRA. If you use the `IPAdapter Unified Loader FaceID` it will be loaded automatically if you follow the naming convention. Otherwise you have to load them manually, be careful each FaceID model has to be paired with its own specific LoRA.
 
@@ -135,6 +137,10 @@ It's only thanks to generous sponsors that **the whole community** can enjoy ope
 ### Gold sponsors
 
 [![Kaiber.ai](https://f.latent.vision/imgs/kaiber.png)](https://kaiber.ai/)
+
+### Companies supporting my projects
+
+- [RunComfy](https://www.runcomfy.com/) (ComfyUI Cloud)
 
 ### Esteemed individuals
 
