@@ -544,8 +544,11 @@ class IPAdapterSimple:
     CATEGORY = "ipadapter"
 
     def apply_ipadapter(self, model, ipadapter, image, weight, start_at, end_at, weight_type, attn_mask=None):
-        if weight_type.startwith("style transfer"):
+        is_sdxl = isinstance(model.model, comfy.model_base.SDXL)
+
+        if weight_type.startswith("style"):
             weight_type = "style transfer"
+            weight = { 6:weight } if is_sdxl else { 0:weight, 1:weight, 2:weight, 3:weight, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
         elif weight_type == "prompt is more important":
             weight_type = "ease out"
         else:
@@ -598,7 +601,7 @@ class IPAdapterAdvanced:
     CATEGORY = "ipadapter"
 
     def apply_ipadapter(self, model, ipadapter, start_at, end_at, weight = 1.0, weight_style=1.0, weight_composition=1.0, expand_style=False, weight_type="linear", combine_embeds="concat", weight_faceidv2=None, image=None, image_style=None, image_composition=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None, embeds_scaling='V only'):
-        is_sdxl = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1] == 2048
+        is_sdxl = isinstance(model.model, comfy.model_base.SDXL)
 
         if image_style is not None: # we are doing style + composition transfer
             if not is_sdxl:
