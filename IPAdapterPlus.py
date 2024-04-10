@@ -37,7 +37,7 @@ else:
     current_paths, _ = folder_paths.folder_names_and_paths["ipadapter"]
 folder_paths.folder_names_and_paths["ipadapter"] = (current_paths, folder_paths.supported_pt_extensions)
 
-WEIGHT_TYPES = ["linear", "ease in", "ease out", 'ease in-out', 'reverse in-out', 'weak input', 'weak output', 'weak middle', 'strong middle', 'style transfer', 'composition']
+WEIGHT_TYPES = ["linear", "ease in", "ease out", 'ease in-out', 'reverse in-out', 'weak input', 'weak output', 'weak middle', 'strong middle', 'style transfer', 'composition', 'strong style transfer']
 
 """
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -151,6 +151,7 @@ def ipadapter_execute(model,
                       image_composition=None,
                       image_negative=None,
                       weight=1.0,
+                      weight_composition=1.0,
                       weight_faceidv2=None,
                       weight_type="linear",
                       combine_embeds="concat",
@@ -185,6 +186,27 @@ def ipadapter_execute(model,
 
     if image is not None and image.shape[1] != image.shape[2]:
         print("\033[33mINFO: the IPAdapter reference image is not a square, CLIPImageProcessor will resize and crop it at the center. If the main focus of the picture is not in the middle the result might not be what you are expecting.\033[0m")
+
+    # special weight types
+    if weight_type.startswith("style transfer"):
+        weight = { 6:weight } if is_sdxl else { 0:weight, 1:weight, 2:weight, 3:weight, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
+    elif weight_type.startswith("composition"):
+        weight = { 3:weight } if is_sdxl else { 4:weight*0.25, 5:weight }
+    elif weight_type == "strong style transfer":
+        if is_sdxl:
+            weight = { 0:weight, 1:weight, 2:weight, 4:weight, 5:weight, 6:weight, 7:weight, 8:weight, 9:weight, 10:weight }
+        else:
+            weight = { 0:weight, 1:weight, 2:weight, 3:weight, 6:weight, 7:weight, 8:weight, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
+    elif weight_type == "style and composition":
+        if is_sdxl:
+            weight = { 3:weight_composition, 6:weight }
+        else:
+            weight = { 0:weight, 1:weight, 2:weight, 3:weight, 4:weight_composition*0.25, 5:weight_composition, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
+    elif weight_type == "strong style and composition":
+        if is_sdxl:
+            weight = { 0:weight, 1:weight, 2:weight, 3:weight_composition, 4:weight, 5:weight, 6:weight, 7:weight, 8:weight, 9:weight, 10:weight }
+        else:
+            weight = { 0:weight, 1:weight, 2:weight, 3:weight, 4:weight_composition, 5:weight_composition, 6:weight, 7:weight, 8:weight, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
 
     img_comp_cond_embeds = None
     face_cond_embeds = None
@@ -608,29 +630,18 @@ class IPAdapterAdvanced:
                 raise Exception("Style + Composition transfer is only available for SDXL models at the moment.") # TODO: check feasibility for SD1.5 models
 
             image = image_style
+            weight = weight_style
             if image_composition is None:
                 image_composition = image_style
-
-            if expand_style:
-                if is_sdxl:
-                    weight = { 0:weight_style, 1:weight_style, 2:weight_style, 3:weight_composition, 4:weight_style, 5:weight_style, 6:weight_style, 7:weight_style, 8:weight_style, 9:weight_style, 10:weight_style }
-                else:
-                    weight = { 0:weight_style, 1:weight_style, 2:weight_style, 3:weight_style, 4:weight_composition, 5:weight_composition, 6:weight_style, 7:weight_style, 8:weight_style, 9:weight_style, 10:weight_style, 11:weight_style, 12:weight_style, 13:weight_style, 14:weight_style, 15:weight_style }
-            else:
-                if is_sdxl:
-                    weight = { 3:weight_composition, 6:weight_style }
-                else:
-                    weight = { 0:weight_style, 1:weight_style, 2:weight_style, 3:weight_style, 4:weight_composition/4, 5:weight_composition, 9:weight_style, 10:weight_style, 11:weight_style, 12:weight_style, 13:weight_style, 14:weight_style, 15:weight_style }
-        elif weight_type.startswith("style transfer"):
-            weight = { 6:weight } if is_sdxl else { 0:weight, 1:weight, 2:weight, 3:weight, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
-        elif weight_type.startswith("composition"):
-            weight = { 3:weight } if is_sdxl else { 4:weight/4, 5:weight }
+            
+            weight_type = "strong style and composition" if expand_style else "style and composition"
 
         ipa_args = {
             "image": image,
             "image_composition": image_composition,
             "image_negative": image_negative,
             "weight": weight,
+            "weight_composition": weight_composition,
             "weight_faceidv2": weight_faceidv2,
             "weight_type": weight_type,
             "combine_embeds": combine_embeds,
