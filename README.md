@@ -83,7 +83,7 @@ Remember you can also use any custom location setting an `ipadapter` entry in th
 
 **FaceID** models require `insightface`, you need to install it in your ComfyUI environment. Check [this issue](https://github.com/cubiq/ComfyUI_IPAdapter_plus/issues/162) for help. Remember that most FaceID models also need a LoRA.
 
-For the Unified Loader to work the files need to be named exactly as shown in the table below.
+For the Unified Loader to work the files need to be named exactly as shown below.
 
 - `/ComfyUI/models/ipadapter`
     - [ip-adapter-faceid_sd15.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sd15.bin), base FaceID model
