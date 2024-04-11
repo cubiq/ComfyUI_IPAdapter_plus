@@ -161,7 +161,8 @@ def ipadapter_execute(model,
                       pos_embed=None,
                       neg_embed=None,
                       unfold_batch=False,
-                      embeds_scaling='V only'):
+                      embeds_scaling='V only',
+                      layer_weights=None):
     device = model_management.get_torch_device()
     dtype = model_management.unet_dtype()
     if dtype not in [torch.float32, torch.float16, torch.bfloat16]:
@@ -188,7 +189,9 @@ def ipadapter_execute(model,
         print("\033[33mINFO: the IPAdapter reference image is not a square, CLIPImageProcessor will resize and crop it at the center. If the main focus of the picture is not in the middle the result might not be what you are expecting.\033[0m")
 
     # special weight types
-    if weight_type.startswith("style transfer"):
+    if layer_weights is not None and layer_weights != '':
+        weight = { int(k): float(v)*weight for k, v in [x.split(":") for x in layer_weights.split(",")] }
+    elif weight_type.startswith("style transfer"):
         weight = { 6:weight } if is_sdxl else { 0:weight, 1:weight, 2:weight, 3:weight, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
     elif weight_type.startswith("composition"):
         weight = { 3:weight } if is_sdxl else { 4:weight*0.25, 5:weight }
@@ -271,7 +274,7 @@ def ipadapter_execute(model,
         del pos_embed, neg_embed
     else:
         raise Exception("Images or Embeds are required")
-    
+
     # ensure that cond and uncond have the same batch size
     img_uncond_embeds = tensor_to_size(img_uncond_embeds, img_cond_embeds.shape[0])
 
@@ -495,7 +498,7 @@ class IPAdapterUnifiedLoaderFaceID(IPAdapterUnifiedLoader):
 
     RETURN_NAMES = ("MODEL", "ipadapter", )
     CATEGORY = "ipadapter/faceid"
-    
+
 class IPAdapterUnifiedLoaderCommunity(IPAdapterUnifiedLoader):
     @classmethod
     def INPUT_TYPES(s):
@@ -506,7 +509,7 @@ class IPAdapterUnifiedLoaderCommunity(IPAdapterUnifiedLoader):
         "optional": {
             "ipadapter": ("IPADAPTER", ),
         }}
-    
+
     CATEGORY = "ipadapter/loaders"
 
 class IPAdapterModelLoader:
@@ -622,7 +625,7 @@ class IPAdapterAdvanced:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, model, ipadapter, start_at, end_at, weight = 1.0, weight_style=1.0, weight_composition=1.0, expand_style=False, weight_type="linear", combine_embeds="concat", weight_faceidv2=None, image=None, image_style=None, image_composition=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None, embeds_scaling='V only'):
+    def apply_ipadapter(self, model, ipadapter, start_at, end_at, weight = 1.0, weight_style=1.0, weight_composition=1.0, expand_style=False, weight_type="linear", combine_embeds="concat", weight_faceidv2=None, image=None, image_style=None, image_composition=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None, embeds_scaling='V only', layer_weights=None):
         is_sdxl = isinstance(model.model, (comfy.model_base.SDXL, comfy.model_base.SDXLRefiner, comfy.model_base.SDXL_instructpix2pix))
 
         if image_style is not None: # we are doing style + composition transfer
@@ -633,7 +636,7 @@ class IPAdapterAdvanced:
             weight = weight_style
             if image_composition is None:
                 image_composition = image_style
-            
+
             weight_type = "strong style and composition" if expand_style else "style and composition"
 
         ipa_args = {
@@ -650,7 +653,8 @@ class IPAdapterAdvanced:
             "attn_mask": attn_mask,
             "unfold_batch": self.unfold_batch,
             "embeds_scaling": embeds_scaling,
-            "insightface": insightface if insightface is not None else ipadapter['insightface']['model'] if 'insightface' in ipadapter else None
+            "insightface": insightface if insightface is not None else ipadapter['insightface']['model'] if 'insightface' in ipadapter else None,
+            "layer_weights": layer_weights,
         }
 
         if 'ipadapter' in ipadapter:
@@ -714,7 +718,7 @@ class IPAdapterStyleComposition(IPAdapterAdvanced):
                 "clip_vision": ("CLIP_VISION",),
             }
         }
-    
+
     CATEGORY = "ipadapter/style_composition"
 
 class IPAdapterStyleCompositionBatch(IPAdapterStyleComposition):
@@ -742,7 +746,7 @@ class IPAdapterStyleCompositionBatch(IPAdapterStyleComposition):
                 "clip_vision": ("CLIP_VISION",),
             }
         }
-    
+
 class IPAdapterFaceID(IPAdapterAdvanced):
     @classmethod
     def INPUT_TYPES(s):
@@ -766,7 +770,7 @@ class IPAdapterFaceID(IPAdapterAdvanced):
                 "insightface": ("INSIGHTFACE",),
             }
         }
-    
+
     CATEGORY = "ipadapter/faceid"
 
 class IPAAdapterFaceIDBatch(IPAdapterFaceID):
@@ -983,6 +987,33 @@ class IPAdapterEmbeds:
         del ipadapter
 
         return (ipadapter_execute(model.clone(), ipadapter_model, clip_vision, **ipa_args), )
+
+class IPAdapterMS(IPAdapterAdvanced):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL", ),
+                "ipadapter": ("IPADAPTER", ),
+                "image": ("IMAGE",),
+                "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 5, "step": 0.05 }),
+                "weight_faceidv2": ("FLOAT", { "default": 1.0, "min": -1, "max": 5.0, "step": 0.05 }),
+                "weight_type": (WEIGHT_TYPES, ),
+                "combine_embeds": (["concat", "add", "subtract", "average", "norm average"],),
+                "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
+                "layer_weights": ("STRING", { "default": "", "multiline": True }),
+            },
+            "optional": {
+                "image_negative": ("IMAGE",),
+                "attn_mask": ("MASK",),
+                "clip_vision": ("CLIP_VISION",),
+                "insightface": ("INSIGHTFACE",),
+            }
+        }
+
+    CATEGORY = "ipadapter/dev"
 
 """
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1268,6 +1299,7 @@ NODE_CLASS_MAPPINGS = {
     "IPAdapterEmbeds": IPAdapterEmbeds,
     "IPAdapterStyleComposition": IPAdapterStyleComposition,
     "IPAdapterStyleCompositionBatch": IPAdapterStyleCompositionBatch,
+    "IPAdapterMS": IPAdapterMS,
 
     # Loaders
     "IPAdapterUnifiedLoader": IPAdapterUnifiedLoader,
@@ -1297,6 +1329,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterEmbeds": "IPAdapter Embeds",
     "IPAdapterStyleComposition": "IPAdapter Style & Composition SDXL",
     "IPAdapterStyleCompositionBatch": "IPAdapter Style & Composition Batch SDXL",
+    "IPAdapterMS": "IPAdapter Mad Scientist",
 
     # Loaders
     "IPAdapterUnifiedLoader": "IPAdapter Unified Loader",
