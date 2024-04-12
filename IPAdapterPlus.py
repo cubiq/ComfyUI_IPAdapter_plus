@@ -194,6 +194,7 @@ def ipadapter_execute(model,
     # special weight types
     if layer_weights is not None and layer_weights != '':
         weight = { int(k): float(v)*weight for k, v in [x.split(":") for x in layer_weights.split(",")] }
+        weight_type = "linear"
     elif weight_type.startswith("style transfer"):
         weight = { 6:weight } if is_sdxl else { 0:weight, 1:weight, 2:weight, 3:weight, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
     elif weight_type.startswith("composition"):
