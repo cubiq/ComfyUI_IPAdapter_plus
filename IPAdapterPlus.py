@@ -572,8 +572,6 @@ class IPAdapterSimple:
     CATEGORY = "ipadapter"
 
     def apply_ipadapter(self, model, ipadapter, image, weight, start_at, end_at, weight_type, attn_mask=None):
-        is_sdxl = isinstance(model.model, (comfy.model_base.SDXL, comfy.model_base.SDXLRefiner, comfy.model_base.SDXL_instructpix2pix))
-
         if weight_type.startswith("style"):
             weight_type = "style transfer"
         elif weight_type == "prompt is more important":
