@@ -27,6 +27,8 @@ Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [Pa
 
 ## Important updates
 
+**2024/04/12**: Added scheduled weights. Useful for animations.
+
 **2024/04/09**: Added experimental Style/Composition transfer for SD1.5. The results are often not as good as SDXL. Optimal weight seems to be from 0.8 to 2.0. The **Style+Composition node doesn't work for SD1.5** at the moment, you can only alter either the Style or the Composition, I need more time for testing. Old workflows will still work **but you may need to refresh the page and re-select the weight type!**
 
 **2024/04/04**: Added Style & Composition node. It's now possible to apply both Style and Composition from the same node
