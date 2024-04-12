@@ -188,6 +188,9 @@ def ipadapter_execute(model,
     if image is not None and image.shape[1] != image.shape[2]:
         print("\033[33mINFO: the IPAdapter reference image is not a square, CLIPImageProcessor will resize and crop it at the center. If the main focus of the picture is not in the middle the result might not be what you are expecting.\033[0m")
 
+    if isinstance(weight, list):
+        weight = torch.tensor(weight).unsqueeze(-1).unsqueeze(-1).to(device, dtype=dtype) if unfold_batch else weight[0]           
+
     # special weight types
     if layer_weights is not None and layer_weights != '':
         weight = { int(k): float(v)*weight for k, v in [x.split(":") for x in layer_weights.split(",")] }
@@ -1282,6 +1285,69 @@ class IPAdapterLoadEmbeds:
         path = folder_paths.get_annotated_filepath(embeds)
         return (torch.load(path).cpu(), )
 
+class IPAdapterWeights:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "weights": ("STRING", {"default": '1.0', "multiline": True }),
+            "timing": (["custom", "linear", "ease_in_out", "ease_in", "ease_out", "reverse_in_out", "random"], ),
+            "frames": ("INT", {"default": 0, "min": 0, "max": 9999, "step": 1 }),
+            "start_frame": ("INT", {"default": 0, "min": 0, "max": 9999, "step": 1 }),
+            "end_frame": ("INT", {"default": 9999, "min": 0, "max": 9999, "step": 1 }),
+            },
+        }
+
+    RETURN_TYPES = ("FLOAT",)
+    FUNCTION = "weights"
+
+    CATEGORY = "ipadapter/utils"
+
+    def weights(self, weights, timing, frames, start_frame, end_frame):
+        import random
+
+        # convert the string to a list of floats separated by commas or newlines
+        weights = weights.replace("\n", ",")
+        weights = [float(weight) for weight in weights.split(",") if weight.strip() != ""]
+
+        if timing != "custom":
+            start = 0.0
+            end = 1.0
+
+            if len(weights) > 0:
+                start = weights[0]
+                end = weights[-1]
+            
+            weights = []
+
+            end_frame = min(end_frame, frames)
+            duration = end_frame - start_frame
+            if start_frame > 0:
+                weights.extend([start] * start_frame)
+
+            for i in range(duration):
+                n = duration - 1
+                if timing == "linear":
+                    weights.append(start + (end - start) * i / n)
+                elif timing == "ease_in_out":
+                    weights.append(start + (end - start) * (1 - math.cos(i / n * math.pi)) / 2)
+                elif timing == "ease_in":
+                    weights.append(start + (end - start) * math.sin(i / n * math.pi / 2))
+                elif timing == "ease_out":
+                    weights.append(start + (end - start) * (1 - math.cos(i / n * math.pi / 2)))
+                elif timing == "reverse_in_out":
+                    weights.append(start + (end - start) * (1 - math.sin((1 - i / n) * math.pi / 2)))
+                elif timing == "random":
+                    weights.append(random.uniform(start, end))
+            weights[-1] = end if timing != "random" else weights[-1]
+
+            if end_frame < frames:
+                weights.extend([end] * (frames - end_frame))
+
+        if len(weights) == 0:
+            weights = [0.0]
+
+        return (weights, )
+
 """
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  Register
@@ -1315,6 +1381,7 @@ NODE_CLASS_MAPPINGS = {
     "PrepImageForClipVision": PrepImageForClipVision,
     "IPAdapterSaveEmbeds": IPAdapterSaveEmbeds,
     "IPAdapterLoadEmbeds": IPAdapterLoadEmbeds,
+    "IPAdapterWeights": IPAdapterWeights,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -1345,4 +1412,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "PrepImageForClipVision": "Prep Image For ClipVision",
     "IPAdapterSaveEmbeds": "IPAdapter Save Embeds",
     "IPAdapterLoadEmbeds": "IPAdapter Load Embeds",
+    "IPAdapterWeights": "IPAdapter Weights",
 }

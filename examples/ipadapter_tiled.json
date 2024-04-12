@@ -206,38 +206,6 @@
       ]
     },
     {
-      "id": 16,
-      "type": "CLIPVisionLoader",
-      "pos": [
-        250,
-        180
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "CLIP_VISION",
-          "type": "CLIP_VISION",
-          "links": [
-            32
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CLIPVisionLoader"
-      },
-      "widgets_values": [
-        "IPAdapter_image_encoder_sd15.safetensors"
-      ]
-    },
-    {
       "id": 5,
       "type": "EmptyLatentImage",
       "pos": [
@@ -249,7 +217,7 @@
         "1": 106
       },
       "flags": {},
-      "order": 3,
+      "order": 2,
       "mode": 0,
       "outputs": [
         {
@@ -330,38 +298,6 @@
       ]
     },
     {
-      "id": 15,
-      "type": "IPAdapterModelLoader",
-      "pos": [
-        250,
-        70
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IPADAPTER",
-          "type": "IPADAPTER",
-          "links": [
-            31
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterModelLoader"
-      },
-      "widgets_values": [
-        "ip-adapter-plus_sd15.safetensors"
-      ]
-    },
-    {
       "id": 18,
       "type": "IPAdapterTiled",
       "pos": [
@@ -370,7 +306,7 @@
       ],
       "size": {
         "0": 315,
-        "1": 278
+        "1": 302
       },
       "flags": {},
       "order": 7,
@@ -439,7 +375,8 @@
         "concat",
         0,
         1,
-        0
+        0,
+        "V only"
       ]
     },
     {
@@ -466,6 +403,70 @@
       "properties": {},
       "widgets_values": [
         "IPAdapter"
+      ]
+    },
+    {
+      "id": 15,
+      "type": "IPAdapterModelLoader",
+      "pos": [
+        250,
+        70
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IPADAPTER",
+          "type": "IPADAPTER",
+          "links": [
+            31
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterModelLoader"
+      },
+      "widgets_values": [
+        "ip-adapter-plus_sd15.safetensors"
+      ]
+    },
+    {
+      "id": 16,
+      "type": "CLIPVisionLoader",
+      "pos": [
+        250,
+        180
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "CLIP_VISION",
+          "type": "CLIP_VISION",
+          "links": [
+            32
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPVisionLoader"
+      },
+      "widgets_values": [
+        "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"
       ]
     }
   ],

@@ -138,76 +138,6 @@
       ]
     },
     {
-      "id": 16,
-      "type": "CLIPVisionLoader",
-      "pos": [
-        308,
-        161
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "CLIP_VISION",
-          "type": "CLIP_VISION",
-          "links": [
-            24,
-            38,
-            49,
-            60,
-            71
-          ],
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CLIPVisionLoader"
-      },
-      "widgets_values": [
-        "IPAdapter_image_encoder_sd15.safetensors"
-      ]
-    },
-    {
-      "id": 15,
-      "type": "IPAdapterModelLoader",
-      "pos": [
-        308,
-        52
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IPADAPTER",
-          "type": "IPADAPTER",
-          "links": [
-            21,
-            36,
-            47,
-            58,
-            69
-          ],
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "IPAdapterModelLoader"
-      },
-      "widgets_values": [
-        "ip-adapter-plus_sd15.safetensors"
-      ]
-    },
-    {
       "id": 12,
       "type": "LoadImage",
       "pos": [
@@ -219,7 +149,7 @@
         "1": 314
       },
       "flags": {},
-      "order": 4,
+      "order": 2,
       "mode": 0,
       "outputs": [
         {
@@ -509,7 +439,7 @@
       ],
       "size": {
         "0": 315,
-        "1": 254
+        "1": 278
       },
       "flags": {},
       "order": 7,
@@ -567,7 +497,8 @@
         "linear",
         "concat",
         0,
-        1
+        1,
+        "V only"
       ]
     },
     {
@@ -579,7 +510,7 @@
       ],
       "size": {
         "0": 315,
-        "1": 254
+        "1": 278
       },
       "flags": {},
       "order": 8,
@@ -637,7 +568,8 @@
         "ease in",
         "concat",
         0,
-        1
+        1,
+        "V only"
       ]
     },
     {
@@ -748,7 +680,7 @@
       ],
       "size": {
         "0": 315,
-        "1": 254
+        "1": 278
       },
       "flags": {},
       "order": 9,
@@ -806,7 +738,8 @@
         "ease out",
         "concat",
         0,
-        1
+        1,
+        "V only"
       ]
     },
     {
@@ -1094,7 +1027,7 @@
       ],
       "size": {
         "0": 315,
-        "1": 254
+        "1": 278
       },
       "flags": {},
       "order": 10,
@@ -1152,7 +1085,8 @@
         "ease in-out",
         "concat",
         0,
-        1
+        1,
+        "V only"
       ]
     },
     {
@@ -1164,7 +1098,7 @@
       ],
       "size": {
         "0": 315,
-        "1": 254
+        "1": 278
       },
       "flags": {},
       "order": 11,
@@ -1222,7 +1156,8 @@
         "reverse in-out",
         "concat",
         0,
-        1
+        1,
+        "V only"
       ]
     },
     {
@@ -1265,6 +1200,76 @@
       },
       "widgets_values": [
         "closeup of a fierce warrior woman wearing a full armor at the end of a battle. cherry blossoms\n\nhigh quality, detailed"
+      ]
+    },
+    {
+      "id": 15,
+      "type": "IPAdapterModelLoader",
+      "pos": [
+        308,
+        52
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IPADAPTER",
+          "type": "IPADAPTER",
+          "links": [
+            21,
+            36,
+            47,
+            58,
+            69
+          ],
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterModelLoader"
+      },
+      "widgets_values": [
+        "ip-adapter-plus_sd15.safetensors"
+      ]
+    },
+    {
+      "id": 16,
+      "type": "CLIPVisionLoader",
+      "pos": [
+        308,
+        161
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "CLIP_VISION",
+          "type": "CLIP_VISION",
+          "links": [
+            24,
+            38,
+            49,
+            60,
+            71
+          ],
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPVisionLoader"
+      },
+      "widgets_values": [
+        "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"
       ]
     }
   ],

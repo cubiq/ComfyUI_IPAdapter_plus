@@ -39,40 +39,6 @@
       ]
     },
     {
-      "id": 16,
-      "type": "CLIPVisionLoader",
-      "pos": [
-        650,
-        80
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "CLIP_VISION",
-          "type": "CLIP_VISION",
-          "links": [
-            24,
-            96,
-            107,
-            118
-          ],
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CLIPVisionLoader"
-      },
-      "widgets_values": [
-        "IPAdapter_image_encoder_sd15.safetensors"
-      ]
-    },
-    {
       "id": 3,
       "type": "KSampler",
       "pos": [
@@ -143,7 +109,7 @@
         "1": 98
       },
       "flags": {},
-      "order": 2,
+      "order": 1,
       "mode": 0,
       "outputs": [
         {
@@ -197,7 +163,7 @@
         "1": 314
       },
       "flags": {},
-      "order": 3,
+      "order": 2,
       "mode": 0,
       "outputs": [
         {
@@ -274,7 +240,7 @@
       ],
       "size": {
         "0": 315,
-        "1": 254
+        "1": 278
       },
       "flags": {},
       "order": 9,
@@ -332,7 +298,8 @@
         "linear",
         "concat",
         0,
-        1
+        1,
+        "V only"
       ]
     },
     {
@@ -499,7 +466,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 4,
+      "order": 3,
       "mode": 0,
       "outputs": [
         {
@@ -577,7 +544,7 @@
         "1": 314
       },
       "flags": {},
-      "order": 5,
+      "order": 4,
       "mode": 0,
       "outputs": [
         {
@@ -613,7 +580,7 @@
       ],
       "size": {
         "0": 315,
-        "1": 254
+        "1": 278
       },
       "flags": {},
       "order": 10,
@@ -671,7 +638,8 @@
         "linear",
         "add",
         0,
-        1
+        1,
+        "V only"
       ]
     },
     {
@@ -881,7 +849,7 @@
       ],
       "size": {
         "0": 315,
-        "1": 254
+        "1": 278
       },
       "flags": {},
       "order": 12,
@@ -939,7 +907,8 @@
         "linear",
         "norm average",
         0,
-        1
+        1,
+        "V only"
       ]
     },
     {
@@ -951,7 +920,7 @@
       ],
       "size": {
         "0": 315,
-        "1": 254
+        "1": 278
       },
       "flags": {},
       "order": 11,
@@ -1009,7 +978,8 @@
         "linear",
         "average",
         0,
-        1
+        1,
+        "V only"
       ]
     },
     {
@@ -1142,6 +1112,40 @@
       "properties": {},
       "widgets_values": [
         "IPAdapter"
+      ]
+    },
+    {
+      "id": 16,
+      "type": "CLIPVisionLoader",
+      "pos": [
+        650,
+        80
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "CLIP_VISION",
+          "type": "CLIP_VISION",
+          "links": [
+            24,
+            96,
+            107,
+            118
+          ],
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPVisionLoader"
+      },
+      "widgets_values": [
+        "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"
       ]
     }
   ],
