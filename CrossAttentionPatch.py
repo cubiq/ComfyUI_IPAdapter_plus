@@ -82,52 +82,37 @@ class CrossAttentionPatch:
                         cond = cond_alt[t_idx]
                         del cond_alt
 
-                #if isinstance(weight, torch.Tensor):
-                #    weight = tensor_to_size(weight, batch_prompt)
-                #    weight = weight.repeat(len(cond_or_uncond), 1, 1)
-                #elif weight == 0:
-                #    continue
-
-                if unfold_batch and cond.shape[0] > 1:
+                if unfold_batch:
                     # Check AnimateDiff context window
                     if ad_params is not None and ad_params["sub_idxs"] is not None:
+                        if isinstance(weight, torch.Tensor):
+                            weight = tensor_to_size(weight, ad_params["full_length"])
+                            weight = torch.Tensor(weight[ad_params["sub_idxs"]])
+                            if torch.all(weight == 0):
+                                continue
+                        elif weight == 0:
+                            continue
+
                         # if image length matches or exceeds full_length get sub_idx images
                         if cond.shape[0] >= ad_params["full_length"]:
-                            if isinstance(weight, torch.Tensor):
-                                weight = torch.Tensor(weight["sub_idxs"])
-                                weight = weight.repeat(len(cond_or_uncond), 1, 1) # repeat for cond and uncond
-                                if torch.all(weight == 0):
-                                    continue
-                            elif weight == 0:
-                                continue
-
                             cond = torch.Tensor(cond[ad_params["sub_idxs"]])
                             uncond = torch.Tensor(uncond[ad_params["sub_idxs"]])
                         # otherwise get sub_idxs images
                         else:
-                            if isinstance(weight, torch.Tensor):
-                                weight = tensor_to_size(weight, ad_params["full_length"])
-                                weight = weight[ad_params["sub_idxs"]]
-                                weight = weight.repeat(len(cond_or_uncond), 1, 1) # repeat for cond and uncond
-                                if torch.all(weight == 0):
-                                    continue
-                            elif weight == 0:
-                                continue
                             cond = tensor_to_size(cond, ad_params["full_length"])
                             uncond = tensor_to_size(uncond, ad_params["full_length"])
                             cond = cond[ad_params["sub_idxs"]]
                             uncond = uncond[ad_params["sub_idxs"]]
                     else:
-                        cond = tensor_to_size(cond, batch_prompt)
-                        uncond = tensor_to_size(uncond, batch_prompt)
-
                         if isinstance(weight, torch.Tensor):
                             weight = tensor_to_size(weight, batch_prompt)
-                            weight = weight.repeat(len(cond_or_uncond), 1, 1)
                             if torch.all(weight == 0):
                                 continue
                         elif weight == 0:
                             continue
+
+                        cond = tensor_to_size(cond, batch_prompt)
+                        uncond = tensor_to_size(uncond, batch_prompt)
 
                     k_cond = ipadapter.ip_layers.to_kvs[self.k_key](cond)
                     k_uncond = ipadapter.ip_layers.to_kvs[self.k_key](uncond)
@@ -137,7 +122,6 @@ class CrossAttentionPatch:
                     # TODO: should we always convert the weights to a tensor?
                     if isinstance(weight, torch.Tensor):
                         weight = tensor_to_size(weight, batch_prompt)
-                        weight = weight.repeat(len(cond_or_uncond), 1, 1)
                         if torch.all(weight == 0):
                             continue
                     elif weight == 0:
@@ -147,6 +131,8 @@ class CrossAttentionPatch:
                     k_uncond = ipadapter.ip_layers.to_kvs[self.k_key](uncond).repeat(batch_prompt, 1, 1)
                     v_cond = ipadapter.ip_layers.to_kvs[self.v_key](cond).repeat(batch_prompt, 1, 1)
                     v_uncond = ipadapter.ip_layers.to_kvs[self.v_key](uncond).repeat(batch_prompt, 1, 1)
+
+                weight = weight.repeat(len(cond_or_uncond), 1, 1) # repeat for cond and uncond
 
                 ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0)
                 ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0)
