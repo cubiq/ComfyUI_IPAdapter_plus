@@ -61,7 +61,7 @@ def get_ipadapter_file(preset, is_sdxl):
         if is_sdxl:
             raise Exception("full face model is not supported for SDXL")
         pattern = 'full.face.sd15\.(safetensors|bin)$'
-    elif preset.startswith("faceid portrait"):
+    elif preset.startswith("faceid portrait ("):
         if is_sdxl:
             pattern = 'portrait.sdxl\.(safetensors|bin)$'
         else:
@@ -69,6 +69,12 @@ def get_ipadapter_file(preset, is_sdxl):
             # if v11 is not found, try with the old version
             if not [e for e in ipadapter_list if re.search(pattern, e, re.IGNORECASE)]:
                 pattern = 'portrait.sd15\.(safetensors|bin)$'
+        is_insightface = True
+    elif preset.startswith("faceid portrait unnorm"):
+        if is_sdxl:
+            pattern = 'portrait.sdxl.unnorm\.(safetensors|bin)$'
+        else:
+            raise Exception("portrait unnorm model is not supported for SD1.5")
         is_insightface = True
     elif preset == "faceid":
         if is_sdxl:
@@ -131,6 +137,9 @@ def ipadapter_model_loader(file):
 
     if 'plusv2' in file.lower():
         model["faceidplusv2"] = True
+    
+    if 'unnorm' in file.lower():
+        model["portraitunnorm"] = True
 
     return model
 

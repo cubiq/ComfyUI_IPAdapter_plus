@@ -27,6 +27,8 @@ Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [Pa
 
 ## Important updates
 
+**2024/04/16**: Added support for the new SDXL portrait unnorm model (link below). It's very strong and tends to ignore the text conditioning. Lower the CFG to 3-4 or use a RescaleCFG node.
+
 **2024/04/12**: Added scheduled weights. Useful for animations.
 
 **2024/04/09**: Added experimental Style/Composition transfer for SD1.5. The results are often not as good as SDXL. Optimal weight seems to be from 0.8 to 2.0. The **Style+Composition node doesn't work for SD1.5** at the moment, you can only alter either the Style or the Composition, I need more time for testing. Old workflows will still work **but you may need to refresh the page and re-select the weight type!**
@@ -85,7 +87,7 @@ Remember you can also use any custom location setting an `ipadapter` entry in th
 
 **FaceID** models require `insightface`, you need to install it in your ComfyUI environment. Check [this issue](https://github.com/cubiq/ComfyUI_IPAdapter_plus/issues/162) for help. Remember that most FaceID models also need a LoRA.
 
-For the Unified Loader to work the files need to be named exactly as shown in the table below.
+For the Unified Loader to work the files need to be named exactly as shown in the list below.
 
 - `/ComfyUI/models/ipadapter`
     - [ip-adapter-faceid_sd15.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sd15.bin), base FaceID model
@@ -94,6 +96,7 @@ For the Unified Loader to work the files need to be named exactly as shown in th
     - [ip-adapter-faceid_sdxl.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid_sdxl.bin), SDXL base FaceID
     - [ip-adapter-faceid-plusv2_sdxl.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sdxl.bin), SDXL plus v2
     - [ip-adapter-faceid-portrait_sdxl.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait_sdxl.bin), SDXL text prompt style transfer
+    - [ip-adapter-faceid-portrait_sdxl_unnorm.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait_sdxl_unnorm.bin), very strong style transfer SDXL only
     - **Deprecated** [ip-adapter-faceid-plus_sd15.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plus_sd15.bin), FaceID plus v1 
     - **Deprecated** [ip-adapter-faceid-portrait_sd15.bin](https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait_sd15.bin), v1 of the portrait model
 

@@ -45,7 +45,7 @@ WEIGHT_TYPES = ["linear", "ease in", "ease out", 'ease in-out', 'reverse in-out'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 class IPAdapter(nn.Module):
-    def __init__(self, ipadapter_model, cross_attention_dim=1024, output_cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4, is_sdxl=False, is_plus=False, is_full=False, is_faceid=False):
+    def __init__(self, ipadapter_model, cross_attention_dim=1024, output_cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4, is_sdxl=False, is_plus=False, is_full=False, is_faceid=False, is_portrait_unnorm=False):
         super().__init__()
 
         self.clip_embeddings_dim = clip_embeddings_dim
@@ -55,12 +55,13 @@ class IPAdapter(nn.Module):
         self.is_sdxl = is_sdxl
         self.is_full = is_full
         self.is_plus = is_plus
+        self.is_portrait_unnorm = is_portrait_unnorm
 
-        if is_faceid:
+        if is_faceid and not is_portrait_unnorm:
             self.image_proj_model = self.init_proj_faceid()
         elif is_full:
             self.image_proj_model = self.init_proj_full()
-        elif is_plus:
+        elif is_plus or is_portrait_unnorm:
             self.image_proj_model = self.init_proj_plus()
         else:
             self.image_proj_model = self.init_proj()
@@ -170,8 +171,9 @@ def ipadapter_execute(model,
 
     is_full = "proj.3.weight" in ipadapter["image_proj"]
     is_portrait = "proj.2.weight" in ipadapter["image_proj"] and not "proj.3.weight" in ipadapter["image_proj"] and not "0.to_q_lora.down.weight" in ipadapter["ip_adapter"]
-    is_faceid = is_portrait or "0.to_q_lora.down.weight" in ipadapter["ip_adapter"]
-    is_plus = is_full or "latents" in ipadapter["image_proj"] or "perceiver_resampler.proj_in.weight" in ipadapter["image_proj"]
+    is_portrait_unnorm = "portraitunnorm" in ipadapter
+    is_faceid = is_portrait or "0.to_q_lora.down.weight" in ipadapter["ip_adapter"] or is_portrait_unnorm
+    is_plus = (is_full or "latents" in ipadapter["image_proj"] or "perceiver_resampler.proj_in.weight" in ipadapter["image_proj"]) and not is_portrait_unnorm
     is_faceidv2 = "faceidplusv2" in ipadapter
     output_cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
     is_sdxl = output_cross_attention_dim == 2048
@@ -182,8 +184,8 @@ def ipadapter_execute(model,
     if is_faceidv2:
         weight_faceidv2 = weight_faceidv2 if weight_faceidv2 is not None else weight*2
 
-    cross_attention_dim = 1280 if is_plus and is_sdxl and not is_faceid else output_cross_attention_dim
-    clip_extra_context_tokens = 16 if (is_plus and not is_faceid) or is_portrait else 4
+    cross_attention_dim = 1280 if (is_plus and is_sdxl and not is_faceid) or is_portrait_unnorm else output_cross_attention_dim
+    clip_extra_context_tokens = 16 if (is_plus and not is_faceid) or is_portrait or is_portrait_unnorm else 4
 
     if image is not None and image.shape[1] != image.shape[2]:
         print("\033[33mINFO: the IPAdapter reference image is not a square, CLIPImageProcessor will resize and crop it at the center. If the main focus of the picture is not in the middle the result might not be what you are expecting.\033[0m")
@@ -233,7 +235,10 @@ def ipadapter_execute(model,
                 insightface.det_model.input_size = size # TODO: hacky but seems to be working
                 face = insightface.get(image_iface[i])
                 if face:
-                    face_cond_embeds.append(torch.from_numpy(face[0].normed_embedding).unsqueeze(0))
+                    if not is_portrait_unnorm:
+                        face_cond_embeds.append(torch.from_numpy(face[0].normed_embedding).unsqueeze(0))
+                    else:
+                        face_cond_embeds.append(torch.from_numpy(face[0].embedding).unsqueeze(0))
                     image.append(image_to_tensor(face_align.norm_crop(image_iface[i], landmark=face[0].kps, image_size=256)))
 
                     if 640 not in size:
@@ -330,7 +335,8 @@ def ipadapter_execute(model,
         is_sdxl=is_sdxl,
         is_plus=is_plus,
         is_full=is_full,
-        is_faceid=is_faceid
+        is_faceid=is_faceid,
+        is_portrait_unnorm=is_portrait_unnorm,
     ).to(device, dtype=dtype)
 
     if is_faceid and is_plus:
@@ -492,7 +498,7 @@ class IPAdapterUnifiedLoaderFaceID(IPAdapterUnifiedLoader):
     def INPUT_TYPES(s):
         return {"required": {
             "model": ("MODEL", ),
-            "preset": (['FACEID', 'FACEID PLUS - SD1.5 only', 'FACEID PLUS V2', 'FACEID PORTRAIT (style transfer)'], ),
+            "preset": (['FACEID', 'FACEID PLUS - SD1.5 only', 'FACEID PLUS V2', 'FACEID PORTRAIT (style transfer)', 'FACEID PORTRAIT UNNORM - SDXL only (strong)'], ),
             "lora_strength": ("FLOAT", { "default": 0.6, "min": 0, "max": 1, "step": 0.01 }),
             "provider": (["CPU", "CUDA", "ROCM", "DirectML", "OpenVINO", "CoreML"], ),
         },
