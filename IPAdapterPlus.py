@@ -1295,6 +1295,37 @@ class IPAdapterLoadEmbeds:
         path = folder_paths.get_annotated_filepath(embeds)
         return (torch.load(path).cpu(), )
 
+defaultValue="""0:0,
+40:1,
+80:2,
+"""
+class IPAdapterImageSchedule:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {"text": ("STRING", {"multiline": True, "default": defaultValue}),
+                            "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 999999.0, "step": 1.0}),
+                            "print_output": ("BOOLEAN", {"default": False})}}
+
+    RETURN_TYPES = ("INT",)
+    FUNCTION = "schedule"
+
+    CATEGORY = "ipadapter/utils"
+
+    def schedule(self, text, max_frames, print_output):
+        frames = [0] * max_frames
+        for item in text.split(","):
+            item = item.strip()
+            if ":" in item:
+                parts = item.split(":")
+                if len(parts) == 2:
+                    start_frame = int(parts[0])
+                    value = int(parts[1])
+                    for i in range(start_frame, max_frames):
+                        frames[i] = value
+        if print_output is True:
+            print("ValueSchedule: ", frames)
+        return (frames, )
+
 class IPAdapterWeights:
     @classmethod
     def INPUT_TYPES(s):
@@ -1392,6 +1423,7 @@ NODE_CLASS_MAPPINGS = {
     "IPAdapterSaveEmbeds": IPAdapterSaveEmbeds,
     "IPAdapterLoadEmbeds": IPAdapterLoadEmbeds,
     "IPAdapterWeights": IPAdapterWeights,
+    "IPAdapterImageSchedule": IPAdapterImageSchedule,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -1423,4 +1455,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterSaveEmbeds": "IPAdapter Save Embeds",
     "IPAdapterLoadEmbeds": "IPAdapter Load Embeds",
     "IPAdapterWeights": "IPAdapter Weights",
+    "IPAdapterImageSchedule": "IPAdapterImageSchedule",
 }
