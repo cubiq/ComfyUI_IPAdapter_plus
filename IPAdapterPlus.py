@@ -162,6 +162,7 @@ def ipadapter_execute(model,
                       pos_embed=None,
                       neg_embed=None,
                       unfold_batch=False,
+                      image_schedule=None,
                       embeds_scaling='V only',
                       layer_weights=None):
     device = model_management.get_torch_device()
@@ -371,6 +372,7 @@ def ipadapter_execute(model,
         "sigma_start": sigma_start,
         "sigma_end": sigma_end,
         "unfold_batch": unfold_batch,
+        "image_schedule": image_schedule,
         "embeds_scaling": embeds_scaling,
     }
 
@@ -632,7 +634,7 @@ class IPAdapterAdvanced:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, model, ipadapter, start_at, end_at, weight = 1.0, weight_style=1.0, weight_composition=1.0, expand_style=False, weight_type="linear", combine_embeds="concat", weight_faceidv2=None, image=None, image_style=None, image_composition=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None, embeds_scaling='V only', layer_weights=None):
+    def apply_ipadapter(self, model, ipadapter, start_at, end_at, weight = 1.0, weight_style=1.0, weight_composition=1.0, expand_style=False, weight_type="linear", combine_embeds="concat", weight_faceidv2=None, image=None, image_style=None, image_composition=None, image_negative=None, clip_vision=None, image_schedule=None, attn_mask=None, insightface=None, embeds_scaling='V only', layer_weights=None):
         is_sdxl = isinstance(model.model, (comfy.model_base.SDXL, comfy.model_base.SDXLRefiner, comfy.model_base.SDXL_instructpix2pix))
 
         if image_style is not None: # we are doing style + composition transfer
@@ -659,6 +661,7 @@ class IPAdapterAdvanced:
             "end_at": end_at,
             "attn_mask": attn_mask,
             "unfold_batch": self.unfold_batch,
+            "image_schedule": image_schedule,
             "embeds_scaling": embeds_scaling,
             "insightface": insightface if insightface is not None else ipadapter['insightface']['model'] if 'insightface' in ipadapter else None,
             "layer_weights": layer_weights,
@@ -699,6 +702,7 @@ class IPAdapterBatch(IPAdapterAdvanced):
                 "image_negative": ("IMAGE",),
                 "attn_mask": ("MASK",),
                 "clip_vision": ("CLIP_VISION",),
+                "image_schedule": ("INT", {"default": None, "forceInput": True} ),
             }
         }
 
@@ -751,6 +755,7 @@ class IPAdapterStyleCompositionBatch(IPAdapterStyleComposition):
                 "image_negative": ("IMAGE",),
                 "attn_mask": ("MASK",),
                 "clip_vision": ("CLIP_VISION",),
+                "image_schedule": ("INT", {"default": None, "forceInput": True} ),
             }
         }
 
@@ -941,6 +946,7 @@ class IPAdapterTiledBatch(IPAdapterTiled):
                 "image_negative": ("IMAGE",),
                 "attn_mask": ("MASK",),
                 "clip_vision": ("CLIP_VISION",),
+                "image_schedule": ("INT", {"default": None, "forceInput": True} ),
             }
         }
 
