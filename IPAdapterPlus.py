@@ -435,7 +435,7 @@ class IPAdapterUnifiedLoader:
         # 1. Load the clipvision model
         clipvision_file, search_pattern = get_clipvision_file(preset)
         if clipvision_file is None:
-            raise Exception(f"ClipVision model not found.\n\nSearching for {search_pattern}")
+            raise Exception(f"ClipVision model not found.\n\nSearching for {search_pattern}\n\nTry to download it from <a href='https://github.com/cubiq/ComfyUI_IPAdapter_plus#installation' target='_blank' style='color:white'>HERE</a>")
 
         if clipvision_file != self.clipvision['file']:
             if clipvision_file != pipeline['clipvision']['file']:
@@ -449,7 +449,7 @@ class IPAdapterUnifiedLoader:
         is_sdxl = isinstance(model.model, (comfy.model_base.SDXL, comfy.model_base.SDXLRefiner, comfy.model_base.SDXL_instructpix2pix))
         ipadapter_file, is_insightface, lora_pattern, search_pattern = get_ipadapter_file(preset, is_sdxl)
         if ipadapter_file is None:
-            raise Exception(f"IPAdapter model not found.\n\nSearching for {search_pattern}")
+            raise Exception(f"IPAdapter model not found.\n\nSearching for {search_pattern}\n\nTry to download it from <a href='https://github.com/cubiq/ComfyUI_IPAdapter_plus#installation' target='_blank' style='color:white'>HERE</a>")
 
         if ipadapter_file != self.ipadapter['file']:
             if pipeline['ipadapter']['file'] != ipadapter_file:
