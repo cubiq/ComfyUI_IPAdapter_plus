@@ -4,7 +4,7 @@ import math
 import folder_paths
 
 import comfy.model_management as model_management
-from node_helpers import conditioning_set_values, conditioning_set_values
+from node_helpers import conditioning_set_values
 from comfy.clip_vision import load as load_clip_vision
 from comfy.sd import load_lora_for_models
 import comfy.utils
