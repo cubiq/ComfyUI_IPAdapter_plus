@@ -4,6 +4,7 @@ import math
 import folder_paths
 
 import comfy.model_management as model_management
+from node_helpers import conditioning_set_values, conditioning_set_values
 from comfy.clip_vision import load as load_clip_vision
 from comfy.sd import load_lora_for_models
 import comfy.utils
@@ -191,7 +192,7 @@ def ipadapter_execute(model,
         print("\033[33mINFO: the IPAdapter reference image is not a square, CLIPImageProcessor will resize and crop it at the center. If the main focus of the picture is not in the middle the result might not be what you are expecting.\033[0m")
 
     if isinstance(weight, list):
-        weight = torch.tensor(weight).unsqueeze(-1).unsqueeze(-1).to(device, dtype=dtype) if unfold_batch else weight[0]           
+        weight = torch.tensor(weight).unsqueeze(-1).unsqueeze(-1).to(device, dtype=dtype) if unfold_batch else weight[0]
 
     # special weight types
     if layer_weights is not None and layer_weights != '':
@@ -632,8 +633,17 @@ class IPAdapterAdvanced:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, model, ipadapter, start_at, end_at, weight = 1.0, weight_style=1.0, weight_composition=1.0, expand_style=False, weight_type="linear", combine_embeds="concat", weight_faceidv2=None, image=None, image_style=None, image_composition=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None, embeds_scaling='V only', layer_weights=None):
+    def apply_ipadapter(self, model, ipadapter, start_at=0.0, end_at=1.0, weight=1.0, weight_style=1.0, weight_composition=1.0, expand_style=False, weight_type="linear", combine_embeds="concat", weight_faceidv2=None, image=None, image_style=None, image_composition=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None, embeds_scaling='V only', layer_weights=None, ipadapter_params=None):
         is_sdxl = isinstance(model.model, (comfy.model_base.SDXL, comfy.model_base.SDXLRefiner, comfy.model_base.SDXL_instructpix2pix))
+
+        if 'ipadapter' in ipadapter:
+            ipadapter_model = ipadapter['ipadapter']['model']
+            clip_vision = clip_vision if clip_vision is not None else ipadapter['clipvision']['model']
+        else:
+            ipadapter_model = ipadapter
+
+        if clip_vision is None:
+            raise Exception("Missing CLIPVision model.")
 
         if image_style is not None: # we are doing style + composition transfer
             if not is_sdxl:
@@ -645,38 +655,44 @@ class IPAdapterAdvanced:
                 image_composition = image_style
 
             weight_type = "strong style and composition" if expand_style else "style and composition"
+        elif ipadapter_params is not None: # we are doing batch processing
+            image = ipadapter_params['image']
+            attn_mask = ipadapter_params['attn_mask']
+            weight = ipadapter_params['weight']
+            weight_type = ipadapter_params['weight_type']
+            start_at = ipadapter_params['start_at']
+            end_at = ipadapter_params['end_at']
 
-        ipa_args = {
-            "image": image,
-            "image_composition": image_composition,
-            "image_negative": image_negative,
-            "weight": weight,
-            "weight_composition": weight_composition,
-            "weight_faceidv2": weight_faceidv2,
-            "weight_type": weight_type,
-            "combine_embeds": combine_embeds,
-            "start_at": start_at,
-            "end_at": end_at,
-            "attn_mask": attn_mask,
-            "unfold_batch": self.unfold_batch,
-            "embeds_scaling": embeds_scaling,
-            "insightface": insightface if insightface is not None else ipadapter['insightface']['model'] if 'insightface' in ipadapter else None,
-            "layer_weights": layer_weights,
-        }
+        image = image if isinstance(image, list) else [image]
 
-        if 'ipadapter' in ipadapter:
-            ipadapter_model = ipadapter['ipadapter']['model']
-            clip_vision = clip_vision if clip_vision is not None else ipadapter['clipvision']['model']
-        else:
-            ipadapter_model = ipadapter
-            clip_vision = clip_vision
+        work_model = model.clone()
 
-        if clip_vision is None:
-            raise Exception("Missing CLIPVision model.")
+        for i in range(len(image)):
+            if image[i] is None:
+                continue
+
+            ipa_args = {
+                "image": image[i],
+                "image_composition": image_composition,
+                "image_negative": image_negative,
+                "weight": weight if not isinstance(weight, list) else weight[i],
+                "weight_composition": weight_composition,
+                "weight_faceidv2": weight_faceidv2,
+                "weight_type": weight_type if not isinstance(weight_type, list) else weight_type[i],
+                "combine_embeds": combine_embeds,
+                "start_at": start_at if not isinstance(start_at, list) else start_at[i],
+                "end_at": end_at if not isinstance(end_at, list) else end_at[i],
+                "attn_mask": attn_mask if not isinstance(attn_mask, list) else attn_mask[i],
+                "unfold_batch": self.unfold_batch,
+                "embeds_scaling": embeds_scaling,
+                "insightface": insightface if insightface is not None else ipadapter['insightface']['model'] if 'insightface' in ipadapter else None,
+                "layer_weights": layer_weights,
+            }
+
+            work_model = ipadapter_execute(work_model, ipadapter_model, clip_vision, **ipa_args)
 
         del ipadapter
-
-        return (ipadapter_execute(model.clone(), ipadapter_model, clip_vision, **ipa_args), )
+        return (work_model, )
 
 class IPAdapterBatch(IPAdapterAdvanced):
     def __init__(self):
@@ -1022,6 +1038,25 @@ class IPAdapterMS(IPAdapterAdvanced):
 
     CATEGORY = "ipadapter/dev"
 
+class IPAdapterFromParams(IPAdapterAdvanced):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL", ),
+                "ipadapter": ("IPADAPTER", ),
+                "ipadapter_params": ("IPADAPTER_PARAMS", ),
+                "combine_embeds": (["concat", "add", "subtract", "average", "norm average"],),
+                "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
+            },
+            "optional": {
+                "image_negative": ("IMAGE",),
+                "clip_vision": ("CLIP_VISION",),
+            }
+        }
+
+    CATEGORY = "ipadapter/params"
+
 """
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  Helpers
@@ -1320,7 +1355,7 @@ class IPAdapterWeights:
             if len(weights) > 0:
                 start = weights[0]
                 end = weights[-1]
-            
+
             weights = []
 
             end_frame = min(end_frame, frames)
@@ -1352,6 +1387,99 @@ class IPAdapterWeights:
 
         return (weights, )
 
+class IPAdapterRegionalConditioning:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            #"set_cond_area": (["default", "mask bounds"],),
+            "image": ("IMAGE",),
+            "image_weight": ("FLOAT", { "default": 1.0, "min": -1.0, "max": 3.0, "step": 0.05 }),
+            "prompt_weight": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 10.0, "step": 0.05 }),
+            "weight_type": (WEIGHT_TYPES, ),
+            "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+            "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+        }, "optional": {
+            "mask": ("MASK",),
+            "positive": ("CONDITIONING",),
+            "negative": ("CONDITIONING",),
+        }}
+
+    RETURN_TYPES = ("IPADAPTER_PARAMS", "CONDITIONING", "CONDITIONING", )
+    RETURN_NAMES = ("IPADAPTER_PARAMS", "POSITIVE", "NEGATIVE")
+    FUNCTION = "conditioning"
+
+    CATEGORY = "ipadapter/params"
+
+    def conditioning(self, image, image_weight, prompt_weight, weight_type, start_at, end_at, mask=None, positive=None, negative=None):
+        set_area_to_bounds = False #if set_cond_area == "default" else True
+
+        if mask is not None:
+            if positive is not None:
+                positive = conditioning_set_values(positive, {"mask": mask, "set_area_to_bounds": set_area_to_bounds, "mask_strength": prompt_weight})
+            if negative is not None:
+                negative = conditioning_set_values(negative, {"mask": mask, "set_area_to_bounds": set_area_to_bounds, "mask_strength": prompt_weight})
+
+        ipadapter_params = {
+            "image": [image],
+            "attn_mask": [mask],
+            "weight": [image_weight],
+            "weight_type": [weight_type],
+            "start_at": [start_at],
+            "end_at": [end_at],
+        }
+        
+        return (ipadapter_params, positive, negative, )
+
+class IPAdapterCombineParams:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "params_1": ("IPADAPTER_PARAMS",),
+            "params_2": ("IPADAPTER_PARAMS",),
+        }, "optional": {
+            "params_3": ("IPADAPTER_PARAMS",),
+            "params_4": ("IPADAPTER_PARAMS",),
+            "params_5": ("IPADAPTER_PARAMS",),
+        }}
+    
+    RETURN_TYPES = ("IPADAPTER_PARAMS",)
+    FUNCTION = "combine"
+    CATEGORY = "ipadapter/params"
+
+    def combine(self, params_1, params_2, params_3=None, params_4=None, params_5=None):
+        ipadapter_params = {
+            "image": params_1["image"] + params_2["image"],
+            "attn_mask": params_1["attn_mask"] + params_2["attn_mask"],
+            "weight": params_1["weight"] + params_2["weight"],
+            "weight_type": params_1["weight_type"] + params_2["weight_type"],
+            "start_at": params_1["start_at"] + params_2["start_at"],
+            "end_at": params_1["end_at"] + params_2["end_at"],
+        }
+
+        if params_3 is not None:
+            ipadapter_params["image"] += params_3["image"]
+            ipadapter_params["attn_mask"] += params_3["attn_mask"]
+            ipadapter_params["weight"] += params_3["weight"]
+            ipadapter_params["weight_type"] += params_3["weight_type"]
+            ipadapter_params["start_at"] += params_3["start_at"]
+            ipadapter_params["end_at"] += params_3["end_at"]
+        if params_4 is not None:
+            ipadapter_params["image"] += params_4["image"]
+            ipadapter_params["attn_mask"] += params_4["attn_mask"]
+            ipadapter_params["weight"] += params_4["weight"]
+            ipadapter_params["weight_type"] += params_4["weight_type"]
+            ipadapter_params["start_at"] += params_4["start_at"]
+            ipadapter_params["end_at"] += params_4["end_at"]
+        if params_5 is not None:
+            ipadapter_params["image"] += params_5["image"]
+            ipadapter_params["attn_mask"] += params_5["attn_mask"]
+            ipadapter_params["weight"] += params_5["weight"]
+            ipadapter_params["weight_type"] += params_5["weight_type"]
+            ipadapter_params["start_at"] += params_5["start_at"]
+            ipadapter_params["end_at"] += params_5["end_at"]
+
+        return (ipadapter_params, )
+
 """
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  Register
@@ -1370,6 +1498,7 @@ NODE_CLASS_MAPPINGS = {
     "IPAdapterStyleComposition": IPAdapterStyleComposition,
     "IPAdapterStyleCompositionBatch": IPAdapterStyleCompositionBatch,
     "IPAdapterMS": IPAdapterMS,
+    "IPAdapterFromParams": IPAdapterFromParams,
 
     # Loaders
     "IPAdapterUnifiedLoader": IPAdapterUnifiedLoader,
@@ -1386,6 +1515,8 @@ NODE_CLASS_MAPPINGS = {
     "IPAdapterSaveEmbeds": IPAdapterSaveEmbeds,
     "IPAdapterLoadEmbeds": IPAdapterLoadEmbeds,
     "IPAdapterWeights": IPAdapterWeights,
+    "IPAdapterRegionalConditioning": IPAdapterRegionalConditioning,
+    "IPAdapterCombineParams": IPAdapterCombineParams,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -1401,6 +1532,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterStyleComposition": "IPAdapter Style & Composition SDXL",
     "IPAdapterStyleCompositionBatch": "IPAdapter Style & Composition Batch SDXL",
     "IPAdapterMS": "IPAdapter Mad Scientist",
+    "IPAdapterFromParams": "IPAdapter from Params",
 
     # Loaders
     "IPAdapterUnifiedLoader": "IPAdapter Unified Loader",
@@ -1417,4 +1549,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterSaveEmbeds": "IPAdapter Save Embeds",
     "IPAdapterLoadEmbeds": "IPAdapter Load Embeds",
     "IPAdapterWeights": "IPAdapter Weights",
+    "IPAdapterRegionalConditioning": "IPAdapter Regional Conditioning",
+    "IPAdapterCombineParams": "IPAdapter Combine Params",
 }
