@@ -1,6 +1,6 @@
 {
   "last_node_id": 23,
-  "last_link_id": 43,
+  "last_link_id": 44,
   "nodes": [
     {
       "id": 8,
@@ -14,7 +14,7 @@
         "1": 46
       },
       "flags": {},
-      "order": 11,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
@@ -87,7 +87,7 @@
         "1": 262
       },
       "flags": {},
-      "order": 10,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -146,7 +146,7 @@
         "1": 582.3048095703125
       },
       "flags": {},
-      "order": 12,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
@@ -211,7 +211,7 @@
         "1": 180.6060791015625
       },
       "flags": {},
-      "order": 6,
+      "order": 5,
       "mode": 0,
       "inputs": [
         {
@@ -249,7 +249,7 @@
         "1": 164.31304931640625
       },
       "flags": {},
-      "order": 5,
+      "order": 4,
       "mode": 0,
       "inputs": [
         {
@@ -335,7 +335,7 @@
         "1": 126
       },
       "flags": {},
-      "order": 4,
+      "order": 3,
       "mode": 0,
       "inputs": [
         {
@@ -391,7 +391,7 @@
         "1": 78
       },
       "flags": {},
-      "order": 8,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
@@ -440,10 +440,10 @@
       ],
       "size": {
         "0": 315,
-        "1": 166
+        "1": 190
       },
       "flags": {},
-      "order": 9,
+      "order": 8,
       "mode": 0,
       "inputs": [
         {
@@ -460,7 +460,7 @@
         {
           "name": "image",
           "type": "IMAGE",
-          "link": 41
+          "link": 44
         },
         {
           "name": "attn_mask",
@@ -485,7 +485,8 @@
       "widgets_values": [
         0.4,
         0,
-        1
+        1,
+        "standard"
       ]
     },
     {
@@ -497,10 +498,10 @@
       ],
       "size": {
         "0": 315,
-        "1": 298
+        "1": 322
       },
       "flags": {},
-      "order": 7,
+      "order": 6,
       "mode": 0,
       "inputs": [
         {
@@ -549,6 +550,15 @@
           ],
           "shape": 3,
           "slot_index": 0
+        },
+        {
+          "name": "face_image",
+          "type": "IMAGE",
+          "links": [
+            44
+          ],
+          "shape": 3,
+          "slot_index": 1
         }
       ],
       "properties": {
@@ -560,46 +570,8 @@
         "linear",
         "concat",
         0,
-        1
-      ]
-    },
-    {
-      "id": 23,
-      "type": "LoadImage",
-      "pos": [
-        1280,
-        -230
-      ],
-      "size": {
-        "0": 315,
-        "1": 314
-      },
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            41
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "rosario.png",
-        "image"
+        1,
+        "V only"
       ]
     }
   ],
@@ -725,14 +697,6 @@
       "MODEL"
     ],
     [
-      41,
-      23,
-      0,
-      21,
-      2,
-      "IMAGE"
-    ],
-    [
       42,
       21,
       0,
@@ -747,6 +711,14 @@
       22,
       0,
       "MODEL"
+    ],
+    [
+      44,
+      18,
+      1,
+      21,
+      2,
+      "IMAGE"
     ]
   ],
   "groups": [],

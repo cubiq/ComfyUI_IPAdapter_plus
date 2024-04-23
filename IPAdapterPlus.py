@@ -656,13 +656,16 @@ class IPAdapterAdvanced:
                 image_composition = image_style
 
             weight_type = "strong style and composition" if expand_style else "style and composition"
-        elif ipadapter_params is not None: # we are doing batch processing
+        if ipadapter_params is not None: # we are doing batch processing
             image = ipadapter_params['image']
             attn_mask = ipadapter_params['attn_mask']
             weight = ipadapter_params['weight']
             weight_type = ipadapter_params['weight_type']
             start_at = ipadapter_params['start_at']
             end_at = ipadapter_params['end_at']
+        else:
+            # at this point weight can be a list from the batch-weight or a single float
+            weight = [weight]
 
         image = image if isinstance(image, list) else [image]
 
@@ -676,7 +679,7 @@ class IPAdapterAdvanced:
                 "image": image[i],
                 "image_composition": image_composition,
                 "image_negative": image_negative,
-                "weight": weight if not isinstance(weight, list) else weight[i],
+                "weight": weight[i],
                 "weight_composition": weight_composition,
                 "weight_faceidv2": weight_faceidv2,
                 "weight_type": weight_type if not isinstance(weight_type, list) else weight_type[i],
@@ -690,10 +693,10 @@ class IPAdapterAdvanced:
                 "layer_weights": layer_weights,
             }
 
-            work_model, image = ipadapter_execute(work_model, ipadapter_model, clip_vision, **ipa_args)
+            work_model, face_image = ipadapter_execute(work_model, ipadapter_model, clip_vision, **ipa_args)
 
         del ipadapter
-        return (work_model, image, )
+        return (work_model, face_image, )
 
 class IPAdapterBatch(IPAdapterAdvanced):
     def __init__(self):
