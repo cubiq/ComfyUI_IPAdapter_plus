@@ -240,7 +240,7 @@ def ipadapter_execute(model,
                         face_cond_embeds.append(torch.from_numpy(face[0].normed_embedding).unsqueeze(0))
                     else:
                         face_cond_embeds.append(torch.from_numpy(face[0].embedding).unsqueeze(0))
-                    image.append(image_to_tensor(face_align.norm_crop(image_iface[i], landmark=face[0].kps, image_size=256)))
+                    image.append(image_to_tensor(face_align.norm_crop(image_iface[i], landmark=face[0].kps, image_size=256 if is_sdxl else 224)))
 
                     if 640 not in size:
                         print(f"\033[33mINFO: InsightFace detection resolution lowered to {size}.\033[0m")
@@ -270,7 +270,9 @@ def ipadapter_execute(model,
                 img_uncond_embeds = torch.zeros_like(img_cond_embeds)
             if image_composition is not None:
                 img_comp_cond_embeds = img_comp_cond_embeds.image_embeds
-        del image, image_negative, image_composition
+        del image_negative, image_composition
+        
+        image = None if not is_faceid else image # if it's face_id we need the cropped face for later
     elif pos_embed is not None:
         img_cond_embeds = pos_embed
 
@@ -398,8 +400,7 @@ def ipadapter_execute(model,
             set_model_patch_replace(model, patch_kwargs, ("middle", 0, index))
             patch_kwargs["number"] += 1
 
-    return model
-
+    return (model, image)
 
 """
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -602,7 +603,7 @@ class IPAdapterSimple:
         if 'clipvision' not in ipadapter:
             raise Exception("CLIPVision model not present in the pipeline. Please load the models with the IPAdapterUnifiedLoader node.")
 
-        return (ipadapter_execute(model.clone(), ipadapter['ipadapter']['model'], ipadapter['clipvision']['model'], **ipa_args), )
+        return ipadapter_execute(model.clone(), ipadapter['ipadapter']['model'], ipadapter['clipvision']['model'], **ipa_args)
 
 class IPAdapterAdvanced:
     def __init__(self):
@@ -689,10 +690,10 @@ class IPAdapterAdvanced:
                 "layer_weights": layer_weights,
             }
 
-            work_model = ipadapter_execute(work_model, ipadapter_model, clip_vision, **ipa_args)
+            work_model, image = ipadapter_execute(work_model, ipadapter_model, clip_vision, **ipa_args)
 
         del ipadapter
-        return (work_model, )
+        return (work_model, image, )
 
 class IPAdapterBatch(IPAdapterAdvanced):
     def __init__(self):
@@ -795,6 +796,8 @@ class IPAdapterFaceID(IPAdapterAdvanced):
         }
 
     CATEGORY = "ipadapter/faceid"
+    RETURN_TYPES = ("MODEL","IMAGE",)
+    RETURN_NAMES = ("MODEL", "face_image", )
 
 class IPAAdapterFaceIDBatch(IPAdapterFaceID):
     def __init__(self):
@@ -931,7 +934,7 @@ class IPAdapterTiled:
                 "embeds_scaling": embeds_scaling,
             }
             # apply the ipadapter to the model without cloning it
-            model = ipadapter_execute(model, ipadapter_model, clip_vision, **ipa_args)
+            model, _ = ipadapter_execute(model, ipadapter_model, clip_vision, **ipa_args)
 
         return (model, torch.cat(tiles), torch.cat(masks), )
 
@@ -1009,7 +1012,7 @@ class IPAdapterEmbeds:
 
         del ipadapter
 
-        return (ipadapter_execute(model.clone(), ipadapter_model, clip_vision, **ipa_args), )
+        return ipadapter_execute(model.clone(), ipadapter_model, clip_vision, **ipa_args)
 
 class IPAdapterMS(IPAdapterAdvanced):
     @classmethod
