@@ -27,6 +27,8 @@ Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [Pa
 
 ## Important updates
 
+**2024/04/21**: Added Regional Conditioning nodes to simplify attention masking and masked text conditioning.
+
 **2024/04/16**: Added support for the new SDXL portrait unnorm model (link below). It's very strong and tends to ignore the text conditioning. Lower the CFG to 3-4 or use a RescaleCFG node.
 
 **2024/04/12**: Added scheduled weights. Useful for animations.
@@ -39,9 +41,9 @@ Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [Pa
 
 **2024/03/27**: Added Style transfer weight type for SDXL
 
-**2024/03/23**: Complete code rewrite!. **This is a breaking update!** Your previous workflows won't work and you'll need to recreate them. You've been warned! After the update, refresh your browser, delete the old IPAdapter nodes and create the new ones.
+**2024/03/23**: Complete code rewrite! **This is a breaking update!** Your previous workflows won't work and you'll need to recreate them. You've been warned! After the update, refresh your browser, delete the old IPAdapter nodes and create the new ones.
 
-*(I removed all previous updates because they were about the previous version of the extension)*
+*(I removed old updates related to the previous version of the extension)*
 
 ## Example workflows
 
@@ -55,11 +57,12 @@ The [examples directory](./examples/) has many workflows that cover all IPAdapte
  <img src="https://img.youtube.com/vi/_JzDcgKgghY/hqdefault.jpg" alt="Watch the video" />
 </a>
 
-**:star: [New IPAdapter features](https://youtu.be/_JzDcgKgghY)**
+- **:star: [New IPAdapter features](https://youtu.be/_JzDcgKgghY)**
+- **:art: [IPAdapter Style and Composition](https://www.youtube.com/watch?v=czcgJnoDVd4)**
 
 The following videos are about the previous version of IPAdapter, but they still contain valuable information.
 
-**:nerd_face: [Basic usage video](https://youtu.be/7m9ZZFU3HWo)**, **:rocket: [Advanced features video](https://www.youtube.com/watch?v=mJQ62ly7jrg)**, **:japanese_goblin: [Attention Masking video](https://www.youtube.com/watch?v=vqG1VXKteQg)**, **:movie_camera: [Animation Features video](https://www.youtube.com/watch?v=ddYbhv3WgWw)**
+:nerd_face: [Basic usage video](https://youtu.be/7m9ZZFU3HWo), :rocket: [Advanced features video](https://www.youtube.com/watch?v=mJQ62ly7jrg), :japanese_goblin: [Attention Masking video](https://www.youtube.com/watch?v=vqG1VXKteQg), :movie_camera: [Animation Features video](https://www.youtube.com/watch?v=ddYbhv3WgWw)
 
 ## Installation
 
@@ -139,9 +142,13 @@ Please check the [troubleshooting](https://github.com/cubiq/ComfyUI_IPAdapter_pl
 
 It's only thanks to generous sponsors that **the whole community** can enjoy open and free software. Please join me in thanking the following companies and individuals!
 
-### Gold sponsors
+### :trophy: Gold sponsors
 
 [![Kaiber.ai](https://f.latent.vision/imgs/kaiber.png)](https://kaiber.ai/)
+
+### :tada: Silver sponsors
+
+[![OperArt.ai](https://f.latent.vision/imgs/openart.png?r=1)](https://openart.ai/workflows)
 
 ### Companies supporting my projects
 
@@ -151,8 +158,9 @@ It's only thanks to generous sponsors that **the whole community** can enjoy ope
 
 - [Jack Gane](https://github.com/ganeJackS)
 - [Nathan Shipley](https://www.nathanshipley.com/)
+- [Dkdnzia](https://github.com/Dkdnzia)
 
-### One-time Extraordinaire
+### One-time Extraordinaires
 
 - [Eric Rollei](https://github.com/EricRollei)
 - [francaleu](https://github.com/francaleu)
