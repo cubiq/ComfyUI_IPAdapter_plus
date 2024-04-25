@@ -15,9 +15,9 @@ def get_clipvision_file(preset):
     clipvision_list = folder_paths.get_filename_list("clip_vision")
 
     if preset.startswith("vit-g"):
-        pattern = '(ViT.bigG.14.*39B.b160k|ipadapter.*sdxl|sdxl.*model\.(bin|safetensors))'
+        pattern = r'(ViT.bigG.14.*39B.b160k|ipadapter.*sdxl|sdxl.*model\.(bin|safetensors))'
     else:
-        pattern = '(ViT.H.14.*s32B.b79K|ipadapter.*sd15|sd1.?5.*model\.(bin|safetensors))'
+        pattern = r'(ViT.H.14.*s32B.b79K|ipadapter.*sd15|sd1.?5.*model\.(bin|safetensors))'
     clipvision_file = [e for e in clipvision_list if re.search(pattern, e, re.IGNORECASE)]
 
     clipvision_file = folder_paths.get_full_path("clip_vision", clipvision_file[0]) if clipvision_file else None
@@ -33,77 +33,77 @@ def get_ipadapter_file(preset, is_sdxl):
     if preset.startswith("light"):
         if is_sdxl:
             raise Exception("light model is not supported for SDXL")
-        pattern = 'sd15.light.v11\.(safetensors|bin)$'
+        pattern = r'sd15.light.v11\.(safetensors|bin)$'
         # if v11 is not found, try with the old version
         if not [e for e in ipadapter_list if re.search(pattern, e, re.IGNORECASE)]:
-            pattern = 'sd15.light\.(safetensors|bin)$'
+            pattern = r'sd15.light\.(safetensors|bin)$'
     elif preset.startswith("standard"):
         if is_sdxl:
-            pattern = 'ip.adapter.sdxl.vit.h\.(safetensors|bin)$'
+            pattern = r'ip.adapter.sdxl.vit.h\.(safetensors|bin)$'
         else:
-            pattern = 'ip.adapter.sd15\.(safetensors|bin)$'
+            pattern = r'ip.adapter.sd15\.(safetensors|bin)$'
     elif preset.startswith("vit-g"):
         if is_sdxl:
-            pattern = 'ip.adapter.sdxl\.(safetensors|bin)$'
+            pattern = r'ip.adapter.sdxl\.(safetensors|bin)$'
         else:
-            pattern = 'sd15.vit.g\.(safetensors|bin)$'
+            pattern = r'sd15.vit.g\.(safetensors|bin)$'
     elif preset.startswith("plus ("):
         if is_sdxl:
-            pattern = 'plus.sdxl.vit.h\.(safetensors|bin)$'
+            pattern = r'plus.sdxl.vit.h\.(safetensors|bin)$'
         else:
-            pattern = 'ip.adapter.plus.sd15\.(safetensors|bin)$'
+            pattern = r'ip.adapter.plus.sd15\.(safetensors|bin)$'
     elif preset.startswith("plus face"):
         if is_sdxl:
-            pattern = 'plus.face.sdxl.vit.h\.(safetensors|bin)$'
+            pattern = r'plus.face.sdxl.vit.h\.(safetensors|bin)$'
         else:
-            pattern = 'plus.face.sd15\.(safetensors|bin)$'
+            pattern = r'plus.face.sd15\.(safetensors|bin)$'
     elif preset.startswith("full"):
         if is_sdxl:
             raise Exception("full face model is not supported for SDXL")
-        pattern = 'full.face.sd15\.(safetensors|bin)$'
+        pattern = r'full.face.sd15\.(safetensors|bin)$'
     elif preset.startswith("faceid portrait ("):
         if is_sdxl:
-            pattern = 'portrait.sdxl\.(safetensors|bin)$'
+            pattern = r'portrait.sdxl\.(safetensors|bin)$'
         else:
-            pattern = 'portrait.v11.sd15\.(safetensors|bin)$'
+            pattern = r'portrait.v11.sd15\.(safetensors|bin)$'
             # if v11 is not found, try with the old version
             if not [e for e in ipadapter_list if re.search(pattern, e, re.IGNORECASE)]:
-                pattern = 'portrait.sd15\.(safetensors|bin)$'
+                pattern = r'portrait.sd15\.(safetensors|bin)$'
         is_insightface = True
     elif preset.startswith("faceid portrait unnorm"):
         if is_sdxl:
-            pattern = 'portrait.sdxl.unnorm\.(safetensors|bin)$'
+            pattern = r'portrait.sdxl.unnorm\.(safetensors|bin)$'
         else:
             raise Exception("portrait unnorm model is not supported for SD1.5")
         is_insightface = True
     elif preset == "faceid":
         if is_sdxl:
-            pattern = 'faceid.sdxl\.(safetensors|bin)$'
-            lora_pattern = 'faceid.sdxl.lora\.safetensors$'
+            pattern = r'faceid.sdxl\.(safetensors|bin)$'
+            lora_pattern = r'faceid.sdxl.lora\.safetensors$'
         else:
-            pattern = 'faceid.sd15\.(safetensors|bin)$'
-            lora_pattern = 'faceid.sd15.lora\.safetensors$'
+            pattern = r'faceid.sd15\.(safetensors|bin)$'
+            lora_pattern = r'faceid.sd15.lora\.safetensors$'
         is_insightface = True
     elif preset.startswith("faceid plus -"):
         if is_sdxl:
             raise Exception("faceid plus model is not supported for SDXL")
-        pattern = 'faceid.plus.sd15\.(safetensors|bin)$'
-        lora_pattern = 'faceid.plus.sd15.lora\.safetensors$'
+        pattern = r'faceid.plus.sd15\.(safetensors|bin)$'
+        lora_pattern = r'faceid.plus.sd15.lora\.safetensors$'
         is_insightface = True
     elif preset.startswith("faceid plus v2"):
         if is_sdxl:
-            pattern = 'faceid.plusv2.sdxl\.(safetensors|bin)$'
-            lora_pattern = 'faceid.plusv2.sdxl.lora\.safetensors$'
+            pattern = r'faceid.plusv2.sdxl\.(safetensors|bin)$'
+            lora_pattern = r'faceid.plusv2.sdxl.lora\.safetensors$'
         else:
-            pattern = 'faceid.plusv2.sd15\.(safetensors|bin)$'
-            lora_pattern = 'faceid.plusv2.sd15.lora\.safetensors$'
+            pattern = r'faceid.plusv2.sd15\.(safetensors|bin)$'
+            lora_pattern = r'faceid.plusv2.sd15.lora\.safetensors$'
         is_insightface = True
     # Community's models
     elif preset.startswith("composition"):
         if is_sdxl:
-            pattern = 'plus.composition.sdxl\.safetensors$'
+            pattern = r'plus.composition.sdxl\.safetensors$'
         else:
-            pattern = 'plus.composition.sd15\.safetensors$'
+            pattern = r'plus.composition.sd15\.safetensors$'
     else:
         raise Exception(f"invalid type '{preset}'")
 
