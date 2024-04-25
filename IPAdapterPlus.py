@@ -163,6 +163,7 @@ def ipadapter_execute(model,
                       pos_embed=None,
                       neg_embed=None,
                       unfold_batch=False,
+                      image_schedule=None,
                       embeds_scaling='V only',
                       layer_weights=None):
     device = model_management.get_torch_device()
@@ -374,6 +375,7 @@ def ipadapter_execute(model,
         "sigma_start": sigma_start,
         "sigma_end": sigma_end,
         "unfold_batch": unfold_batch,
+        "image_schedule": image_schedule,
         "embeds_scaling": embeds_scaling,
     }
 
@@ -634,7 +636,7 @@ class IPAdapterAdvanced:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, model, ipadapter, start_at=0.0, end_at=1.0, weight=1.0, weight_style=1.0, weight_composition=1.0, expand_style=False, weight_type="linear", combine_embeds="concat", weight_faceidv2=None, image=None, image_style=None, image_composition=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None, embeds_scaling='V only', layer_weights=None, ipadapter_params=None):
+    def apply_ipadapter(self, model, ipadapter, start_at=0.0, end_at=1.0, weight=1.0, weight_style=1.0, weight_composition=1.0, expand_style=False, weight_type="linear", combine_embeds="concat", weight_faceidv2=None, image=None, image_style=None, image_composition=None, image_negative=None, clip_vision=None, image_schedule=None, attn_mask=None, insightface=None, embeds_scaling='V only', layer_weights=None, ipadapter_params=None):
         is_sdxl = isinstance(model.model, (comfy.model_base.SDXL, comfy.model_base.SDXLRefiner, comfy.model_base.SDXL_instructpix2pix))
 
         if 'ipadapter' in ipadapter:
@@ -688,6 +690,7 @@ class IPAdapterAdvanced:
                 "end_at": end_at if not isinstance(end_at, list) else end_at[i],
                 "attn_mask": attn_mask if not isinstance(attn_mask, list) else attn_mask[i],
                 "unfold_batch": self.unfold_batch,
+            "image_schedule": image_schedule,
                 "embeds_scaling": embeds_scaling,
                 "insightface": insightface if insightface is not None else ipadapter['insightface']['model'] if 'insightface' in ipadapter else None,
                 "layer_weights": layer_weights,
@@ -719,6 +722,7 @@ class IPAdapterBatch(IPAdapterAdvanced):
                 "image_negative": ("IMAGE",),
                 "attn_mask": ("MASK",),
                 "clip_vision": ("CLIP_VISION",),
+                "image_schedule": ("INT", {"default": None, "forceInput": True} ),
             }
         }
 
@@ -771,6 +775,7 @@ class IPAdapterStyleCompositionBatch(IPAdapterStyleComposition):
                 "image_negative": ("IMAGE",),
                 "attn_mask": ("MASK",),
                 "clip_vision": ("CLIP_VISION",),
+                "image_schedule": ("INT", {"default": None, "forceInput": True} ),
             }
         }
 
@@ -963,6 +968,7 @@ class IPAdapterTiledBatch(IPAdapterTiled):
                 "image_negative": ("IMAGE",),
                 "attn_mask": ("MASK",),
                 "clip_vision": ("CLIP_VISION",),
+                "image_schedule": ("INT", {"default": None, "forceInput": True} ),
             }
         }
 
@@ -1330,6 +1336,37 @@ class IPAdapterLoadEmbeds:
         path = folder_paths.get_annotated_filepath(embeds)
         return (torch.load(path).cpu(), )
 
+defaultValue="""0:0,
+40:1,
+80:2,
+"""
+class IPAdapterImageSchedule:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {"text": ("STRING", {"multiline": True, "default": defaultValue}),
+                            "max_frames": ("INT", {"default": 120.0, "min": 1.0, "max": 999999.0, "step": 1.0}),
+                            "print_output": ("BOOLEAN", {"default": False})}}
+
+    RETURN_TYPES = ("INT",)
+    FUNCTION = "schedule"
+
+    CATEGORY = "ipadapter/utils"
+
+    def schedule(self, text, max_frames, print_output):
+        frames = [0] * max_frames
+        for item in text.split(","):
+            item = item.strip()
+            if ":" in item:
+                parts = item.split(":")
+                if len(parts) == 2:
+                    start_frame = int(parts[0])
+                    value = int(parts[1])
+                    for i in range(start_frame, max_frames):
+                        frames[i] = value
+        if print_output is True:
+            print("ValueSchedule: ", frames)
+        return (frames, )
+
 class IPAdapterWeights:
     @classmethod
     def INPUT_TYPES(s):
@@ -1521,7 +1558,9 @@ NODE_CLASS_MAPPINGS = {
     "IPAdapterSaveEmbeds": IPAdapterSaveEmbeds,
     "IPAdapterLoadEmbeds": IPAdapterLoadEmbeds,
     "IPAdapterWeights": IPAdapterWeights,
+    "IPAdapterImageSchedule": IPAdapterImageSchedule,
     "IPAdapterRegionalConditioning": IPAdapterRegionalConditioning,
+    "IPAdapterCombineParams": IPAdapterCombineParams,
     "IPAdapterCombineParams": IPAdapterCombineParams,
 }
 
@@ -1555,6 +1594,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterSaveEmbeds": "IPAdapter Save Embeds",
     "IPAdapterLoadEmbeds": "IPAdapter Load Embeds",
     "IPAdapterWeights": "IPAdapter Weights",
+    "IPAdapterImageSchedule": "IPAdapterImageSchedule",
     "IPAdapterRegionalConditioning": "IPAdapter Regional Conditioning",
     "IPAdapterCombineParams": "IPAdapter Combine Params",
 }
