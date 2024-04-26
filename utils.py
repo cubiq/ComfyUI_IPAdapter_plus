@@ -9,6 +9,7 @@ try:
     import torchvision.transforms.v2 as T
 except ImportError:
     import torchvision.transforms as T
+import logging
 
 def get_clipvision_file(preset):
     preset = preset.lower()
@@ -149,7 +150,14 @@ def insightface_loader(provider):
     except ImportError as e:
         raise Exception(e)
 
-    path = os.path.join(folder_paths.models_dir, "insightface")
+    folders_insightface=folder_paths.get_folder_paths("insightface")
+    if not folders_insightface:
+        path = os.path.join(folder_paths.models_dir, "insightface")
+    elif len(folders_insightface)>1:
+        logging.info(f"several insightface folders exist in extra_model_paths.yaml file. Using {folders_insightface[0]}")
+        path=folders_insightface[0]
+    else:
+        path=folders_insightface[0]
     model = FaceAnalysis(name="buffalo_l", root=path, providers=[provider + 'ExecutionProvider',])
     model.prepare(ctx_id=0, det_size=(640, 640))
     return model
