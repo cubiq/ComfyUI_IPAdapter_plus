@@ -154,7 +154,7 @@ def insightface_loader(provider):
     if not folders_insightface:
         path = os.path.join(folder_paths.models_dir, "insightface")
     elif len(folders_insightface)>1:
-        logging.info(f"several insightface folders exist in extra_model_paths.yaml file. Using {folders_insightface[0]}")
+        logging.info(f"[IP ADAPTER PLUS] Several insightface folders exist in extra_model_paths.yaml file. Using {folders_insightface[0]}")
         path=folders_insightface[0]
     else:
         path=folders_insightface[0]
