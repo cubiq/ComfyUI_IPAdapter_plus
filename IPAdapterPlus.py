@@ -1334,20 +1334,26 @@ class IPAdapterWeights:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
-            "weights": ("STRING", {"default": '1.0', "multiline": True }),
-            "timing": (["custom", "linear", "ease_in_out", "ease_in", "ease_out", "reverse_in_out", "random"], ),
+            "weights": ("STRING", {"default": '1.0, 0.0', "multiline": True }),
+            "timing": (["custom", "linear", "ease_in_out", "ease_in", "ease_out", "random"], ),
             "frames": ("INT", {"default": 0, "min": 0, "max": 9999, "step": 1 }),
             "start_frame": ("INT", {"default": 0, "min": 0, "max": 9999, "step": 1 }),
             "end_frame": ("INT", {"default": 9999, "min": 0, "max": 9999, "step": 1 }),
-            },
+            "add_starting_frames": ("INT", {"default": 0, "min": 0, "max": 9999, "step": 1 }),
+            "add_ending_frames": ("INT", {"default": 0, "min": 0, "max": 9999, "step": 1 }),
+            "method": (["full batch", "shift batches", "alternate batches"], { "default": "full batch" }),
+            }, "optional": {
+                "image": ("IMAGE",),
+            }
         }
 
-    RETURN_TYPES = ("FLOAT",)
+    RETURN_TYPES = ("FLOAT", "FLOAT", "INT", "IMAGE", "IMAGE")
+    RETURN_NAMES = ("weights", "weights_invert", "total_frames", "image_1", "image_2")
     FUNCTION = "weights"
 
     CATEGORY = "ipadapter/utils"
 
-    def weights(self, weights, timing, frames, start_frame, end_frame):
+    def weights(self, weights, timing, frames, start_frame, end_frame, add_starting_frames, add_ending_frames, method, image=None):
         import random
 
         # convert the string to a list of floats separated by commas or newlines
@@ -1355,6 +1361,7 @@ class IPAdapterWeights:
         weights = [float(weight) for weight in weights.split(",") if weight.strip() != ""]
 
         if timing != "custom":
+            frames = max(frames, 2)
             start = 0.0
             end = 1.0
 
@@ -1379,19 +1386,92 @@ class IPAdapterWeights:
                     weights.append(start + (end - start) * math.sin(i / n * math.pi / 2))
                 elif timing == "ease_out":
                     weights.append(start + (end - start) * (1 - math.cos(i / n * math.pi / 2)))
-                elif timing == "reverse_in_out":
-                    weights.append(start + (end - start) * (1 - math.sin((1 - i / n) * math.pi / 2)))
                 elif timing == "random":
                     weights.append(random.uniform(start, end))
-            weights[-1] = end if timing != "random" else weights[-1]
 
+            weights[-1] = end if timing != "random" else weights[-1]
             if end_frame < frames:
                 weights.extend([end] * (frames - end_frame))
 
         if len(weights) == 0:
             weights = [0.0]
+                
+        frames = len(weights)
+        
+        # repeat the images for cross fade
+        image_1 = None
+        image_2 = None
+        if image is not None:
+            if "shift" in method:
+                image_1 = image[:-1]
+                image_2 = image[1:]
+                
+                weights = weights * image_1.shape[0]
+                #weights_invert = [1.0 - w for w in weights]
 
-        return (weights, )
+                image_1 = image_1.repeat_interleave(frames, 0)
+                image_2 = image_2.repeat_interleave(frames, 0)
+            elif "alternate" in method:
+                image_1 = image[::2].repeat_interleave(2, 0)
+                image_1 = image_1[1:]
+                image_2 = image[1::2].repeat_interleave(2, 0)
+
+                mew_weights = weights + [1.0 - w for w in weights]
+                mew_weights = mew_weights * (image_1.shape[0] // 2)
+                if image.shape[0] % 2:
+                    image_1 = image_1[:-1]
+                else:
+                    image_2 = image_2[:-1]
+                    mew_weights = mew_weights + weights
+
+                weights = mew_weights
+                #weights_invert = [1.0 - w for w in weights]
+
+                image_1 = image_1.repeat_interleave(frames, 0)
+                image_2 = image_2.repeat_interleave(frames, 0)
+            else:
+                weights = weights * image.shape[0]
+                #weights_invert = [1.0 - w for w in weights]
+
+                image_1 = image.repeat_interleave(frames, 0)
+
+        # add starting and ending frames
+            if add_starting_frames > 0:
+                weights = [weights[0]] * add_starting_frames + weights
+                image_1 = torch.cat([image[:1].repeat(add_starting_frames, 1, 1, 1), image_1], dim=0)
+                if image_2 is not None:
+                    image_2 = torch.cat([image[:1].repeat(add_starting_frames, 1, 1, 1), image_2], dim=0)
+            if add_ending_frames > 0:
+                weights = weights + [weights[-1]] * add_ending_frames
+                image_1 = torch.cat([image_1, image[-1:].repeat(add_ending_frames, 1, 1, 1)], dim=0)
+                if image_2 is not None:
+                    image_2 = torch.cat([image_2, image[-1:].repeat(add_ending_frames, 1, 1, 1)], dim=0)
+
+        weights_invert = [1.0 - w for w in weights]
+
+        return (weights, weights_invert, len(weights), image_1, image_2, )
+
+class IPAdapterCombineWeights:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+        "required": {
+            "weights_1": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.05 }),
+            "weights_2": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.05 }),
+        }}
+    RETURN_TYPES = ("FLOAT", "INT")
+    RETURN_NAMES = ("weights", "count")
+    FUNCTION = "combine"
+    CATEGORY = "ipadapter/utils"
+
+    def combine(self, weights_1, weights_2):
+        if not isinstance(weights_1, list):
+            weights_1 = [weights_1]
+        if not isinstance(weights_2, list):
+            weights_2 = [weights_2]
+        weights = weights_1 + weights_2
+
+        return (weights, len(weights), )
 
 class IPAdapterRegionalConditioning:
     @classmethod
@@ -1521,6 +1601,7 @@ NODE_CLASS_MAPPINGS = {
     "IPAdapterSaveEmbeds": IPAdapterSaveEmbeds,
     "IPAdapterLoadEmbeds": IPAdapterLoadEmbeds,
     "IPAdapterWeights": IPAdapterWeights,
+    "IPAdapterCombineWeights": IPAdapterCombineWeights,
     "IPAdapterRegionalConditioning": IPAdapterRegionalConditioning,
     "IPAdapterCombineParams": IPAdapterCombineParams,
 }
@@ -1555,6 +1636,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterSaveEmbeds": "IPAdapter Save Embeds",
     "IPAdapterLoadEmbeds": "IPAdapter Load Embeds",
     "IPAdapterWeights": "IPAdapter Weights",
+    "IPAdapterCombineWeights": "IPAdapter Combine Weights",
     "IPAdapterRegionalConditioning": "IPAdapter Regional Conditioning",
     "IPAdapterCombineParams": "IPAdapter Combine Params",
 }

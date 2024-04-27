@@ -27,6 +27,8 @@ Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [Pa
 
 ## Important updates
 
+**2024/04/27**: Refactored the IPAdapterWeights mostly useful for AnimateDiff animations.
+
 **2024/04/21**: Added Regional Conditioning nodes to simplify attention masking and masked text conditioning.
 
 **2024/04/16**: Added support for the new SDXL portrait unnorm model (link below). It's very strong and tends to ignore the text conditioning. Lower the CFG to 3-4 or use a RescaleCFG node.
@@ -144,7 +146,7 @@ It's only thanks to generous sponsors that **the whole community** can enjoy ope
 
 ### :trophy: Gold sponsors
 
-[![Kaiber.ai](https://f.latent.vision/imgs/kaiber.png)](https://kaiber.ai/)
+[![Kaiber.ai](https://f.latent.vision/imgs/kaiber.png)](https://kaiber.ai/)&nbsp; &nbsp;[![Kaiber.ai](https://f.latent.vision/imgs/replicate.png)](https://replicate.com/)
 
 ### :tada: Silver sponsors
 
