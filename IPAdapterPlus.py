@@ -1402,7 +1402,7 @@ class IPAdapterWeights:
         image_1 = None
         image_2 = None
         if image is not None:
-            if "shift" in method:
+            if "shift batches" in method:
                 image_1 = image[:-1]
                 image_2 = image[1:]
                 
@@ -1411,7 +1411,7 @@ class IPAdapterWeights:
 
                 image_1 = image_1.repeat_interleave(frames, 0)
                 image_2 = image_2.repeat_interleave(frames, 0)
-            elif "alternate" in method:
+            elif "alternate batches" in method:
                 image_1 = image[::2].repeat_interleave(2, 0)
                 image_1 = image_1[1:]
                 image_2 = image[1::2].repeat_interleave(2, 0)
