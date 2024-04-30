@@ -1335,7 +1335,7 @@ class IPAdapterWeights:
     def INPUT_TYPES(s):
         return {"required": {
             "weights": ("STRING", {"default": '1.0, 0.0', "multiline": True }),
-            "timing": (["custom", "linear", "ease_in_out", "ease_in", "ease_out", "random"], ),
+            "timing": (["custom", "linear", "ease_in_out", "ease_in", "ease_out", "random"], { "default": "linear" } ),
             "frames": ("INT", {"default": 0, "min": 0, "max": 9999, "step": 1 }),
             "start_frame": ("INT", {"default": 0, "min": 0, "max": 9999, "step": 1 }),
             "end_frame": ("INT", {"default": 9999, "min": 0, "max": 9999, "step": 1 }),
@@ -1347,14 +1347,37 @@ class IPAdapterWeights:
             }
         }
 
-    RETURN_TYPES = ("FLOAT", "FLOAT", "INT", "IMAGE", "IMAGE")
-    RETURN_NAMES = ("weights", "weights_invert", "total_frames", "image_1", "image_2")
+    RETURN_TYPES = ("FLOAT", "FLOAT", "INT", "IMAGE", "IMAGE", "WEIGHTS_STRATEGY")
+    RETURN_NAMES = ("weights", "weights_invert", "total_frames", "image_1", "image_2", "weights_strategy")
     FUNCTION = "weights"
+    CATEGORY = "ipadapter/weights"
 
-    CATEGORY = "ipadapter/utils"
-
-    def weights(self, weights, timing, frames, start_frame, end_frame, add_starting_frames, add_ending_frames, method, image=None):
+    def weights(self, weights='', timing='custom', frames=0, start_frame=0, end_frame=9999, add_starting_frames=0, add_ending_frames=0, method='full batch', weights_strategy=None, image=None):
         import random
+
+        frame_count = image.shape[0] if image is not None else 0
+        if weights_strategy is not None:
+            weights = weights_strategy["weights"]
+            timing = weights_strategy["timing"]
+            frames = weights_strategy["frames"]
+            start_frame = weights_strategy["start_frame"]
+            end_frame = weights_strategy["end_frame"]
+            add_starting_frames = weights_strategy["add_starting_frames"]
+            add_ending_frames = weights_strategy["add_ending_frames"]
+            method = weights_strategy["method"]
+            frame_count = weights_strategy["frame_count"]
+        else:
+            weights_strategy = {
+                "weights": weights,
+                "timing": timing,
+                "frames": frames,
+                "start_frame": start_frame,
+                "end_frame": end_frame,
+                "add_starting_frames": add_starting_frames,
+                "add_ending_frames": add_ending_frames,
+                "method": method,
+                "frame_count": frame_count,
+            }
 
         # convert the string to a list of floats separated by commas or newlines
         weights = weights.replace("\n", ",")
@@ -1368,7 +1391,7 @@ class IPAdapterWeights:
             if len(weights) > 0:
                 start = weights[0]
                 end = weights[-1]
-
+            
             weights = []
 
             end_frame = min(end_frame, frames)
@@ -1395,7 +1418,7 @@ class IPAdapterWeights:
 
         if len(weights) == 0:
             weights = [0.0]
-                
+
         frames = len(weights)
         
         # repeat the images for cross fade
@@ -1407,8 +1430,6 @@ class IPAdapterWeights:
                 image_2 = image[1:]
                 
                 weights = weights * image_1.shape[0]
-                #weights_invert = [1.0 - w for w in weights]
-
                 image_1 = image_1.repeat_interleave(frames, 0)
                 image_2 = image_2.repeat_interleave(frames, 0)
             elif "alternate" in method:
@@ -1425,17 +1446,13 @@ class IPAdapterWeights:
                     mew_weights = mew_weights + weights
 
                 weights = mew_weights
-                #weights_invert = [1.0 - w for w in weights]
-
                 image_1 = image_1.repeat_interleave(frames, 0)
                 image_2 = image_2.repeat_interleave(frames, 0)
             else:
                 weights = weights * image.shape[0]
-                #weights_invert = [1.0 - w for w in weights]
-
                 image_1 = image.repeat_interleave(frames, 0)
 
-        # add starting and ending frames
+            # add starting and ending frames
             if add_starting_frames > 0:
                 weights = [weights[0]] * add_starting_frames + weights
                 image_1 = torch.cat([image[:1].repeat(add_starting_frames, 1, 1, 1), image_1], dim=0)
@@ -1449,7 +1466,56 @@ class IPAdapterWeights:
 
         weights_invert = [1.0 - w for w in weights]
 
-        return (weights, weights_invert, len(weights), image_1, image_2, )
+        return (weights, weights_invert, len(weights), image_1, image_2, weights_strategy,)
+
+class IPAdapterWeightsFromStrategy(IPAdapterWeights):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "weights_strategy": ("WEIGHTS_STRATEGY",),
+            }, "optional": {
+                "image": ("IMAGE",),
+            }
+        }
+
+class IPAdapterPromptScheduleFromWeightsStrategy():
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "weights_strategy": ("WEIGHTS_STRATEGY",),
+            "prompt": ("STRING", {"default": "", "multiline": True }),
+            }}
+    
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("prompt_schedule", )
+    FUNCTION = "prompt_schedule"
+    CATEGORY = "ipadapter/weights"
+
+    def prompt_schedule(self, weights_strategy, prompt=""):
+        frames = weights_strategy["frames"]
+        add_starting_frames = weights_strategy["add_starting_frames"]
+        add_ending_frames = weights_strategy["add_ending_frames"]
+        frame_count = weights_strategy["frame_count"]
+
+        out = ""
+
+        prompt = [p for p in prompt.split("\n") if p.strip() != ""]
+
+        if len(prompt) > 0 and frame_count > 0:
+            # prompt_pos must be the same size as the image batch
+            if len(prompt) > frame_count:
+                prompt = prompt[:frame_count]
+            elif len(prompt) < frame_count:
+                prompt += [prompt[-1]] * (frame_count - len(prompt))
+
+            if add_starting_frames > 0:
+                out += f"\"0\": \"{prompt[0]}\",\n"
+            for i in range(frame_count):
+                out += f"\"{i * frames + add_starting_frames}\": \"{prompt[i]}\",\n"
+            if add_ending_frames > 0:
+                out += f"\"{frame_count * frames + add_starting_frames}\": \"{prompt[-1]}\",\n"
+
+        return (out, )
 
 class IPAdapterCombineWeights:
     @classmethod
@@ -1602,6 +1668,8 @@ NODE_CLASS_MAPPINGS = {
     "IPAdapterLoadEmbeds": IPAdapterLoadEmbeds,
     "IPAdapterWeights": IPAdapterWeights,
     "IPAdapterCombineWeights": IPAdapterCombineWeights,
+    "IPAdapterWeightsFromStrategy": IPAdapterWeightsFromStrategy,
+    "IPAdapterPromptScheduleFromWeightsStrategy": IPAdapterPromptScheduleFromWeightsStrategy,
     "IPAdapterRegionalConditioning": IPAdapterRegionalConditioning,
     "IPAdapterCombineParams": IPAdapterCombineParams,
 }
@@ -1636,6 +1704,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterSaveEmbeds": "IPAdapter Save Embeds",
     "IPAdapterLoadEmbeds": "IPAdapter Load Embeds",
     "IPAdapterWeights": "IPAdapter Weights",
+    "IPAdapterWeightsFromStrategy": "IPAdapter Weights From Strategy",
+    "IPAdapterPromptScheduleFromWeightsStrategy": "Prompt Schedule From Weights Strategy",
     "IPAdapterCombineWeights": "IPAdapter Combine Weights",
     "IPAdapterRegionalConditioning": "IPAdapter Regional Conditioning",
     "IPAdapterCombineParams": "IPAdapter Combine Params",
