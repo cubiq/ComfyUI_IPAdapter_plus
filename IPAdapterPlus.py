@@ -1063,6 +1063,26 @@ class IPAdapterFromParams(IPAdapterAdvanced):
 
     CATEGORY = "ipadapter/params"
 
+class IPAdapterFromParamsBatch(IPAdapterBatch):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL", ),
+                "ipadapter": ("IPADAPTER", ),
+                "ipadapter_params": ("IPADAPTER_PARAMS", ),
+                "combine_embeds": (["concat", "add", "subtract", "average", "norm average"],),
+                "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
+            },
+            "optional": {
+                "image_negative": ("IMAGE",),
+                "clip_vision": ("CLIP_VISION",),
+            }
+        }
+
+    CATEGORY = "ipadapter/params"
+
+
 """
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  Helpers
@@ -1651,6 +1671,7 @@ NODE_CLASS_MAPPINGS = {
     "IPAdapterStyleCompositionBatch": IPAdapterStyleCompositionBatch,
     "IPAdapterMS": IPAdapterMS,
     "IPAdapterFromParams": IPAdapterFromParams,
+    "IPAdapterFromParamsBatch": IPAdapterFromParamsBatch,
 
     # Loaders
     "IPAdapterUnifiedLoader": IPAdapterUnifiedLoader,
