@@ -1064,6 +1064,8 @@ class IPAdapterFromParams(IPAdapterAdvanced):
     CATEGORY = "ipadapter/params"
 
 class IPAdapterFromParamsBatch(IPAdapterBatch):
+    def __init__(self):
+        self.unfold_batch = True
     @classmethod
     def INPUT_TYPES(s):
         return {
