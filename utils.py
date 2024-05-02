@@ -154,21 +154,39 @@ def insightface_loader(provider):
     model.prepare(ctx_id=0, det_size=(640, 640))
     return model
 
-def encode_image_masked(clip_vision, image, mask=None):
+def encode_image_masked(clip_vision, image, mask=None, batch_size=0):
     model_management.load_model_gpu(clip_vision.patcher)
-    image = image.to(clip_vision.load_device)
-
-    pixel_values = clip_preprocess(image.to(clip_vision.load_device)).float()
-
-    if mask is not None:
-        pixel_values = pixel_values * mask.to(clip_vision.load_device)
-
-    out = clip_vision.model(pixel_values=pixel_values, intermediate_output=-2)
-
     outputs = Output()
-    outputs["last_hidden_state"] = out[0].to(model_management.intermediate_device())
-    outputs["image_embeds"] = out[2].to(model_management.intermediate_device())
-    outputs["penultimate_hidden_states"] = out[1].to(model_management.intermediate_device())
+
+    if batch_size == 0:
+        batch_size = image.shape[0]
+    elif batch_size > image.shape[0]:
+        batch_size = image.shape[0]
+
+    image_batch = torch.split(image, batch_size, dim=0)
+
+    for img in image_batch:
+        img = img.to(clip_vision.load_device)
+
+        pixel_values = clip_preprocess(img.to(clip_vision.load_device)).float()
+
+        # TODO: support for multiple masks
+        if mask is not None:
+            pixel_values = pixel_values * mask.to(clip_vision.load_device)
+
+        out = clip_vision.model(pixel_values=pixel_values, intermediate_output=-2)
+
+        if not hasattr(outputs, "last_hidden_state"):
+            outputs["last_hidden_state"] = out[0].to(model_management.intermediate_device())
+            outputs["image_embeds"] = out[2].to(model_management.intermediate_device())
+            outputs["penultimate_hidden_states"] = out[1].to(model_management.intermediate_device())
+        else:
+            outputs["last_hidden_state"] = torch.cat((outputs["last_hidden_state"], out[0].to(model_management.intermediate_device())), dim=0)
+            outputs["image_embeds"] = torch.cat((outputs["image_embeds"], out[2].to(model_management.intermediate_device())), dim=0)
+            outputs["penultimate_hidden_states"] = torch.cat((outputs["penultimate_hidden_states"], out[1].to(model_management.intermediate_device())), dim=0)
+
+    del img, pixel_values, out
+
     return outputs
 
 def tensor_to_size(source, dest_size):

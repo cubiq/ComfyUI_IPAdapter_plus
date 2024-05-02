@@ -164,7 +164,8 @@ def ipadapter_execute(model,
                       neg_embed=None,
                       unfold_batch=False,
                       embeds_scaling='V only',
-                      layer_weights=None):
+                      layer_weights=None,
+                      encode_batch_size=0,):
     device = model_management.get_torch_device()
     dtype = model_management.unet_dtype()
     if dtype not in [torch.float32, torch.float16, torch.bfloat16]:
@@ -252,20 +253,20 @@ def ipadapter_execute(model,
         del image_iface, face
 
     if image is not None:
-        img_cond_embeds = encode_image_masked(clipvision, image)
+        img_cond_embeds = encode_image_masked(clipvision, image, batch_size=encode_batch_size)
         if image_composition is not None:
-            img_comp_cond_embeds = encode_image_masked(clipvision, image_composition)
+            img_comp_cond_embeds = encode_image_masked(clipvision, image_composition, batch_size=encode_batch_size)
 
         if is_plus:
             img_cond_embeds = img_cond_embeds.penultimate_hidden_states
             image_negative = image_negative if image_negative is not None else torch.zeros([1, 224, 224, 3])
-            img_uncond_embeds = encode_image_masked(clipvision, image_negative).penultimate_hidden_states
+            img_uncond_embeds = encode_image_masked(clipvision, image_negative, batch_size=encode_batch_size).penultimate_hidden_states
             if image_composition is not None:
                 img_comp_cond_embeds = img_comp_cond_embeds.penultimate_hidden_states
         else:
             img_cond_embeds = img_cond_embeds.image_embeds if not is_faceid else face_cond_embeds
             if image_negative is not None and not is_faceid:
-                img_uncond_embeds = encode_image_masked(clipvision, image_negative).image_embeds
+                img_uncond_embeds = encode_image_masked(clipvision, image_negative, batch_size=encode_batch_size).image_embeds
             else:
                 img_uncond_embeds = torch.zeros_like(img_cond_embeds)
             if image_composition is not None:
@@ -634,7 +635,7 @@ class IPAdapterAdvanced:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, model, ipadapter, start_at=0.0, end_at=1.0, weight=1.0, weight_style=1.0, weight_composition=1.0, expand_style=False, weight_type="linear", combine_embeds="concat", weight_faceidv2=None, image=None, image_style=None, image_composition=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None, embeds_scaling='V only', layer_weights=None, ipadapter_params=None):
+    def apply_ipadapter(self, model, ipadapter, start_at=0.0, end_at=1.0, weight=1.0, weight_style=1.0, weight_composition=1.0, expand_style=False, weight_type="linear", combine_embeds="concat", weight_faceidv2=None, image=None, image_style=None, image_composition=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None, embeds_scaling='V only', layer_weights=None, ipadapter_params=None, encode_batch_size=0):
         is_sdxl = isinstance(model.model, (comfy.model_base.SDXL, comfy.model_base.SDXLRefiner, comfy.model_base.SDXL_instructpix2pix))
 
         if 'ipadapter' in ipadapter:
@@ -691,6 +692,7 @@ class IPAdapterAdvanced:
                 "embeds_scaling": embeds_scaling,
                 "insightface": insightface if insightface is not None else ipadapter['insightface']['model'] if 'insightface' in ipadapter else None,
                 "layer_weights": layer_weights,
+                "encode_batch_size": encode_batch_size,
             }
 
             work_model, face_image = ipadapter_execute(work_model, ipadapter_model, clip_vision, **ipa_args)
@@ -714,6 +716,7 @@ class IPAdapterBatch(IPAdapterAdvanced):
                 "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
+                "encode_batch_size": ("INT", { "default": 0, "min": 0, "max": 4096 }),
             },
             "optional": {
                 "image_negative": ("IMAGE",),
