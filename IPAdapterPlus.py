@@ -169,7 +169,7 @@ def ipadapter_execute(model,
     device = model_management.get_torch_device()
     dtype = model_management.unet_dtype()
     if dtype not in [torch.float32, torch.float16, torch.bfloat16]:
-        dtype = torch.float16 if comfy.model_management.should_use_fp16() else torch.float32
+        dtype = torch.float16 if model_management.should_use_fp16() else torch.float32
 
     is_full = "proj.3.weight" in ipadapter["image_proj"]
     is_portrait = "proj.2.weight" in ipadapter["image_proj"] and not "proj.3.weight" in ipadapter["image_proj"] and not "0.to_q_lora.down.weight" in ipadapter["ip_adapter"]
@@ -840,7 +840,7 @@ class IPAdapterTiled:
     FUNCTION = "apply_tiled"
     CATEGORY = "ipadapter/tiled"
 
-    def apply_tiled(self, model, ipadapter, image, weight, weight_type, start_at, end_at, sharpening, combine_embeds="concat", image_negative=None, attn_mask=None, clip_vision=None, embeds_scaling='V only'):
+    def apply_tiled(self, model, ipadapter, image, weight, weight_type, start_at, end_at, sharpening, combine_embeds="concat", image_negative=None, attn_mask=None, clip_vision=None, embeds_scaling='V only', encode_batch_size=0):
         # 1. Select the models
         if 'ipadapter' in ipadapter:
             ipadapter_model = ipadapter['ipadapter']['model']
@@ -938,6 +938,7 @@ class IPAdapterTiled:
                 "attn_mask": masks[i],
                 "unfold_batch": self.unfold_batch,
                 "embeds_scaling": embeds_scaling,
+                "encode_batch_size": encode_batch_size,
             }
             # apply the ipadapter to the model without cloning it
             model, _ = ipadapter_execute(model, ipadapter_model, clip_vision, **ipa_args)
@@ -961,6 +962,7 @@ class IPAdapterTiledBatch(IPAdapterTiled):
                 "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "sharpening": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.05 }),
                 "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
+                "encode_batch_size": ("INT", { "default": 0, "min": 0, "max": 4096 }),
             },
             "optional": {
                 "image_negative": ("IMAGE",),
@@ -1469,7 +1471,9 @@ class IPAdapterWeights:
 
         weights_invert = [1.0 - w for w in weights]
 
-        return (weights, weights_invert, len(weights), image_1, image_2, weights_strategy,)
+        frame_count = len(weights)
+
+        return (weights, weights_invert, frame_count, image_1, image_2, weights_strategy,)
 
 class IPAdapterWeightsFromStrategy(IPAdapterWeights):
     @classmethod
