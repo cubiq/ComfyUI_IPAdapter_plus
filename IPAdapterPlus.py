@@ -17,7 +17,7 @@ except ImportError:
     import torchvision.transforms as T
 
 from .image_proj_models import MLPProjModel, MLPProjModelFaceId, ProjModelFaceIdPlus, Resampler, ImageProjModel
-from .CrossAttentionPatch import CrossAttentionPatch
+from .CrossAttentionPatch import Attn2Replace, ipadapter_attention
 from .utils import (
     encode_image_masked,
     tensor_to_size,
@@ -135,15 +135,22 @@ class To_KV(nn.Module):
             self.to_kvs[key.replace(".weight", "").replace(".", "_")].weight.data = value
 
 def set_model_patch_replace(model, patch_kwargs, key):
-    to = model.model_options["transformer_options"]
+    to = model.model_options["transformer_options"].copy()
     if "patches_replace" not in to:
         to["patches_replace"] = {}
+    else:
+        to["patches_replace"] = to["patches_replace"].copy()
+
     if "attn2" not in to["patches_replace"]:
         to["patches_replace"]["attn2"] = {}
-    if key not in to["patches_replace"]["attn2"]:
-        to["patches_replace"]["attn2"][key] = CrossAttentionPatch(**patch_kwargs)
     else:
-        to["patches_replace"]["attn2"][key].set_new_condition(**patch_kwargs)
+        to["patches_replace"]["attn2"] = to["patches_replace"]["attn2"].copy()
+    
+    if key not in to["patches_replace"]["attn2"]:
+        to["patches_replace"]["attn2"][key] = Attn2Replace(ipadapter_attention, **patch_kwargs)
+        model.model_options["transformer_options"] = to
+    else:
+        to["patches_replace"]["attn2"][key].add(ipadapter_attention, **patch_kwargs)
 
 def ipadapter_execute(model,
                       ipadapter,
@@ -365,7 +372,6 @@ def ipadapter_execute(model,
 
     patch_kwargs = {
         "ipadapter": ipa,
-        "number": 0,
         "weight": weight,
         "cond": cond,
         "cond_alt": cond_alt,
@@ -378,28 +384,35 @@ def ipadapter_execute(model,
         "embeds_scaling": embeds_scaling,
     }
 
+    number = 0
     if not is_sdxl:
         for id in [1,2,4,5,7,8]: # id of input_blocks that have cross attention
+            patch_kwargs["module_key"] = str(number*2+1)
             set_model_patch_replace(model, patch_kwargs, ("input", id))
-            patch_kwargs["number"] += 1
+            number += 1
         for id in [3,4,5,6,7,8,9,10,11]: # id of output_blocks that have cross attention
+            patch_kwargs["module_key"] = str(number*2+1)
             set_model_patch_replace(model, patch_kwargs, ("output", id))
-            patch_kwargs["number"] += 1
+            number += 1
+        patch_kwargs["module_key"] = str(number*2+1)
         set_model_patch_replace(model, patch_kwargs, ("middle", 0))
     else:
         for id in [4,5,7,8]: # id of input_blocks that have cross attention
             block_indices = range(2) if id in [4, 5] else range(10) # transformer_depth
             for index in block_indices:
+                patch_kwargs["module_key"] = str(number*2+1)
                 set_model_patch_replace(model, patch_kwargs, ("input", id, index))
-                patch_kwargs["number"] += 1
+                number += 1
         for id in range(6): # id of output_blocks that have cross attention
             block_indices = range(2) if id in [3, 4, 5] else range(10) # transformer_depth
             for index in block_indices:
+                patch_kwargs["module_key"] = str(number*2+1)
                 set_model_patch_replace(model, patch_kwargs, ("output", id, index))
-                patch_kwargs["number"] += 1
+                number += 1
         for index in range(10):
+            patch_kwargs["module_key"] = str(number*2+1)
             set_model_patch_replace(model, patch_kwargs, ("middle", 0, index))
-            patch_kwargs["number"] += 1
+            number += 1
 
     return (model, image)
 
