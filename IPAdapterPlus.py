@@ -115,14 +115,60 @@ class IPAdapter(nn.Module):
         return image_proj_model
 
     @torch.inference_mode()
-    def get_image_embeds(self, clip_embed, clip_embed_zeroed):
-        image_prompt_embeds = self.image_proj_model(clip_embed)
-        uncond_image_prompt_embeds = self.image_proj_model(clip_embed_zeroed)
+    def get_image_embeds(self, clip_embed, clip_embed_zeroed, batch_size):
+        torch_device = model_management.get_torch_device()
+        intermediate_device = model_management.intermediate_device()
+
+        if batch_size == 0:
+            batch_size = clip_embed.shape[0]
+            intermediate_device = torch_device
+        elif batch_size > clip_embed.shape[0]:
+            batch_size = clip_embed.shape[0]
+
+        clip_embed = torch.split(clip_embed, batch_size, dim=0)
+        clip_embed_zeroed = torch.split(clip_embed_zeroed, batch_size, dim=0)
+
+        image_prompt_embeds = []
+        uncond_image_prompt_embeds = []
+
+        for ce, cez in zip(clip_embed, clip_embed_zeroed):
+            image_prompt_embeds.append(self.image_proj_model(ce.to(torch_device)).to(intermediate_device))
+            uncond_image_prompt_embeds.append(self.image_proj_model(cez.to(torch_device)).to(intermediate_device))
+        
+        del clip_embed, clip_embed_zeroed
+
+        image_prompt_embeds = torch.cat(image_prompt_embeds, dim=0)
+        uncond_image_prompt_embeds = torch.cat(uncond_image_prompt_embeds, dim=0)
+        
+        torch.cuda.empty_cache()
+
+        #image_prompt_embeds = self.image_proj_model(clip_embed)
+        #uncond_image_prompt_embeds = self.image_proj_model(clip_embed_zeroed)
         return image_prompt_embeds, uncond_image_prompt_embeds
 
     @torch.inference_mode()
-    def get_image_embeds_faceid_plus(self, face_embed, clip_embed, s_scale, shortcut):
-        embeds = self.image_proj_model(face_embed, clip_embed, scale=s_scale, shortcut=shortcut)
+    def get_image_embeds_faceid_plus(self, face_embed, clip_embed, s_scale, shortcut, batch_size):
+        torch_device = model_management.get_torch_device()
+        intermediate_device = model_management.intermediate_device()
+
+        if batch_size == 0:
+            batch_size = clip_embed.shape[0]
+            intermediate_device = torch_device
+        elif batch_size > clip_embed.shape[0]:
+            batch_size = clip_embed.shape[0]
+        
+        face_embed_batch = torch.split(face_embed, batch_size, dim=0)
+        clip_embed_batch = torch.split(clip_embed, batch_size, dim=0)
+
+        embeds = []
+        for face_embed, clip_embed in zip(face_embed_batch, clip_embed_batch):
+            embeds.append(self.image_proj_model(face_embed.to(torch_device), clip_embed.to(torch_device), scale=s_scale, shortcut=shortcut).to(intermediate_device))
+
+        del face_embed_batch, clip_embed_batch
+
+        embeds = torch.cat(embeds, dim=0)
+        torch.cuda.empty_cache()
+        #embeds = self.image_proj_model(face_embed, clip_embed, scale=s_scale, shortcut=shortcut)
         return embeds
 
 class To_KV(nn.Module):
@@ -351,16 +397,17 @@ def ipadapter_execute(model,
     ).to(device, dtype=dtype)
 
     if is_faceid and is_plus:
-        cond = ipa.get_image_embeds_faceid_plus(face_cond_embeds, img_cond_embeds, weight_faceidv2, is_faceidv2)
+        cond = ipa.get_image_embeds_faceid_plus(face_cond_embeds, img_cond_embeds, weight_faceidv2, is_faceidv2, encode_batch_size)
         # TODO: check if noise helps with the uncond face embeds
-        uncond = ipa.get_image_embeds_faceid_plus(torch.zeros_like(face_cond_embeds), img_uncond_embeds, weight_faceidv2, is_faceidv2)
+        uncond = ipa.get_image_embeds_faceid_plus(torch.zeros_like(face_cond_embeds), img_uncond_embeds, weight_faceidv2, is_faceidv2, encode_batch_size)
     else:
-        cond, uncond = ipa.get_image_embeds(img_cond_embeds, img_uncond_embeds)
+        cond, uncond = ipa.get_image_embeds(img_cond_embeds, img_uncond_embeds, encode_batch_size)
         if img_comp_cond_embeds is not None:
-            cond_comp = ipa.get_image_embeds(img_comp_cond_embeds, img_uncond_embeds)[0]
+            cond_comp = ipa.get_image_embeds(img_comp_cond_embeds, img_uncond_embeds, encode_batch_size)[0]
 
     cond = cond.to(device, dtype=dtype)
     uncond = uncond.to(device, dtype=dtype)
+
     cond_alt = None
     if img_comp_cond_embeds is not None:
         cond_alt = { 3: cond_comp.to(device, dtype=dtype) }

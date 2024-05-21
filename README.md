@@ -27,6 +27,8 @@ Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [Pa
 
 ## Important updates
 
+**2024/05/21**: Improved memory allocation when `encode_batch_size`. Useful mostly for very long animations.
+
 **2024/05/02**: Add `encode_batch_size` to the Advanced batch node. This can be useful for animations with a lot of frames to reduce the VRAM usage during the image encoding. Please note that results will be slightly different based on the batch size.
 
 **2024/04/27**: Refactored the IPAdapterWeights mostly useful for AnimateDiff animations.

@@ -186,6 +186,7 @@ def encode_image_masked(clip_vision, image, mask=None, batch_size=0):
             outputs["penultimate_hidden_states"] = torch.cat((outputs["penultimate_hidden_states"], out[1].to(model_management.intermediate_device())), dim=0)
 
     del img, pixel_values, out
+    torch.cuda.empty_cache()
 
     return outputs
 
