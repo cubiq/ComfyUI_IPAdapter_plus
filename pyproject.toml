@@ -1,0 +1,14 @@
+[project]
+name = "comfyui_ipadapter_plus"
+description = "ComfyUI reference implementation for IPAdapter models. The code is mostly taken from the original IPAdapter repository and laksjdjf's implementation, all credit goes to them. I just made the extension closer to ComfyUI philosophy."
+version = "1.0.0"
+license = "LICENSE"
+
+[project.urls]
+Repository = "https://github.com/cubiq/ComfyUI_IPAdapter_plus"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "ComfyUI_IPAdapter_plus"
+Icon = ""
