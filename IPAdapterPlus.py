@@ -979,6 +979,7 @@ class IPAdapterEmbeds:
                 "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
                 "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
+                "unfold_batch": ("BOOLEAN", { "default": False }),
             },
             "optional": {
                 "neg_embed": ("EMBEDS",),
@@ -991,7 +992,7 @@ class IPAdapterEmbeds:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter/embeds"
 
-    def apply_ipadapter(self, model, ipadapter, pos_embed, weight, weight_type, start_at, end_at, neg_embed=None, attn_mask=None, clip_vision=None, embeds_scaling='V only'):
+    def apply_ipadapter(self, model, ipadapter, pos_embed, weight, weight_type, start_at, end_at, neg_embed=None, attn_mask=None, clip_vision=None, embeds_scaling='V only', unfold_batch = False):
         ipa_args = {
             "pos_embed": pos_embed,
             "neg_embed": neg_embed,
@@ -1001,6 +1002,7 @@ class IPAdapterEmbeds:
             "end_at": end_at,
             "attn_mask": attn_mask,
             "embeds_scaling": embeds_scaling,
+            "unfold_batch": unfold_batch
         }
 
         if 'ipadapter' in ipadapter:
