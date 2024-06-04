@@ -154,7 +154,7 @@ It's only thanks to generous sponsors that **the whole community** can enjoy ope
 
 ### :tada: Silver sponsors
 
-[![OperArt.ai](https://f.latent.vision/imgs/openart.png?r=1)](https://openart.ai/workflows)
+[![OperArt.ai](https://f.latent.vision/imgs/openart.png?r=1)](https://openart.ai/workflows)&nbsp; &nbsp;[![OperArt.ai](https://f.latent.vision/imgs/finetuners.png)](https://www.finetuners.ai/)
 
 ### Companies supporting my projects
 
