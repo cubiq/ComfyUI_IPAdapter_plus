@@ -1032,6 +1032,10 @@ class IPAdapterTiledBatch(IPAdapterTiled):
         }
 
 class IPAdapterEmbeds:
+
+    def __init__(self):
+        self.unfold_batch = False
+
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -1066,6 +1070,7 @@ class IPAdapterEmbeds:
             "end_at": end_at,
             "attn_mask": attn_mask,
             "embeds_scaling": embeds_scaling,
+            "unfold_batch": self.unfold_batch,
         }
 
         if 'ipadapter' in ipadapter:
@@ -1081,6 +1086,31 @@ class IPAdapterEmbeds:
         del ipadapter
 
         return ipadapter_execute(model.clone(), ipadapter_model, clip_vision, **ipa_args)
+
+class IPAdapterEmbedsBatch(IPAdapterEmbeds):
+    
+    def __init__(self):
+        self.unfold_batch = True
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL", ),
+                "ipadapter": ("IPADAPTER", ),
+                "pos_embed": ("EMBEDS",),
+                "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 3, "step": 0.05 }),
+                "weight_type": (WEIGHT_TYPES, ),
+                "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
+            },
+            "optional": {
+                "neg_embed": ("EMBEDS",),
+                "attn_mask": ("MASK",),
+                "clip_vision": ("CLIP_VISION",),
+            }
+        }
 
 class IPAdapterMS(IPAdapterAdvanced):
     @classmethod
@@ -1714,6 +1744,7 @@ NODE_CLASS_MAPPINGS = {
     "IPAdapterTiled": IPAdapterTiled,
     "IPAdapterTiledBatch": IPAdapterTiledBatch,
     "IPAdapterEmbeds": IPAdapterEmbeds,
+    "IPAdapterEmbedsBatch": IPAdapterEmbedsBatch,
     "IPAdapterStyleComposition": IPAdapterStyleComposition,
     "IPAdapterStyleCompositionBatch": IPAdapterStyleCompositionBatch,
     "IPAdapterMS": IPAdapterMS,
@@ -1751,6 +1782,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterTiled": "IPAdapter Tiled",
     "IPAdapterTiledBatch": "IPAdapter Tiled Batch",
     "IPAdapterEmbeds": "IPAdapter Embeds",
+    "IPAdapterEmbedsBatch": "IPAdapter Embeds Batch",
     "IPAdapterStyleComposition": "IPAdapter Style & Composition SDXL",
     "IPAdapterStyleCompositionBatch": "IPAdapter Style & Composition Batch SDXL",
     "IPAdapterMS": "IPAdapter Mad Scientist",
