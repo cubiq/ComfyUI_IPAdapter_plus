@@ -1,0 +1,14 @@
+[project]
+name = "comfyui_ipadapter_plus"
+description = "ComfyUI reference implementation for the IPAdapter models. The IPAdapter are very powerful models for image conditioning. The style and composition of a reference can be easily transferred to the generation. Think of it as a 1-image lora."
+version = "2.0.0"
+license = "GPL-3.0 license"
+
+[project.urls]
+Repository = "https://github.com/cubiq/ComfyUI_IPAdapter_plus"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = "matteo"
+DisplayName = "ComfyUI_IPAdapter_plus"
+Icon = ""
