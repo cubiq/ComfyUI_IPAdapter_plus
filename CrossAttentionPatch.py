@@ -124,8 +124,12 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
         v_cond = ipadapter.ip_layers.to_kvs[v_key](cond).repeat(batch_prompt, 1, 1)
         v_uncond = ipadapter.ip_layers.to_kvs[v_key](uncond).repeat(batch_prompt, 1, 1)
 
-    ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0)
-    ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0)
+    if len(cond_or_uncond) == 3: # TODO: conxl, I need to check this
+        ip_k = torch.cat([(k_cond, k_uncond, k_cond)[i] for i in cond_or_uncond], dim=0)
+        ip_v = torch.cat([(v_cond, v_uncond, v_cond)[i] for i in cond_or_uncond], dim=0)
+    else:
+        ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0)
+        ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0)
     
     if embeds_scaling == 'K+mean(V) w/ C penalty':
         scaling = float(ip_k.shape[2]) / 1280.0
