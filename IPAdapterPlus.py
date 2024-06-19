@@ -1532,7 +1532,12 @@ class IPAdapterWeights:
                 image_1 = image_1[1:]
                 image_2 = image[1::2].repeat_interleave(2, 0)
 
-                mew_weights = weights + [1.0 - w for w in weights]
+                # Calculate the min and max of the weights
+                min_weight = min(weights)
+                max_weight = max(weights)
+                # Invert the weights relative to their own range
+                mew_weights = [max_weight - (w - min_weight) for w in weights]
+
                 mew_weights = mew_weights * (image_1.shape[0] // 2)
                 if image.shape[0] % 2:
                     image_1 = image_1[:-1]
@@ -1559,7 +1564,10 @@ class IPAdapterWeights:
                 if image_2 is not None:
                     image_2 = torch.cat([image_2, image[-1:].repeat(add_ending_frames, 1, 1, 1)], dim=0)
 
-        weights_invert = [1.0 - w for w in weights]
+        # inversion relative to weights' own range
+        min_weight = min(weights)
+        max_weight = max(weights)
+        weights_invert = [max_weight - (w - min_weight) for w in weights]
 
         frame_count = len(weights)
 
