@@ -1536,7 +1536,7 @@ class IPAdapterWeights:
                 min_weight = min(weights)
                 max_weight = max(weights)
                 # Invert the weights relative to their own range
-                mew_weights = [max_weight - (w - min_weight) for w in weights]
+                mew_weights = weights + [max_weight - (w - min_weight) for w in weights]
 
                 mew_weights = mew_weights * (image_1.shape[0] // 2)
                 if image.shape[0] % 2:
