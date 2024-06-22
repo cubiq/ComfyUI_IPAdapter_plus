@@ -8,8 +8,8 @@ class Attn2Replace:
     def __init__(self, callback=None, **kwargs):
         self.callback = [callback]
         self.kwargs = [kwargs]
-    
-    def add(self, callback, **kwargs):          
+
+    def add(self, callback, **kwargs):
         self.callback.append(callback)
         self.kwargs.append(kwargs)
 
@@ -24,7 +24,7 @@ class Attn2Replace:
         for i, callback in enumerate(self.callback):
             if sigma <= self.kwargs[i]["sigma_start"] and sigma >= self.kwargs[i]["sigma_end"]:
                 out = out + callback(out, q, k, v, extra_options, **self.kwargs[i])
-        
+
         return out.to(dtype=dtype)
 
 def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=None, weight=1.0, cond=None, cond_alt=None, uncond=None, weight_type="linear", mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False, embeds_scaling='V only', **kwargs):
@@ -64,6 +64,14 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
     elif isinstance(weight, dict):
         if t_idx not in weight:
             return 0
+
+        if weight_type == "style transfer precise":
+            if layers == 11 and t_idx == 3:
+                uncond = cond
+                cond = cond * 0
+            elif layers == 16 and (t_idx == 4 or t_idx == 5):
+                uncond = cond
+                cond = cond * 0
 
         weight = weight[t_idx]
 
@@ -130,7 +138,7 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
     else:
         ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0)
         ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0)
-    
+
     if embeds_scaling == 'K+mean(V) w/ C penalty':
         scaling = float(ip_k.shape[2]) / 1280.0
         weight = weight * scaling

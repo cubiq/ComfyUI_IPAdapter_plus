@@ -27,6 +27,8 @@ Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [Pa
 
 ## Important updates
 
+**2024/06/22**: Added `style transfer precise`, offers less bleeding of the embeds between the style and composition layers. It is sometimes better than the standard style transfer especially if the reference image is very different from the generated image. Works better in SDXL than SD1.5.
+
 **2024/05/21**: Improved memory allocation when `encode_batch_size`. Useful mostly for very long animations.
 
 **2024/05/02**: Add `encode_batch_size` to the Advanced batch node. This can be useful for animations with a lot of frames to reduce the VRAM usage during the image encoding. Please note that results will be slightly different based on the batch size.
@@ -47,9 +49,7 @@ Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [Pa
 
 **2024/03/27**: Added Style transfer weight type for SDXL
 
-**2024/03/23**: Complete code rewrite! **This is a breaking update!** Your previous workflows won't work and you'll need to recreate them. You've been warned! After the update, refresh your browser, delete the old IPAdapter nodes and create the new ones.
-
-*(I removed old updates related to the previous version of the extension)*
+*(Older updates removed for readability)*
 
 ## Example workflows
 
