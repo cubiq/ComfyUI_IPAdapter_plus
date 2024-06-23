@@ -1572,8 +1572,8 @@ class IPAdapterWeights:
                 if image_2 is not None:
                     image_2 = torch.cat([image_2, image[-1:].repeat(add_ending_frames, 1, 1, 1)], dim=0)
 
-        # inversion relative to weights' own range
-        weights_invert = [max_weight - (w - min_weight) for w in weights]
+        # reverse the weights array
+        weights_invert = weights[::-1]
 
         frame_count = len(weights)
 
