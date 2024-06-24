@@ -22,7 +22,7 @@ def get_clipvision_file(preset):
 
     clipvision_file = folder_paths.get_full_path("clip_vision", clipvision_file[0]) if clipvision_file else None
 
-    return clipvision_file
+    return clipvision_file, pattern
 
 def get_ipadapter_file(preset, is_sdxl):
     preset = preset.lower()
@@ -110,7 +110,7 @@ def get_ipadapter_file(preset, is_sdxl):
     ipadapter_file = [e for e in ipadapter_list if re.search(pattern, e, re.IGNORECASE)]
     ipadapter_file = folder_paths.get_full_path("ipadapter", ipadapter_file[0]) if ipadapter_file else None
 
-    return ipadapter_file, is_insightface, lora_pattern
+    return ipadapter_file, is_insightface, lora_pattern, pattern
 
 def get_lora_file(pattern):
     lora_list = folder_paths.get_filename_list("loras")
