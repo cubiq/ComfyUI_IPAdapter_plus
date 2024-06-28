@@ -27,6 +27,8 @@ Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [Pa
 
 ## Important updates
 
+**2024/06/28**: Added the `IPAdapter Precise Style Transfer` node. Increase the `style_boost` option to lower the bleeding of the composition layer. **Important:** works better in SDXL, start with a style_boost of 2; for SD1.5 try to increase the weight a little over 1.0 and set the style_boost to a value between -1 and +1, starting with 0.
+
 **2024/06/22**: Added `style transfer precise`, offers less bleeding of the embeds between the style and composition layers. It is sometimes better than the standard style transfer especially if the reference image is very different from the generated image. Works better in SDXL than SD1.5.
 
 **2024/05/21**: Improved memory allocation when `encode_batch_size`. Useful mostly for very long animations.
@@ -44,10 +46,6 @@ Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [Pa
 **2024/04/09**: Added experimental Style/Composition transfer for SD1.5. The results are often not as good as SDXL. Optimal weight seems to be from 0.8 to 2.0. The **Style+Composition node doesn't work for SD1.5** at the moment, you can only alter either the Style or the Composition, I need more time for testing. Old workflows will still work **but you may need to refresh the page and re-select the weight type!**
 
 **2024/04/04**: Added Style & Composition node. It's now possible to apply both Style and Composition from the same node
-
-**2024/04/01**: Added Composition only transfer weight type for SDXL
-
-**2024/03/27**: Added Style transfer weight type for SDXL
 
 *(Older updates removed for readability)*
 
