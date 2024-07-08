@@ -46,23 +46,25 @@ WEIGHT_TYPES = ["linear", "ease in", "ease out", 'ease in-out', 'reverse in-out'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 class IPAdapter(nn.Module):
-    def __init__(self, ipadapter_model, cross_attention_dim=1024, output_cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4, is_sdxl=False, is_plus=False, is_full=False, is_faceid=False, is_portrait_unnorm=False):
+    def __init__(self, ipadapter_model):
         super().__init__()
+        self.is_full = "proj.3.weight" in ipadapter_model["image_proj"]
+        self.is_portrait = "proj.2.weight" in ipadapter_model["image_proj"] and not self.is_full and not "0.to_q_lora.down.weight" in ipadapter_model["ip_adapter"]
+        self.is_portrait_unnorm = "portraitunnorm" in ipadapter_model
+        self.is_faceid = self.is_portrait or "0.to_q_lora.down.weight" in ipadapter_model["ip_adapter"] or self.is_portrait_unnorm
+        self.is_plus = (self.is_full or "latents" in ipadapter_model["image_proj"] or "perceiver_resampler.proj_in.weight" in ipadapter_model["image_proj"]) and not self.is_portrait_unnorm
+        self.is_faceidv2 = "faceidplusv2" in ipadapter_model
+        self.output_cross_attention_dim = ipadapter_model["ip_adapter"]["1.to_k_ip.weight"].shape[1]
+        self.is_sdxl = self.output_cross_attention_dim == 2048
+        self.clip_embeddings_dim = -1 # img_cond_embeds.shape[-1]
+        self.cross_attention_dim = 1280 if (self.is_plus and self.is_sdxl and not self.is_faceid) or self.is_portrait_unnorm else self.output_cross_attention_dim
+        self.clip_extra_context_tokens = 16 if (self.is_plus and not self.is_faceid) or self.is_portrait or self.is_portrait_unnorm else 4
 
-        self.clip_embeddings_dim = clip_embeddings_dim
-        self.cross_attention_dim = cross_attention_dim
-        self.output_cross_attention_dim = output_cross_attention_dim
-        self.clip_extra_context_tokens = clip_extra_context_tokens
-        self.is_sdxl = is_sdxl
-        self.is_full = is_full
-        self.is_plus = is_plus
-        self.is_portrait_unnorm = is_portrait_unnorm
-
-        if is_faceid and not is_portrait_unnorm:
+        if self.is_faceid and not self.is_portrait_unnorm:
             self.image_proj_model = self.init_proj_faceid()
-        elif is_full:
+        elif self.is_full:
             self.image_proj_model = self.init_proj_full()
-        elif is_plus or is_portrait_unnorm:
+        elif self.is_plus or self.is_portrait_unnorm:
             self.image_proj_model = self.init_proj_plus()
         else:
             self.image_proj_model = self.init_proj()
@@ -225,30 +227,18 @@ def ipadapter_execute(model,
     if dtype not in [torch.float32, torch.float16, torch.bfloat16]:
         dtype = torch.float16 if model_management.should_use_fp16() else torch.float32
 
-    is_full = "proj.3.weight" in ipadapter["image_proj"]
-    is_portrait = "proj.2.weight" in ipadapter["image_proj"] and not "proj.3.weight" in ipadapter["image_proj"] and not "0.to_q_lora.down.weight" in ipadapter["ip_adapter"]
-    is_portrait_unnorm = "portraitunnorm" in ipadapter
-    is_faceid = is_portrait or "0.to_q_lora.down.weight" in ipadapter["ip_adapter"] or is_portrait_unnorm
-    is_plus = (is_full or "latents" in ipadapter["image_proj"] or "perceiver_resampler.proj_in.weight" in ipadapter["image_proj"]) and not is_portrait_unnorm
-    is_faceidv2 = "faceidplusv2" in ipadapter
-    output_cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
-    is_sdxl = output_cross_attention_dim == 2048
-
-    if is_faceid and not insightface:
+    if ipadapter.is_faceid and not insightface:
         raise Exception("insightface model is required for FaceID models")
 
-    if is_faceidv2:
+    if ipadapter.is_faceidv2:
         weight_faceidv2 = weight_faceidv2 if weight_faceidv2 is not None else weight*2
-
-    cross_attention_dim = 1280 if (is_plus and is_sdxl and not is_faceid) or is_portrait_unnorm else output_cross_attention_dim
-    clip_extra_context_tokens = 16 if (is_plus and not is_faceid) or is_portrait or is_portrait_unnorm else 4
 
     if image is not None and image.shape[1] != image.shape[2]:
         print("\033[33mINFO: the IPAdapter reference image is not a square, CLIPImageProcessor will resize and crop it at the center. If the main focus of the picture is not in the middle the result might not be what you are expecting.\033[0m")
 
     if isinstance(weight, list):
         weight = torch.tensor(weight).unsqueeze(-1).unsqueeze(-1).to(device, dtype=dtype) if unfold_batch else weight[0]
-    
+
     if style_boost is not None:
         weight_type = "style transfer precise"
 
@@ -257,34 +247,34 @@ def ipadapter_execute(model,
         weight = { int(k): float(v)*weight for k, v in [x.split(":") for x in layer_weights.split(",")] }
         weight_type = weight_type if weight_type == "style transfer precise" else "linear"
     elif weight_type == "style transfer":
-        weight = { 6:weight } if is_sdxl else { 0:weight, 1:weight, 2:weight, 3:weight, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
+        weight = { 6:weight } if ipadapter.is_sdxl else { 0:weight, 1:weight, 2:weight, 3:weight, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
     elif weight_type == "composition":
-        weight = { 3:weight } if is_sdxl else { 4:weight*0.25, 5:weight }
+        weight = { 3:weight } if ipadapter.is_sdxl else { 4:weight*0.25, 5:weight }
     elif weight_type == "strong style transfer":
-        if is_sdxl:
+        if ipadapter.is_sdxl:
             weight = { 0:weight, 1:weight, 2:weight, 4:weight, 5:weight, 6:weight, 7:weight, 8:weight, 9:weight, 10:weight }
         else:
             weight = { 0:weight, 1:weight, 2:weight, 3:weight, 6:weight, 7:weight, 8:weight, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
     elif weight_type == "style and composition":
-        if is_sdxl:
+        if ipadapter.is_sdxl:
             weight = { 3:weight_composition, 6:weight }
         else:
             weight = { 0:weight, 1:weight, 2:weight, 3:weight, 4:weight_composition*0.25, 5:weight_composition, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
     elif weight_type == "strong style and composition":
-        if is_sdxl:
+        if ipadapter.is_sdxl:
             weight = { 0:weight, 1:weight, 2:weight, 3:weight_composition, 4:weight, 5:weight, 6:weight, 7:weight, 8:weight, 9:weight, 10:weight }
         else:
             weight = { 0:weight, 1:weight, 2:weight, 3:weight, 4:weight_composition, 5:weight_composition, 6:weight, 7:weight, 8:weight, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
     elif weight_type == "style transfer precise":
         weight_composition = style_boost if style_boost is not None else weight
-        if is_sdxl:
+        if ipadapter.is_sdxl:
             weight = { 3:weight_composition, 6:weight }
         else:
             weight = { 0:weight, 1:weight, 2:weight, 3:weight, 4:weight_composition*0.25, 5:weight_composition, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
 
     img_comp_cond_embeds = None
     face_cond_embeds = None
-    if is_faceid:
+    if ipadapter.is_faceid:
         if insightface is None:
             raise Exception("Insightface model is required for FaceID models")
 
@@ -300,11 +290,11 @@ def ipadapter_execute(model,
                 insightface.det_model.input_size = size # TODO: hacky but seems to be working
                 face = insightface.get(image_iface[i])
                 if face:
-                    if not is_portrait_unnorm:
+                    if not ipadapter.is_portrait_unnorm:
                         face_cond_embeds.append(torch.from_numpy(face[0].normed_embedding).unsqueeze(0))
                     else:
                         face_cond_embeds.append(torch.from_numpy(face[0].embedding).unsqueeze(0))
-                    image.append(image_to_tensor(face_align.norm_crop(image_iface[i], landmark=face[0].kps, image_size=256 if is_sdxl else 224)))
+                    image.append(image_to_tensor(face_align.norm_crop(image_iface[i], landmark=face[0].kps, image_size=256 if ipadapter.is_sdxl else 224)))
 
                     if 640 not in size:
                         print(f"\033[33mINFO: InsightFace detection resolution lowered to {size}.\033[0m")
@@ -320,15 +310,15 @@ def ipadapter_execute(model,
         if image_composition is not None:
             img_comp_cond_embeds = encode_image_masked(clipvision, image_composition, batch_size=encode_batch_size)
 
-        if is_plus:
+        if ipadapter.is_plus:
             img_cond_embeds = img_cond_embeds.penultimate_hidden_states
             image_negative = image_negative if image_negative is not None else torch.zeros([1, 224, 224, 3])
             img_uncond_embeds = encode_image_masked(clipvision, image_negative, batch_size=encode_batch_size).penultimate_hidden_states
             if image_composition is not None:
                 img_comp_cond_embeds = img_comp_cond_embeds.penultimate_hidden_states
         else:
-            img_cond_embeds = img_cond_embeds.image_embeds if not is_faceid else face_cond_embeds
-            if image_negative is not None and not is_faceid:
+            img_cond_embeds = img_cond_embeds.image_embeds if not ipadapter.is_faceid else face_cond_embeds
+            if image_negative is not None and not ipadapter.is_faceid:
                 img_uncond_embeds = encode_image_masked(clipvision, image_negative, batch_size=encode_batch_size).image_embeds
             else:
                 img_uncond_embeds = torch.zeros_like(img_cond_embeds)
@@ -336,14 +326,14 @@ def ipadapter_execute(model,
                 img_comp_cond_embeds = img_comp_cond_embeds.image_embeds
         del image_negative, image_composition
 
-        image = None if not is_faceid else image # if it's face_id we need the cropped face for later
+        image = None if not ipadapter.is_faceid else image # if it's face_id we need the cropped face for later
     elif pos_embed is not None:
         img_cond_embeds = pos_embed
 
         if neg_embed is not None:
             img_uncond_embeds = neg_embed
         else:
-            if is_plus:
+            if ipadapter.is_plus:
                 img_uncond_embeds = encode_image_masked(clipvision, torch.zeros([1, 224, 224, 3])).penultimate_hidden_states
             else:
                 img_uncond_embeds = torch.zeros_like(img_cond_embeds)
@@ -393,23 +383,12 @@ def ipadapter_execute(model,
     if attn_mask is not None:
         attn_mask = attn_mask.to(device, dtype=dtype)
 
-    ipa = IPAdapter(
-        ipadapter,
-        cross_attention_dim=cross_attention_dim,
-        output_cross_attention_dim=output_cross_attention_dim,
-        clip_embeddings_dim=img_cond_embeds.shape[-1],
-        clip_extra_context_tokens=clip_extra_context_tokens,
-        is_sdxl=is_sdxl,
-        is_plus=is_plus,
-        is_full=is_full,
-        is_faceid=is_faceid,
-        is_portrait_unnorm=is_portrait_unnorm,
-    ).to(device, dtype=dtype)
+    ipa = ipadapter.to(device, dtype=dtype)
 
-    if is_faceid and is_plus:
-        cond = ipa.get_image_embeds_faceid_plus(face_cond_embeds, img_cond_embeds, weight_faceidv2, is_faceidv2, encode_batch_size)
+    if ipadapter.is_faceid and ipadapter.is_plus:
+        cond = ipa.get_image_embeds_faceid_plus(face_cond_embeds, img_cond_embeds, weight_faceidv2, ipadapter.is_faceidv2, encode_batch_size)
         # TODO: check if noise helps with the uncond face embeds
-        uncond = ipa.get_image_embeds_faceid_plus(torch.zeros_like(face_cond_embeds), img_uncond_embeds, weight_faceidv2, is_faceidv2, encode_batch_size)
+        uncond = ipa.get_image_embeds_faceid_plus(torch.zeros_like(face_cond_embeds), img_uncond_embeds, weight_faceidv2, ipadapter.is_faceidv2, encode_batch_size)
     else:
         cond, uncond = ipa.get_image_embeds(img_cond_embeds, img_uncond_embeds, encode_batch_size)
         if img_comp_cond_embeds is not None:
@@ -442,7 +421,7 @@ def ipadapter_execute(model,
     }
 
     number = 0
-    if not is_sdxl:
+    if not ipadapter.is_sdxl:
         for id in [1,2,4,5,7,8]: # id of input_blocks that have cross attention
             patch_kwargs["module_key"] = str(number*2+1)
             set_model_patch_replace(model, patch_kwargs, ("input", id))
@@ -527,7 +506,7 @@ class IPAdapterUnifiedLoader:
         if ipadapter_file != self.ipadapter['file']:
             if pipeline['ipadapter']['file'] != ipadapter_file:
                 self.ipadapter['file'] = ipadapter_file
-                self.ipadapter['model'] = ipadapter_model_loader(ipadapter_file)
+                self.ipadapter['model'] = IPAdapter(ipadapter_model_loader(ipadapter_file))
                 print(f"\033[33mINFO: IPAdapter model loaded from {ipadapter_file}\033[0m")
             else:
                 self.ipadapter = pipeline['ipadapter']
@@ -606,7 +585,7 @@ class IPAdapterModelLoader:
 
     def load_ipadapter_model(self, ipadapter_file):
         ipadapter_file = folder_paths.get_full_path("ipadapter", ipadapter_file)
-        return (ipadapter_model_loader(ipadapter_file),)
+        return (IPAdapter(ipadapter_model_loader(ipadapter_file)),)
 
 class IPAdapterInsightFaceLoader:
     @classmethod
@@ -1208,8 +1187,6 @@ class IPAdapterEncoder:
         if clip_vision is None:
             raise Exception("Missing CLIPVision model.")
 
-        is_plus = "proj.3.weight" in ipadapter_model["image_proj"] or "latents" in ipadapter_model["image_proj"] or "perceiver_resampler.proj_in.weight" in ipadapter_model["image_proj"]
-
         # resize and crop the mask to 224x224
         if mask is not None and mask.shape[1:3] != torch.Size([224, 224]):
             mask = mask.unsqueeze(1)
@@ -1222,7 +1199,7 @@ class IPAdapterEncoder:
 
         img_cond_embeds = encode_image_masked(clip_vision, image, mask)
 
-        if is_plus:
+        if ipadapter_model.is_plus:
             img_cond_embeds = img_cond_embeds.penultimate_hidden_states
             img_uncond_embeds = encode_image_masked(clip_vision, torch.zeros([1, 224, 224, 3])).penultimate_hidden_states
         else:
