@@ -56,17 +56,22 @@ class IPAdapter(nn.Module):
         self.is_faceidv2 = "faceidplusv2" in ipadapter_model
         self.output_cross_attention_dim = ipadapter_model["ip_adapter"]["1.to_k_ip.weight"].shape[1]
         self.is_sdxl = self.output_cross_attention_dim == 2048
-        self.clip_embeddings_dim = -1 # img_cond_embeds.shape[-1]
         self.cross_attention_dim = 1280 if (self.is_plus and self.is_sdxl and not self.is_faceid) or self.is_portrait_unnorm else self.output_cross_attention_dim
         self.clip_extra_context_tokens = 16 if (self.is_plus and not self.is_faceid) or self.is_portrait or self.is_portrait_unnorm else 4
 
+        self.clip_embeddings_dim = -1 # img_cond_embeds.shape[-1]
         if self.is_faceid and not self.is_portrait_unnorm:
+            if self.is_plus:
+                self.clip_embeddings_dim = ipadapter_model['image_proj']['perceiver_resampler.proj_in.weight'].shape[-1]
             self.image_proj_model = self.init_proj_faceid()
         elif self.is_full:
+            self.clip_embeddings_dim = ipadapter_model['image_proj']['proj.0.weight'].shape[-1]
             self.image_proj_model = self.init_proj_full()
         elif self.is_plus or self.is_portrait_unnorm:
+            self.clip_embeddings_dim = ipadapter_model['image_proj']['proj_in.weight'].shape[-1]
             self.image_proj_model = self.init_proj_plus()
         else:
+            self.clip_embeddings_dim = ipadapter_model['image_proj']['proj.weight'].shape[-1]
             self.image_proj_model = self.init_proj()
 
         self.image_proj_model.load_state_dict(ipadapter_model["image_proj"])
@@ -747,7 +752,7 @@ class IPAdapterAdvanced:
 
             work_model, face_image = ipadapter_execute(work_model, ipadapter_model, clip_vision, **ipa_args)
 
-        del ipadapter
+        # del ipadapter
         return (work_model, face_image, )
 
 class IPAdapterBatch(IPAdapterAdvanced):
@@ -902,7 +907,7 @@ class IPAdapterTiled:
         if clip_vision is None:
             raise Exception("Missing CLIPVision model.")
 
-        del ipadapter
+        # del ipadapter
 
         # 2. Extract the tiles
         tile_size = 256     # I'm using 256 instead of 224 as it is more likely divisible by the latent size, it will be downscaled to 224 by the clip vision encoder
@@ -1072,7 +1077,7 @@ class IPAdapterEmbeds:
         if clip_vision is None and neg_embed is None:
             raise Exception("Missing CLIPVision model.")
 
-        del ipadapter
+        # del ipadapter
 
         return ipadapter_execute(model.clone(), ipadapter_model, clip_vision, **ipa_args)
 
