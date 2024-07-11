@@ -72,6 +72,13 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
             elif layers == 16 and (t_idx == 4 or t_idx == 5):
                 uncond = cond
                 cond = cond * 0
+        elif weight_type == "composition precise":
+            if layers == 11 and t_idx != 3:
+                uncond = cond
+                cond = cond * 0
+            elif layers == 16 and (t_idx != 4 and t_idx != 5):
+                uncond = cond
+                cond = cond * 0
 
         weight = weight[t_idx]
 

@@ -38,7 +38,7 @@ else:
     current_paths, _ = folder_paths.folder_names_and_paths["ipadapter"]
 folder_paths.folder_names_and_paths["ipadapter"] = (current_paths, folder_paths.supported_pt_extensions)
 
-WEIGHT_TYPES = ["linear", "ease in", "ease out", 'ease in-out', 'reverse in-out', 'weak input', 'weak output', 'weak middle', 'strong middle', 'style transfer', 'composition', 'strong style transfer', 'style and composition', 'style transfer precise']
+WEIGHT_TYPES = ["linear", "ease in", "ease out", 'ease in-out', 'reverse in-out', 'weak input', 'weak output', 'weak middle', 'strong middle', 'style transfer', 'composition', 'strong style transfer', 'style and composition', 'style transfer precise', 'composition precise']
 
 """
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -219,7 +219,8 @@ def ipadapter_execute(model,
                       embeds_scaling='V only',
                       layer_weights=None,
                       encode_batch_size=0,
-                      style_boost=None,):
+                      style_boost=None,
+                      composition_boost=None,):
     device = model_management.get_torch_device()
     dtype = model_management.unet_dtype()
     if dtype not in [torch.float32, torch.float16, torch.bfloat16]:
@@ -248,14 +249,16 @@ def ipadapter_execute(model,
 
     if isinstance(weight, list):
         weight = torch.tensor(weight).unsqueeze(-1).unsqueeze(-1).to(device, dtype=dtype) if unfold_batch else weight[0]
-    
+
     if style_boost is not None:
         weight_type = "style transfer precise"
+    elif composition_boost is not None:
+        weight_type = "composition precise"
 
     # special weight types
     if layer_weights is not None and layer_weights != '':
         weight = { int(k): float(v)*weight for k, v in [x.split(":") for x in layer_weights.split(",")] }
-        weight_type = weight_type if weight_type == "style transfer precise" else "linear"
+        weight_type = weight_type if weight_type == "style transfer precise" or weight_type == "composition precise" else "linear"
     elif weight_type == "style transfer":
         weight = { 6:weight } if is_sdxl else { 0:weight, 1:weight, 2:weight, 3:weight, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
     elif weight_type == "composition":
@@ -281,6 +284,13 @@ def ipadapter_execute(model,
             weight = { 3:weight_composition, 6:weight }
         else:
             weight = { 0:weight, 1:weight, 2:weight, 3:weight, 4:weight_composition*0.25, 5:weight_composition, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
+    elif weight_type == "composition precise":
+        weight_composition = weight
+        weight = composition_boost if composition_boost is not None else weight
+        if is_sdxl:
+            weight = { 0:weight*.1, 1:weight*.1, 2:weight*.1, 3:weight_composition, 4:weight*.1, 5:weight*.1, 6:weight, 7:weight*.1, 8:weight*.1, 9:weight*.1, 10:weight*.1 }
+        else:
+            weight = { 0:weight, 1:weight, 2:weight, 3:weight, 4:weight_composition*0.25, 5:weight_composition, 6:weight*.1, 7:weight*.1, 8:weight*.1, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
 
     img_comp_cond_embeds = None
     face_cond_embeds = None
@@ -705,7 +715,7 @@ class IPAdapterAdvanced:
     FUNCTION = "apply_ipadapter"
     CATEGORY = "ipadapter"
 
-    def apply_ipadapter(self, model, ipadapter, start_at=0.0, end_at=1.0, weight=1.0, weight_style=1.0, weight_composition=1.0, expand_style=False, weight_type="linear", combine_embeds="concat", weight_faceidv2=None, image=None, image_style=None, image_composition=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None, embeds_scaling='V only', layer_weights=None, ipadapter_params=None, encode_batch_size=0, style_boost=None):
+    def apply_ipadapter(self, model, ipadapter, start_at=0.0, end_at=1.0, weight=1.0, weight_style=1.0, weight_composition=1.0, expand_style=False, weight_type="linear", combine_embeds="concat", weight_faceidv2=None, image=None, image_style=None, image_composition=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None, embeds_scaling='V only', layer_weights=None, ipadapter_params=None, encode_batch_size=0, style_boost=None, composition_boost=None):
         is_sdxl = isinstance(model.model, (comfy.model_base.SDXL, comfy.model_base.SDXLRefiner, comfy.model_base.SDXL_instructpix2pix))
 
         if 'ipadapter' in ipadapter:
@@ -764,6 +774,7 @@ class IPAdapterAdvanced:
                 "layer_weights": layer_weights,
                 "encode_batch_size": encode_batch_size,
                 "style_boost": style_boost,
+                "composition_boost": composition_boost,
             }
 
             work_model, face_image = ipadapter_execute(work_model, ipadapter_model, clip_vision, **ipa_args)
@@ -1170,6 +1181,32 @@ class IPAdapterPreciseStyleTransfer(IPAdapterAdvanced):
         }
 
 class IPAdapterPreciseStyleTransferBatch(IPAdapterPreciseStyleTransfer):
+    def __init__(self):
+        self.unfold_batch = True
+
+class IPAdapterPreciseComposition(IPAdapterAdvanced):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL", ),
+                "ipadapter": ("IPADAPTER", ),
+                "image": ("IMAGE",),
+                "weight": ("FLOAT", { "default": 1.0, "min": -1, "max": 5, "step": 0.05 }),
+                "composition_boost": ("FLOAT", { "default": 0.0, "min": -5, "max": 5, "step": 0.05 }),
+                "combine_embeds": (["concat", "add", "subtract", "average", "norm average"],),
+                "start_at": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "end_at": ("FLOAT", { "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001 }),
+                "embeds_scaling": (['V only', 'K+V', 'K+V w/ C penalty', 'K+mean(V) w/ C penalty'], ),
+            },
+            "optional": {
+                "image_negative": ("IMAGE",),
+                "attn_mask": ("MASK",),
+                "clip_vision": ("CLIP_VISION",),
+            }
+        }
+
+class IPAdapterPreciseCompositionBatch(IPAdapterPreciseComposition):
     def __init__(self):
         self.unfold_batch = True
 
@@ -1775,6 +1812,8 @@ NODE_CLASS_MAPPINGS = {
     "IPAdapterFromParams": IPAdapterFromParams,
     "IPAdapterPreciseStyleTransfer": IPAdapterPreciseStyleTransfer,
     "IPAdapterPreciseStyleTransferBatch": IPAdapterPreciseStyleTransferBatch,
+    "IPAdapterPreciseComposition": IPAdapterPreciseComposition,
+    "IPAdapterPreciseCompositionBatch": IPAdapterPreciseCompositionBatch,
 
     # Loaders
     "IPAdapterUnifiedLoader": IPAdapterUnifiedLoader,
@@ -1815,6 +1854,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterFromParams": "IPAdapter from Params",
     "IPAdapterPreciseStyleTransfer": "IPAdapter Precise Style Transfer",
     "IPAdapterPreciseStyleTransferBatch": "IPAdapter Precise Style Transfer Batch",
+    "IPAdapterPreciseComposition": "IPAdapter Precise Composition",
+    "IPAdapterPreciseCompositionBatch": "IPAdapter Precise Composition Batch",
 
     # Loaders
     "IPAdapterUnifiedLoader": "IPAdapter Unified Loader",

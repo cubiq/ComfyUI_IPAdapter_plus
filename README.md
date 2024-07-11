@@ -27,6 +27,8 @@ Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [Pa
 
 ## Important updates
 
+**2024/07/11**: Added experimental Precise composition (layout) transfer. It's not as good as style. `embeds_scaling` has a huge impact. Start with strength 0.8 and boost 0.3 in SDXL and 0.6 boost 0.35 in SD1.5.
+
 **2024/06/28**: Added the `IPAdapter Precise Style Transfer` node. Increase the `style_boost` option to lower the bleeding of the composition layer. **Important:** works better in SDXL, start with a style_boost of 2; for SD1.5 try to increase the weight a little over 1.0 and set the style_boost to a value between -1 and +1, starting with 0.
 
 **2024/06/22**: Added `style transfer precise`, offers less bleeding of the embeds between the style and composition layers. It is sometimes better than the standard style transfer especially if the reference image is very different from the generated image. Works better in SDXL than SD1.5.
