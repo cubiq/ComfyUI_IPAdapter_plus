@@ -154,7 +154,7 @@ def insightface_loader(provider):
     model.prepare(ctx_id=0, det_size=(640, 640))
     return model
 
-def encode_image_masked(clip_vision, image, mask=None, batch_size=0):
+def encode_image_masked(clip_vision, image, mask=None, batch_size=0, size=224):
     model_management.load_model_gpu(clip_vision.patcher)
     outputs = Output()
 
@@ -168,7 +168,7 @@ def encode_image_masked(clip_vision, image, mask=None, batch_size=0):
     for img in image_batch:
         img = img.to(clip_vision.load_device)
 
-        pixel_values = clip_preprocess(img.to(clip_vision.load_device)).float()
+        pixel_values = clip_preprocess(img.to(clip_vision.load_device), size=size).float()
 
         # TODO: support for multiple masks
         if mask is not None:

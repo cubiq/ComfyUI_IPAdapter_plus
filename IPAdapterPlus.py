@@ -46,7 +46,7 @@ WEIGHT_TYPES = ["linear", "ease in", "ease out", 'ease in-out', 'reverse in-out'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 class IPAdapter(nn.Module):
-    def __init__(self, ipadapter_model, cross_attention_dim=1024, output_cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4, is_sdxl=False, is_plus=False, is_full=False, is_faceid=False, is_portrait_unnorm=False):
+    def __init__(self, ipadapter_model, cross_attention_dim=1024, output_cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4, is_sdxl=False, is_plus=False, is_full=False, is_faceid=False, is_portrait_unnorm=False, is_kwai_kolors=False):
         super().__init__()
 
         self.clip_embeddings_dim = clip_embeddings_dim
@@ -57,6 +57,7 @@ class IPAdapter(nn.Module):
         self.is_full = is_full
         self.is_plus = is_plus
         self.is_portrait_unnorm = is_portrait_unnorm
+        self.is_kwai_kolors = is_kwai_kolors
 
         if is_faceid and not is_portrait_unnorm:
             self.image_proj_model = self.init_proj_faceid()
@@ -83,7 +84,7 @@ class IPAdapter(nn.Module):
             dim=self.cross_attention_dim,
             depth=4,
             dim_head=64,
-            heads=20 if self.is_sdxl else 12,
+            heads=20 if self.is_sdxl and not self.is_kwai_kolors else 12,
             num_queries=self.clip_extra_context_tokens,
             embedding_dim=self.clip_embeddings_dim,
             output_dim=self.output_cross_attention_dim,
@@ -127,7 +128,7 @@ class IPAdapter(nn.Module):
 
         clip_embed = torch.split(clip_embed, batch_size, dim=0)
         clip_embed_zeroed = torch.split(clip_embed_zeroed, batch_size, dim=0)
-
+        
         image_prompt_embeds = []
         uncond_image_prompt_embeds = []
 
@@ -234,6 +235,7 @@ def ipadapter_execute(model,
     is_faceidv2 = "faceidplusv2" in ipadapter
     output_cross_attention_dim = ipadapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
     is_sdxl = output_cross_attention_dim == 2048
+    is_kwai_kolors = is_sdxl and "layers.0.0.to_out.weight" in ipadapter["image_proj"] and ipadapter["image_proj"]["layers.0.0.to_out.weight"].shape[0] == 2048
 
     if is_faceid and not insightface:
         raise Exception("insightface model is required for FaceID models")
@@ -241,7 +243,7 @@ def ipadapter_execute(model,
     if is_faceidv2:
         weight_faceidv2 = weight_faceidv2 if weight_faceidv2 is not None else weight*2
 
-    cross_attention_dim = 1280 if (is_plus and is_sdxl and not is_faceid) or is_portrait_unnorm else output_cross_attention_dim
+    cross_attention_dim = 1280 if (is_plus and is_sdxl and not is_faceid and not is_kwai_kolors) or is_portrait_unnorm else output_cross_attention_dim
     clip_extra_context_tokens = 16 if (is_plus and not is_faceid) or is_portrait or is_portrait_unnorm else 4
 
     if image is not None and image.shape[1] != image.shape[2]:
@@ -292,6 +294,8 @@ def ipadapter_execute(model,
         else:
             weight = { 0:weight, 1:weight, 2:weight, 3:weight, 4:weight_composition*0.25, 5:weight_composition, 6:weight*.1, 7:weight*.1, 8:weight*.1, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
 
+    image_size=224 if not is_kwai_kolors else 336
+
     img_comp_cond_embeds = None
     face_cond_embeds = None
     if is_faceid:
@@ -324,22 +328,23 @@ def ipadapter_execute(model,
         face_cond_embeds = torch.stack(face_cond_embeds).to(device, dtype=dtype)
         image = torch.stack(image)
         del image_iface, face
+    
 
     if image is not None:
-        img_cond_embeds = encode_image_masked(clipvision, image, batch_size=encode_batch_size)
+        img_cond_embeds = encode_image_masked(clipvision, image, batch_size=encode_batch_size, size=image_size)
         if image_composition is not None:
-            img_comp_cond_embeds = encode_image_masked(clipvision, image_composition, batch_size=encode_batch_size)
+            img_comp_cond_embeds = encode_image_masked(clipvision, image_composition, batch_size=encode_batch_size, size=image_size)
 
         if is_plus:
             img_cond_embeds = img_cond_embeds.penultimate_hidden_states
-            image_negative = image_negative if image_negative is not None else torch.zeros([1, 224, 224, 3])
-            img_uncond_embeds = encode_image_masked(clipvision, image_negative, batch_size=encode_batch_size).penultimate_hidden_states
+            image_negative = image_negative if image_negative is not None else torch.zeros([1, image_size, image_size, 3])
+            img_uncond_embeds = encode_image_masked(clipvision, image_negative, batch_size=encode_batch_size, size=image_size).penultimate_hidden_states
             if image_composition is not None:
                 img_comp_cond_embeds = img_comp_cond_embeds.penultimate_hidden_states
         else:
             img_cond_embeds = img_cond_embeds.image_embeds if not is_faceid else face_cond_embeds
             if image_negative is not None and not is_faceid:
-                img_uncond_embeds = encode_image_masked(clipvision, image_negative, batch_size=encode_batch_size).image_embeds
+                img_uncond_embeds = encode_image_masked(clipvision, image_negative, batch_size=encode_batch_size, size=image_size).image_embeds
             else:
                 img_uncond_embeds = torch.zeros_like(img_cond_embeds)
             if image_composition is not None:
@@ -354,7 +359,7 @@ def ipadapter_execute(model,
             img_uncond_embeds = neg_embed
         else:
             if is_plus:
-                img_uncond_embeds = encode_image_masked(clipvision, torch.zeros([1, 224, 224, 3])).penultimate_hidden_states
+                img_uncond_embeds = encode_image_masked(clipvision, torch.zeros([1, image_size, image_size, 3]), size=image_size).penultimate_hidden_states
             else:
                 img_uncond_embeds = torch.zeros_like(img_cond_embeds)
         del pos_embed, neg_embed
@@ -414,6 +419,7 @@ def ipadapter_execute(model,
         is_full=is_full,
         is_faceid=is_faceid,
         is_portrait_unnorm=is_portrait_unnorm,
+        is_kwai_kolors=is_kwai_kolors,
     ).to(device, dtype=dtype)
 
     if is_faceid and is_plus:
@@ -1246,13 +1252,16 @@ class IPAdapterEncoder:
             raise Exception("Missing CLIPVision model.")
 
         is_plus = "proj.3.weight" in ipadapter_model["image_proj"] or "latents" in ipadapter_model["image_proj"] or "perceiver_resampler.proj_in.weight" in ipadapter_model["image_proj"]
+        is_kwai_kolors = is_plus and "layers.0.0.to_out.weight" in ipadapter_model["image_proj"] and ipadapter_model["image_proj"]["layers.0.0.to_out.weight"].shape[0] == 2048
+
+        image_size = 224 if not is_kwai_kolors else 336
 
         # resize and crop the mask to 224x224
-        if mask is not None and mask.shape[1:3] != torch.Size([224, 224]):
+        if mask is not None and mask.shape[1:3] != torch.Size([image_size, image_size]):
             mask = mask.unsqueeze(1)
             transforms = T.Compose([
                 T.CenterCrop(min(mask.shape[2], mask.shape[3])),
-                T.Resize((224, 224), interpolation=T.InterpolationMode.BICUBIC, antialias=True),
+                T.Resize((image_size, image_size), interpolation=T.InterpolationMode.BICUBIC, antialias=True),
             ])
             mask = transforms(mask).squeeze(1)
             #mask = T.Resize((image.shape[1], image.shape[2]), interpolation=T.InterpolationMode.BICUBIC, antialias=True)(mask.unsqueeze(1)).squeeze(1)
@@ -1261,7 +1270,7 @@ class IPAdapterEncoder:
 
         if is_plus:
             img_cond_embeds = img_cond_embeds.penultimate_hidden_states
-            img_uncond_embeds = encode_image_masked(clip_vision, torch.zeros([1, 224, 224, 3])).penultimate_hidden_states
+            img_uncond_embeds = encode_image_masked(clip_vision, torch.zeros([1, image_size, image_size, 3])).penultimate_hidden_states
         else:
             img_cond_embeds = img_cond_embeds.image_embeds
             img_uncond_embeds = torch.zeros_like(img_cond_embeds)
