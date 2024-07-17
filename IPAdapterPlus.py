@@ -296,7 +296,7 @@ def ipadapter_execute(model,
         else:
             weight = { 0:weight, 1:weight, 2:weight, 3:weight, 4:weight_composition*0.25, 5:weight_composition, 6:weight*.1, 7:weight*.1, 8:weight*.1, 9:weight, 10:weight, 11:weight, 12:weight, 13:weight, 14:weight, 15:weight }
 
-    image_size=224 if not is_kwai_kolors else 336
+    clipvision_size=224 if not is_kwai_kolors else 336
 
     img_comp_cond_embeds = None
     face_cond_embeds = None
@@ -333,20 +333,20 @@ def ipadapter_execute(model,
     
 
     if image is not None:
-        img_cond_embeds = encode_image_masked(clipvision, image, batch_size=encode_batch_size, tiles=enhance_tiles, ratio=enhance_ratio, size=image_size)
+        img_cond_embeds = encode_image_masked(clipvision, image, batch_size=encode_batch_size, tiles=enhance_tiles, ratio=enhance_ratio, clipvision_size=clipvision_size)
         if image_composition is not None:
-            img_comp_cond_embeds = encode_image_masked(clipvision, image_composition, batch_size=encode_batch_size, tiles=enhance_tiles, ratio=enhance_ratio, size=image_size)
+            img_comp_cond_embeds = encode_image_masked(clipvision, image_composition, batch_size=encode_batch_size, tiles=enhance_tiles, ratio=enhance_ratio, clipvision_size=clipvision_size)
 
         if is_plus:
             img_cond_embeds = img_cond_embeds.penultimate_hidden_states
-            image_negative = image_negative if image_negative is not None else torch.zeros([1, image_size, image_size, 3])
-            img_uncond_embeds = encode_image_masked(clipvision, image_negative, batch_size=encode_batch_size, size=image_size).penultimate_hidden_states
+            image_negative = image_negative if image_negative is not None else torch.zeros([1, clipvision_size, clipvision_size, 3])
+            img_uncond_embeds = encode_image_masked(clipvision, image_negative, batch_size=encode_batch_size, clipvision_size=clipvision_size).penultimate_hidden_states
             if image_composition is not None:
                 img_comp_cond_embeds = img_comp_cond_embeds.penultimate_hidden_states
         else:
             img_cond_embeds = img_cond_embeds.image_embeds if not is_faceid else face_cond_embeds
             if image_negative is not None and not is_faceid:
-                img_uncond_embeds = encode_image_masked(clipvision, image_negative, batch_size=encode_batch_size, size=image_size).image_embeds
+                img_uncond_embeds = encode_image_masked(clipvision, image_negative, batch_size=encode_batch_size, clipvision_size=clipvision_size).image_embeds
             else:
                 img_uncond_embeds = torch.zeros_like(img_cond_embeds)
             if image_composition is not None:
@@ -361,7 +361,7 @@ def ipadapter_execute(model,
             img_uncond_embeds = neg_embed
         else:
             if is_plus:
-                img_uncond_embeds = encode_image_masked(clipvision, torch.zeros([1, image_size, image_size, 3]), size=image_size).penultimate_hidden_states
+                img_uncond_embeds = encode_image_masked(clipvision, torch.zeros([1, clipvision_size, clipvision_size, 3]), clipvision_size=clipvision_size).penultimate_hidden_states
             else:
                 img_uncond_embeds = torch.zeros_like(img_cond_embeds)
         del pos_embed, neg_embed
@@ -1284,23 +1284,23 @@ class IPAdapterEncoder:
         is_plus = "proj.3.weight" in ipadapter_model["image_proj"] or "latents" in ipadapter_model["image_proj"] or "perceiver_resampler.proj_in.weight" in ipadapter_model["image_proj"]
         is_kwai_kolors = is_plus and "layers.0.0.to_out.weight" in ipadapter_model["image_proj"] and ipadapter_model["image_proj"]["layers.0.0.to_out.weight"].shape[0] == 2048
 
-        image_size = 224 if not is_kwai_kolors else 336
+        clipvision_size = 224 if not is_kwai_kolors else 336
 
         # resize and crop the mask to 224x224
-        if mask is not None and mask.shape[1:3] != torch.Size([image_size, image_size]):
+        if mask is not None and mask.shape[1:3] != torch.Size([clipvision_size, clipvision_size]):
             mask = mask.unsqueeze(1)
             transforms = T.Compose([
                 T.CenterCrop(min(mask.shape[2], mask.shape[3])),
-                T.Resize((image_size, image_size), interpolation=T.InterpolationMode.BICUBIC, antialias=True),
+                T.Resize((clipvision_size, clipvision_size), interpolation=T.InterpolationMode.BICUBIC, antialias=True),
             ])
             mask = transforms(mask).squeeze(1)
             #mask = T.Resize((image.shape[1], image.shape[2]), interpolation=T.InterpolationMode.BICUBIC, antialias=True)(mask.unsqueeze(1)).squeeze(1)
 
-        img_cond_embeds = encode_image_masked(clip_vision, image, mask, size=image_size)
+        img_cond_embeds = encode_image_masked(clip_vision, image, mask, clipvision_size=clipvision_size)
 
         if is_plus:
             img_cond_embeds = img_cond_embeds.penultimate_hidden_states
-            img_uncond_embeds = encode_image_masked(clip_vision, torch.zeros([1, image_size, image_size, 3]), size=image_size).penultimate_hidden_states
+            img_uncond_embeds = encode_image_masked(clip_vision, torch.zeros([1, clipvision_size, clipvision_size, 3]), clipvision_size=clipvision_size).penultimate_hidden_states
         else:
             img_cond_embeds = img_cond_embeds.image_embeds
             img_uncond_embeds = torch.zeros_like(img_cond_embeds)
