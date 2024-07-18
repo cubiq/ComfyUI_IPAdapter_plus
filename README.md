@@ -27,6 +27,8 @@ Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [Pa
 
 ## Important updates
 
+**2024/07/18**: Support for Kolors.
+
 **2024/07/17**: Added experimental ClipVision Enhancer node. It was somehow inspired by the [Scaling on Scales](https://arxiv.org/pdf/2403.13043) paper but the implementation is a bit different. The new IPAdapterClipVisionEnhancer tries to catch small details by tiling the embeds (instead of the image in the pixel space), the result is a slightly higher resolution visual embedding with no cost of performance.
 
 **2024/07/11**: Added experimental Precise composition (layout) transfer. It's not as good as style. `embeds_scaling` has a huge impact. Start with strength 0.8 and boost 0.3 in SDXL and 0.6 boost 0.35 in SD1.5.
@@ -81,6 +83,7 @@ Remember you can also use any custom location setting an `ipadapter` entry in th
 - `/ComfyUI/models/clip_vision`
     - [CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors), download and rename
     - [CLIP-ViT-bigG-14-laion2B-39B-b160k.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/image_encoder/model.safetensors), download and rename
+    - [clip-vit-large-patch14-336.bin](https://huggingface.co/Kwai-Kolors/Kolors-IP-Adapter-Plus/resolve/main/image_encoder/pytorch_model.bin), download and rename only for Kolors models
 - `/ComfyUI/models/ipadapter`, create it if not present
     - [ip-adapter_sd15.safetensors](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15.safetensors), Basic model, average strength
     - [ip-adapter_sd15_light_v11.bin](https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15_light_v11.bin), Light impact model
@@ -127,6 +130,7 @@ The community has baked some interesting IPAdapter models.
 - `/ComfyUI/models/ipadapter`
     - [ip_plus_composition_sd15.safetensors](https://huggingface.co/ostris/ip-composition-adapter/resolve/main/ip_plus_composition_sd15.safetensors), general composition ignoring style and content, more about it [here](https://huggingface.co/ostris/ip-composition-adapter)
     - [ip_plus_composition_sdxl.safetensors](https://huggingface.co/ostris/ip-composition-adapter/resolve/main/ip_plus_composition_sdxl.safetensors), SDXL version
+    - [Kolors-IP-Adapter-Plus.bin](https://huggingface.co/Kwai-Kolors/Kolors-IP-Adapter-Plus/resolve/main/ip_adapter_plus_general.bin?download=true), IPAdapter Plus for Kolors model
 
 if you know of other models please let me know and I will add them to the unified loader.
 

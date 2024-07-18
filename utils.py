@@ -16,6 +16,8 @@ def get_clipvision_file(preset):
 
     if preset.startswith("vit-g"):
         pattern = r'(ViT.bigG.14.*39B.b160k|ipadapter.*sdxl|sdxl.*model\.(bin|safetensors))'
+    elif preset.startswith("kolors"):
+        pattern = r'(clip.vit.large.patch14.336\.(bin|safetensors))'
     else:
         pattern = r'(ViT.H.14.*s32B.b79K|ipadapter.*sd15|sd1.?5.*model\.(bin|safetensors))'
     clipvision_file = [e for e in clipvision_list if re.search(pattern, e, re.IGNORECASE)]
@@ -104,6 +106,11 @@ def get_ipadapter_file(preset, is_sdxl):
             pattern = r'plus.composition.sdxl\.safetensors$'
         else:
             pattern = r'plus.composition.sd15\.safetensors$'
+    elif preset.startswith("kolors"):
+        if is_sdxl:
+            pattern = r'(ip_adapter_plus_general|kolors.ip.adapter.plus)\.(safetensors|bin)$'
+        else:
+            raise Exception("Only supported for Kolors model")
     else:
         raise Exception(f"invalid type '{preset}'")
 

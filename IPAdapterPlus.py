@@ -605,7 +605,7 @@ class IPAdapterUnifiedLoaderCommunity(IPAdapterUnifiedLoader):
     def INPUT_TYPES(s):
         return {"required": {
             "model": ("MODEL", ),
-            "preset": (['Composition',], ),
+            "preset": (['Composition', 'Kolors'], ),
         },
         "optional": {
             "ipadapter": ("IPADAPTER", ),
