@@ -1,0 +1,680 @@
+{
+  "last_node_id": 88,
+  "last_link_id": 132,
+  "nodes": [
+    {
+      "id": 9,
+      "type": "EmptyLatentImage",
+      "pos": [
+        1710,
+        620
+      ],
+      "size": {
+        "0": 368.5347900390625,
+        "1": 106
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            108
+          ],
+          "shape": 3,
+          "label": "Latent"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "EmptyLatentImage"
+      },
+      "widgets_values": [
+        968,
+        1152,
+        1
+      ]
+    },
+    {
+      "id": 80,
+      "type": "VAEDecode",
+      "pos": [
+        2690,
+        110
+      ],
+      "size": {
+        "0": 210,
+        "1": 46
+      },
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 110
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 111
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            113
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      }
+    },
+    {
+      "id": 81,
+      "type": "PreviewImage",
+      "pos": [
+        2700,
+        210
+      ],
+      "size": {
+        "0": 1085.9268798828125,
+        "1": 1301.6563720703125
+      },
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 113
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 59,
+      "type": "MZ_KolorsUNETLoader",
+      "pos": [
+        1140,
+        300
+      ],
+      "size": {
+        "0": 310.1650695800781,
+        "1": 78
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "links": [
+            132
+          ],
+          "shape": 3,
+          "label": "model",
+          "slot_index": 0
+        },
+        {
+          "name": "hid_proj",
+          "type": "TorchLinear",
+          "links": [
+            79,
+            87
+          ],
+          "shape": 3,
+          "label": "hid_proj",
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MZ_KolorsUNETLoader"
+      },
+      "widgets_values": [
+        "diffusion_pytorch_model.fp16.safetensors"
+      ]
+    },
+    {
+      "id": 75,
+      "type": "IPAdapterAdvanced",
+      "pos": [
+        1919,
+        -273
+      ],
+      "size": {
+        "0": 291.9587097167969,
+        "1": 278
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 132,
+          "slot_index": 0
+        },
+        {
+          "name": "ipadapter",
+          "type": "IPADAPTER",
+          "link": 130,
+          "slot_index": 1
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 102,
+          "slot_index": 2
+        },
+        {
+          "name": "image_negative",
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "attn_mask",
+          "type": "MASK",
+          "link": null
+        },
+        {
+          "name": "clip_vision",
+          "type": "CLIP_VISION",
+          "link": 131,
+          "slot_index": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            105
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterAdvanced"
+      },
+      "widgets_values": [
+        1,
+        "style transfer precise",
+        "concat",
+        0,
+        1,
+        "V only"
+      ]
+    },
+    {
+      "id": 76,
+      "type": "IPAdapterModelLoader",
+      "pos": [
+        1541,
+        -383
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IPADAPTER",
+          "type": "IPADAPTER",
+          "links": [
+            130
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterModelLoader"
+      },
+      "widgets_values": [
+        "Kolors-IP-Adapter-Plus.bin"
+      ]
+    },
+    {
+      "id": 78,
+      "type": "CLIPVisionLoader",
+      "pos": [
+        1511,
+        -127
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "CLIP_VISION",
+          "type": "CLIP_VISION",
+          "links": [
+            131
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPVisionLoader"
+      },
+      "widgets_values": [
+        "clip-vit-large-patch14-336.bin"
+      ]
+    },
+    {
+      "id": 77,
+      "type": "LoadImage",
+      "pos": [
+        1137,
+        -329
+      ],
+      "size": {
+        "0": 237.2888641357422,
+        "1": 323.4468994140625
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            102
+          ],
+          "shape": 3
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "cga_pixels.png",
+        "image"
+      ]
+    },
+    {
+      "id": 70,
+      "type": "VAELoader",
+      "pos": [
+        1130,
+        450
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            111
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "sdxl_vae.safetensors"
+      ]
+    },
+    {
+      "id": 79,
+      "type": "KSampler",
+      "pos": [
+        2320,
+        110
+      ],
+      "size": {
+        "0": 315,
+        "1": 262
+      },
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 105
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 107
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 106
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 108
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            110
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSampler"
+      },
+      "widgets_values": [
+        13,
+        "fixed",
+        30,
+        6.5,
+        "dpmpp_2m_sde_gpu",
+        "karras",
+        1
+      ]
+    },
+    {
+      "id": 67,
+      "type": "MZ_ChatGLM3",
+      "pos": [
+        1680,
+        80
+      ],
+      "size": {
+        "0": 400,
+        "1": 200
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "chatglm3_model",
+          "type": "CHATGLM3MODEL",
+          "link": 86,
+          "label": "chatglm3_model",
+          "slot_index": 0
+        },
+        {
+          "name": "hid_proj",
+          "type": "TorchLinear",
+          "link": 87,
+          "label": "hid_proj"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            107
+          ],
+          "shape": 3,
+          "label": "CONDITIONING",
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MZ_ChatGLM3"
+      },
+      "widgets_values": [
+        "a fierce red hair warrior woman wearing a white and gold armor with purple decorations. Highly detailed digital illustration, high quality, detailed, intricate"
+      ]
+    },
+    {
+      "id": 66,
+      "type": "MZ_ChatGLM3Loader",
+      "pos": [
+        1140,
+        180
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "chatglm3_model",
+          "type": "CHATGLM3MODEL",
+          "links": [
+            84,
+            86
+          ],
+          "shape": 3,
+          "label": "chatglm3_model"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MZ_ChatGLM3Loader"
+      },
+      "widgets_values": [
+        "chatglm3-8bit.safetensors"
+      ]
+    },
+    {
+      "id": 62,
+      "type": "MZ_ChatGLM3",
+      "pos": [
+        1680,
+        340
+      ],
+      "size": {
+        "0": 400,
+        "1": 200
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "chatglm3_model",
+          "type": "CHATGLM3MODEL",
+          "link": 84,
+          "label": "chatglm3_model",
+          "slot_index": 0
+        },
+        {
+          "name": "hid_proj",
+          "type": "TorchLinear",
+          "link": 79,
+          "label": "hid_proj"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            106
+          ],
+          "shape": 3,
+          "label": "CONDITIONING",
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MZ_ChatGLM3"
+      },
+      "widgets_values": [
+        ""
+      ]
+    }
+  ],
+  "links": [
+    [
+      79,
+      59,
+      1,
+      62,
+      1,
+      "TorchLinear"
+    ],
+    [
+      84,
+      66,
+      0,
+      62,
+      0,
+      "CHATGLM3MODEL"
+    ],
+    [
+      86,
+      66,
+      0,
+      67,
+      0,
+      "CHATGLM3MODEL"
+    ],
+    [
+      87,
+      59,
+      1,
+      67,
+      1,
+      "TorchLinear"
+    ],
+    [
+      102,
+      77,
+      0,
+      75,
+      2,
+      "IMAGE"
+    ],
+    [
+      105,
+      75,
+      0,
+      79,
+      0,
+      "MODEL"
+    ],
+    [
+      106,
+      62,
+      0,
+      79,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      107,
+      67,
+      0,
+      79,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      108,
+      9,
+      0,
+      79,
+      3,
+      "LATENT"
+    ],
+    [
+      110,
+      79,
+      0,
+      80,
+      0,
+      "LATENT"
+    ],
+    [
+      111,
+      70,
+      0,
+      80,
+      1,
+      "VAE"
+    ],
+    [
+      113,
+      80,
+      0,
+      81,
+      0,
+      "IMAGE"
+    ],
+    [
+      130,
+      76,
+      0,
+      75,
+      1,
+      "IPADAPTER"
+    ],
+    [
+      131,
+      78,
+      0,
+      75,
+      5,
+      "CLIP_VISION"
+    ],
+    [
+      132,
+      59,
+      0,
+      75,
+      0,
+      "MODEL"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.620921323059155,
+      "offset": [
+        -781.0947110324239,
+        731.4168331979325
+      ]
+    }
+  },
+  "version": 0.4
+}
