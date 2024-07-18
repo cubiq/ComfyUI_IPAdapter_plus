@@ -205,9 +205,9 @@ def merge_embeddings(embeds): # TODO: this needs so much testing that I don't ev
     
     return pooled
 
-def encode_image_masked(clip_vision, image, mask=None, batch_size=0, tiles=1, ratio=1.0):
+def encode_image_masked(clip_vision, image, mask=None, batch_size=0, tiles=1, ratio=1.0, clipvision_size=224):
     # full image embeds
-    embeds = encode_image_masked_(clip_vision, image, mask, batch_size)
+    embeds = encode_image_masked_(clip_vision, image, mask, batch_size, clipvision_size=clipvision_size)
     tiles = min(tiles, 16)
 
     if tiles > 1:
@@ -215,7 +215,7 @@ def encode_image_masked(clip_vision, image, mask=None, batch_size=0, tiles=1, ra
         image_split = split_tiles(image, tiles)
 
         # get the embeds for each tile
-        embeds_split = encode_image_masked_(clip_vision, image_split, mask, batch_size)
+        embeds_split = encode_image_masked_(clip_vision, image_split, mask, batch_size, clipvision_size=clipvision_size)
 
         #embeds_split['last_hidden_state'] = merge_hiddenstates(embeds_split['last_hidden_state'])
         embeds_split["image_embeds"] = merge_embeddings(embeds_split["image_embeds"])
@@ -229,7 +229,7 @@ def encode_image_masked(clip_vision, image, mask=None, batch_size=0, tiles=1, ra
 
     return embeds
 
-def encode_image_masked_(clip_vision, image, mask=None, batch_size=0):
+def encode_image_masked_(clip_vision, image, mask=None, batch_size=0, clipvision_size=224):
     model_management.load_model_gpu(clip_vision.patcher)
     outputs = Output()
 
@@ -242,7 +242,7 @@ def encode_image_masked_(clip_vision, image, mask=None, batch_size=0):
 
     for img in image_batch:
         img = img.to(clip_vision.load_device)
-        pixel_values = clip_preprocess(img).float()
+        pixel_values = clip_preprocess(img, size=clipvision_size).float()
 
         # TODO: support for multiple masks
         if mask is not None:
