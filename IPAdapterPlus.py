@@ -326,7 +326,12 @@ def ipadapter_execute(model,
                         print(f"\033[33mINFO: InsightFace detection resolution lowered to {size}.\033[0m")
                     break
             else:
-                raise Exception('InsightFace: No face detected.')
+                print(f"\033[33mINFO: No face detected in image {i}. Skipping this image.\033[0m")
+
+        if len(face_cond_embeds) == 0:
+            print("\033[33mINFO: No faces detected in any of the input images. Returning unmodified model.\033[0m")
+            return (model, None)
+
         face_cond_embeds = torch.stack(face_cond_embeds).to(device, dtype=dtype)
         image = torch.stack(image)
         del image_iface, face
