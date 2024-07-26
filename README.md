@@ -27,6 +27,8 @@ Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [Pa
 
 ## Important updates
 
+**2024/07/26**: Added support for image batches and animation to the ClipVision Enhancer.
+
 **2024/07/18**: Support for Kolors.
 
 **2024/07/17**: Added experimental ClipVision Enhancer node. It was somehow inspired by the [Scaling on Scales](https://arxiv.org/pdf/2403.13043) paper but the implementation is a bit different. The new IPAdapterClipVisionEnhancer tries to catch small details by tiling the embeds (instead of the image in the pixel space), the result is a slightly higher resolution visual embedding with no cost of performance.
@@ -48,8 +50,6 @@ Please consider a [Github Sponsorship](https://github.com/sponsors/cubiq) or [Pa
 **2024/04/16**: Added support for the new SDXL portrait unnorm model (link below). It's very strong and tends to ignore the text conditioning. Lower the CFG to 3-4 or use a RescaleCFG node.
 
 **2024/04/12**: Added scheduled weights. Useful for animations.
-
-**2024/04/09**: Added experimental Style/Composition transfer for SD1.5. The results are often not as good as SDXL. Optimal weight seems to be from 0.8 to 2.0. The **Style+Composition node doesn't work for SD1.5** at the moment, you can only alter either the Style or the Composition, I need more time for testing. Old workflows will still work **but you may need to refresh the page and re-select the weight type!**
 
 *(Older updates removed for readability)*
 
@@ -158,7 +158,7 @@ It's only thanks to generous sponsors that **the whole community** can enjoy ope
 
 ### :tada: Silver sponsors
 
-[![OperArt.ai](https://f.latent.vision/imgs/openart.png?r=1)](https://openart.ai/workflows)&nbsp; &nbsp;[![OperArt.ai](https://f.latent.vision/imgs/finetuners.png)](https://www.finetuners.ai/)
+[![OperArt.ai](https://f.latent.vision/imgs/openart.png?r=1)](https://openart.ai/workflows)&nbsp; &nbsp;[![OperArt.ai](https://f.latent.vision/imgs/finetuners.png)](https://www.finetuners.ai/)&nbsp; &nbsp;[![Comfy.ICU](https://f.latent.vision/imgs/comfyicu.png?r=1)](https://comfy.icu/)
 
 ### Companies supporting my projects
 
