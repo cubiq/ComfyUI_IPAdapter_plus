@@ -6,6 +6,7 @@ import folder_paths
 import comfy.model_management as model_management
 from node_helpers import conditioning_set_values
 from comfy.clip_vision import load as load_clip_vision
+from comfy.model_patcher import ModelPatcher
 from comfy.sd import load_lora_for_models
 import comfy.utils
 
@@ -76,6 +77,14 @@ class IPAdapter(nn.Module):
 
         self.image_proj_model.load_state_dict(ipadapter_model["image_proj"])
         self.ip_layers = To_KV(ipadapter_model["ip_adapter"])
+        dtype = model_management.unet_dtype()
+        self.image_proj_model.to(dtype)
+        self.ip_layers.to(dtype)
+
+        load_device = model_management.get_torch_device()
+        offload_device = model_management.text_encoder_offload_device()
+        self.image_proj_model_patcher = ModelPatcher(self.image_proj_model, load_device=load_device, offload_device=offload_device)
+        self.ip_layers_patcher = ModelPatcher(self.ip_layers, load_device=load_device, offload_device=offload_device)
 
     def init_proj(self):
         image_proj_model = ImageProjModel(
@@ -138,6 +147,7 @@ class IPAdapter(nn.Module):
         image_prompt_embeds = []
         uncond_image_prompt_embeds = []
 
+        model_management.load_model_gpu(self.image_proj_model_patcher)
         for ce, cez in zip(clip_embed, clip_embed_zeroed):
             image_prompt_embeds.append(self.image_proj_model(ce.to(torch_device)).to(intermediate_device))
             uncond_image_prompt_embeds.append(self.image_proj_model(cez.to(torch_device)).to(intermediate_device))
@@ -168,6 +178,7 @@ class IPAdapter(nn.Module):
         clip_embed_batch = torch.split(clip_embed, batch_size, dim=0)
 
         embeds = []
+        model_management.load_model_gpu(self.image_proj_model_patcher)
         for face_embed, clip_embed in zip(face_embed_batch, clip_embed_batch):
             embeds.append(self.image_proj_model(face_embed.to(torch_device), clip_embed.to(torch_device), scale=s_scale, shortcut=shortcut).to(intermediate_device))
 
@@ -388,7 +399,7 @@ def ipadapter_execute(model,
     if attn_mask is not None:
         attn_mask = attn_mask.to(device, dtype=dtype)
 
-    ipa = ipadapter.to(device, dtype=dtype)
+    ipa = ipadapter
 
     if ipadapter.is_faceid and ipadapter.is_plus:
         cond = ipa.get_image_embeds_faceid_plus(face_cond_embeds, img_cond_embeds, weight_faceidv2, ipadapter.is_faceidv2, encode_batch_size)
@@ -752,7 +763,7 @@ class IPAdapterAdvanced:
 
             work_model, face_image = ipadapter_execute(work_model, ipadapter_model, clip_vision, **ipa_args)
 
-        # del ipadapter
+        del ipadapter
         return (work_model, face_image, )
 
 class IPAdapterBatch(IPAdapterAdvanced):
@@ -907,7 +918,7 @@ class IPAdapterTiled:
         if clip_vision is None:
             raise Exception("Missing CLIPVision model.")
 
-        # del ipadapter
+        del ipadapter
 
         # 2. Extract the tiles
         tile_size = 256     # I'm using 256 instead of 224 as it is more likely divisible by the latent size, it will be downscaled to 224 by the clip vision encoder
@@ -1077,7 +1088,7 @@ class IPAdapterEmbeds:
         if clip_vision is None and neg_embed is None:
             raise Exception("Missing CLIPVision model.")
 
-        # del ipadapter
+        del ipadapter
 
         return ipadapter_execute(model.clone(), ipadapter_model, clip_vision, **ipa_args)
 

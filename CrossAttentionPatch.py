@@ -2,6 +2,7 @@ import torch
 import math
 import torch.nn.functional as F
 from comfy.ldm.modules.attention import optimized_attention
+import comfy.model_management as model_management
 from .utils import tensor_to_size
 
 class Attn2Replace:
@@ -79,6 +80,7 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
             cond = cond_alt[t_idx]
             del cond_alt
 
+    model_management.load_model_gpu(ipadapter.ip_layers_patcher)
     if unfold_batch:
         # Check AnimateDiff context window
         if ad_params is not None and ad_params["sub_idxs"] is not None:
