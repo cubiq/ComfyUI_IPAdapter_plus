@@ -133,13 +133,13 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
             weight = weight.repeat(len(cond_or_uncond), 1, 1) # repeat for cond and uncond
         elif weight == 0:
             return 0
-
+        
         k_cond = ipadapter.ip_layers.to_kvs[k_key](cond).repeat(batch_prompt, 1, 1)
         k_uncond = ipadapter.ip_layers.to_kvs[k_key](uncond).repeat(batch_prompt, 1, 1)
         v_cond = ipadapter.ip_layers.to_kvs[v_key](cond).repeat(batch_prompt, 1, 1)
         v_uncond = ipadapter.ip_layers.to_kvs[v_key](uncond).repeat(batch_prompt, 1, 1)
 
-    if len(cond_or_uncond) == 3: # TODO: conxl, I need to check this
+    if len(cond_or_uncond) == 3: # TODO: cosxl, I need to check this
         ip_k = torch.cat([(k_cond, k_uncond, k_cond)[i] for i in cond_or_uncond], dim=0)
         ip_v = torch.cat([(v_cond, v_uncond, v_cond)[i] for i in cond_or_uncond], dim=0)
     else:
