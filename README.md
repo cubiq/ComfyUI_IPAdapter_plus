@@ -17,7 +17,6 @@ If you like my work and wish to see updates and new features please consider spo
 - [ComfyUI InstantID (Native)](https://github.com/cubiq/ComfyUI_InstantID)
 - [ComfyUI Essentials](https://github.com/cubiq/ComfyUI_essentials)
 - [ComfyUI FaceAnalysis](https://github.com/cubiq/ComfyUI_FaceAnalysis)
-- [Comfy Dungeon](https://github.com/cubiq/Comfy_Dungeon)
 
 Not to mention the documentation and videos tutorials. Check my **ComfyUI Advanced Understanding** videos on YouTube for example, [part 1](https://www.youtube.com/watch?v=_C7kR2TFIX0) and [part 2](https://www.youtube.com/watch?v=ijqXnW_9gzc)
 
@@ -157,29 +156,24 @@ It's only thanks to generous sponsors that **the whole community** can enjoy ope
 
 ### :trophy: Gold sponsors
 
-[![Kaiber.ai](https://f.latent.vision/imgs/kaiber.png)](https://kaiber.ai/)&nbsp; &nbsp;[![Kaiber.ai](https://f.latent.vision/imgs/replicate.png)](https://replicate.com/)
+[![Kaiber.ai](https://f.latent.vision/imgs/kaiber.png)](https://kaiber.ai/)&nbsp; &nbsp;[![Kaiber.ai](https://f.latent.vision/imgs/replicate.png)](https://replicate.com/)&nbsp; &nbsp;[![InstaSD](https://f.latent.vision/imgs/instasd.png)](https://replicate.com/)
 
 ### :tada: Silver sponsors
 
 [![OperArt.ai](https://f.latent.vision/imgs/openart.png?r=1)](https://openart.ai/workflows)&nbsp; &nbsp;[![OperArt.ai](https://f.latent.vision/imgs/finetuners.png)](https://www.finetuners.ai/)&nbsp; &nbsp;[![Comfy.ICU](https://f.latent.vision/imgs/comfyicu.png?r=1)](https://comfy.icu/)
 
-### Companies supporting my projects
+### Other companies supporting my projects
 
 - [RunComfy](https://www.runcomfy.com/) (ComfyUI Cloud)
 
 ### Esteemed individuals
 
+- [Øystein Ø. Olsen](https://github.com/FireNeslo)
 - [Jack Gane](https://github.com/ganeJackS)
 - [Nathan Shipley](https://www.nathanshipley.com/)
 - [Dkdnzia](https://github.com/Dkdnzia)
 
-### One-time Extraordinaires
-
-- [Eric Rollei](https://github.com/EricRollei)
-- [francaleu](https://github.com/francaleu)
-- [Neta.art](https://github.com/talesofai)
-- [Samwise Wang](https://github.com/tzwm)
-- _And all private sponsors, you know who you are!_
+[And all my public and private sponsors!](https://github.com/sponsors/cubiq)
 
 ## Credits
 

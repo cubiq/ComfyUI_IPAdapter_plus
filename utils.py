@@ -15,11 +15,11 @@ def get_clipvision_file(preset):
     clipvision_list = folder_paths.get_filename_list("clip_vision")
 
     if preset.startswith("vit-g"):
-        pattern = r'(ViT.bigG.14.*39B.b160k|ipadapter.*sdxl|sdxl.*model\.(bin|safetensors))'
+        pattern = r'(ViT.bigG.14.*39B.b160k|ipadapter.*sdxl|sdxl.*model)\.(bin|safetensors)'
     elif preset.startswith("kolors"):
-        pattern = r'(clip.vit.large.patch14.336\.(bin|safetensors))'
+        pattern = r'clip.vit.large.patch14.336\.(bin|safetensors)'
     else:
-        pattern = r'(ViT.H.14.*s32B.b79K|ipadapter.*sd15|sd1.?5.*model\.(bin|safetensors))'
+        pattern = r'(ViT.H.14.*s32B.b79K|ipadapter.*sd15|sd1.?5.*model)\.(bin|safetensors)'
     clipvision_file = [e for e in clipvision_list if re.search(pattern, e, re.IGNORECASE)]
 
     clipvision_file = folder_paths.get_full_path("clip_vision", clipvision_file[0]) if clipvision_file else None
