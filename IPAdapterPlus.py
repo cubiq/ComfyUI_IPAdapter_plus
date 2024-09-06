@@ -1974,7 +1974,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "IPAdapterBatch": "IPAdapter Batch (Adv.)",
     "IPAdapterFaceID": "IPAdapter FaceID",
     "IPAdapterFaceIDKolors": "IPAdapter FaceID Kolors",
-    "IPAAdapterFaceIDBatch": "IPAdapter FaceID Batch",
+    "IPAdapterFaceIDBatch": "IPAdapter FaceID Batch",
     "IPAdapterTiled": "IPAdapter Tiled",
     "IPAdapterTiledBatch": "IPAdapter Tiled Batch",
     "IPAdapterEmbeds": "IPAdapter Embeds",
