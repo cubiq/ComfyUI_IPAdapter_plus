@@ -2,6 +2,19 @@
 
 Quick introduction lorem ipsum dolor sit amet, consectetur adipiscing elit. In porttitor condimentum ullamcorper. Nullam mattis tellus ac quam commodo semper. Nullam posuere diam est, sit amet lacinia velit semper et. Proin eget lacinia dui. Nam aliquet porttitor mauris et aliquam. Proin vel egestas diam. Curabitur posuere aliquam porta.
 
+- [User Guide](#user-guide)
+  - [1. Quick Start](#1-quick-start)
+  - [2. IP Adapter Simple](#2-ip-adapter-simple)
+  - [3. IP Adapter Advanced](#3-ip-adapter-advanced)
+  - [4. IP Adapter Portrait (Style Transfer)](#4-ip-adapter-portrait-style-transfer)
+  - [5. IP Adapter: Models and Transformers](#5-ip-adapter-models-and-transformers)
+    - [5.1 IP Adapter with SD1.5](#51-ip-adapter-with-sd15)
+    - [5.2 IP Adapter with SDXL](#52-ip-adapter-with-sdxl)
+  - [6 FaceID: Models and Transformers](#6-faceid-models-and-transformers)
+    - [6.1 FaceID with SD1.5](#61-faceid-with-sd15)
+    - [6.2 FaceID with SDXL](#62-faceid-with-sdxl)
+  - [7 Community Models](#7-community-models)
+
 ## 1. Quick Start
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. In porttitor condimentum ullamcorper. Nullam mattis tellus ac quam commodo semper. Nullam posuere diam est, sit amet lacinia velit semper et. Proin eget lacinia dui. Nam aliquet porttitor mauris et aliquam. Proin vel egestas diam. Curabitur posuere aliquam porta.
@@ -28,30 +41,28 @@ Duis dapibus, enim vitae elementum egestas, libero ex gravida mi, at luctus tell
 
 ### 5.1 IP Adapter with SD1.5
 
-| IP Adapter                            | Matching Visual Transformer (ViT)              | Alias\*           |
+| IP Adapter                            | Matching Visual Transformer (ViT)              | Alias[^1]         |
 | ------------------------------------- | ---------------------------------------------- | ----------------- |
 | ip-adapter_sd15.safetensors           | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors    | STANDARD          |
-| ip-adapter_sd15_light.safetensors     | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors    | LIGHT - SD15 Only |
+| ip-adapter_sd15_light_v11.bin[^2]     | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors    | LIGHT - SD15 Only |
 | ip-adapter_sd15_vit-G.safetensors     | CLIP-ViT-bigG-14-laion2B-39B-b160k.safetensors | VIT-G             |
 | ip-adapter-plus_sd15.safetensors      | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors    | PLUS              |
 | ip-adapter-plus-face_sd15.safetensors | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors    | PLUS FACE         |
 
 ### 5.2 IP Adapter with SDXL
 
-| IP Adapter                                  | Matching Visual Transformer (ViT)              | Alias\*   |
+| IP Adapter                                  | Matching Visual Transformer (ViT)              | Alias[^1] |
 | ------------------------------------------- | ---------------------------------------------- | --------- |
 | ip-adapter_sdxl.safetensors                 | CLIP-ViT-bigG-14-laion2B-39B-b160k.safetensors | STANDARD  |
 | ip-adapter_sdxl_vit-h.safetensors           | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors    | VIT-G     |
 | ip-adapter-plus_sdxl_vit-h.safetensors      | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors    | PLUS      |
 | ip-adapter-plus-face_sdxl_vit-h.safetensors | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors    | PLUS FACE |
 
-\*When using Unified Loader
-
 ## 6 FaceID: Models and Transformers
 
 ### 6.1 FaceID with SD1.5
 
-| IP Adapter                              | Matching Visual Transformer (ViT)           | LoRA                                           | Alias\*         |
+| IP Adapter                              | Matching Visual Transformer (ViT)           | LoRA                                           | Alias[^1]       |
 | --------------------------------------- | ------------------------------------------- | ---------------------------------------------- | --------------- |
 | ip-adapter-faceid_sd15.bin              | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors | ip-adapter-faceid_sd15_lora.safetensors        | FACEID          |
 | ip-adapter-faceid-plusv2_sd15.bin       | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors | ip-adapter-faceid-plusv2_sd15_lora.safetensors | FACEID PLUS V2  |
@@ -59,15 +70,18 @@ Duis dapibus, enim vitae elementum egestas, libero ex gravida mi, at luctus tell
 
 ### 6.2 FaceID with SDXL
 
-| IP Adapter                          | Matching Visual Transformer (ViT)           | LoRA                                           | Alias\*         |
+| IP Adapter                          | Matching Visual Transformer (ViT)           | LoRA                                           | Alias[^1]       |
 | ----------------------------------- | ------------------------------------------- | ---------------------------------------------- | --------------- |
 | ip-adapter-faceid_sdxl.bin          | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors | ip-adapter-faceid_sdxl_lora.safetensors        | FACEID          |
 | ip-adapter-faceid-plusv2_sdxl.bin   | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors | ip-adapter-faceid-plusv2_sdxl_lora.safetensors | FACEID PLUS V2  |
 | ip-adapter-faceid-portrait_sdxl.bin | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors | None                                           | FACEID PORTRAIT |
 
+[^1]: When using Unified Loader
+[^2]: Version 1 (`ip-adapter_sd15_light.safetensors`) is depricated. You need version v1.1. Dagger symbol:
+
 ## 7 Community Models
 
-| IP Adapter                                 | Matching Visual Transformer (ViT)           | LoRA | Alias\*                            |
+| IP Adapter                                 | Matching Visual Transformer (ViT)           | LoRA | Alias[^1]                          |
 | ------------------------------------------ | ------------------------------------------- | ---- | ---------------------------------- |
 | ip-adapter-faceid-portrait_sdxl_unnorm.bin | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors | None | FACEID PORTRAIT UNNORM - SDXL Only |
 
