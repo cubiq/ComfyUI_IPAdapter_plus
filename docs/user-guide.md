@@ -77,7 +77,7 @@ Duis dapibus, enim vitae elementum egestas, libero ex gravida mi, at luctus tell
 | ip-adapter-faceid-portrait_sdxl.bin | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors | None                                           | FACEID PORTRAIT |
 
 [^1]: When using Unified Loader
-[^2]: Version 1 (`ip-adapter_sd15_light.safetensors`) is depricated. You need version v1.1. Dagger symbol:
+[^2]: Version 1 (`ip-adapter_sd15_light.safetensors`) is depricated. You need version v1.1.
 
 ## 7 Community Models
 
