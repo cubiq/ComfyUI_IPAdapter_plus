@@ -500,7 +500,7 @@ def ipadapter_execute(model,
             set_model_patch_replace(model, patch_kwargs, ("output", id))
             number += 1
         patch_kwargs["module_key"] = str(number*2+1)
-        set_model_patch_replace(model, patch_kwargs, ("middle", 0))
+        set_model_patch_replace(model, patch_kwargs, ("middle", 1))
     else:
         for id in [4,5,7,8]: # id of input_blocks that have cross attention
             block_indices = range(2) if id in [4, 5] else range(10) # transformer_depth
@@ -516,7 +516,7 @@ def ipadapter_execute(model,
                 number += 1
         for index in range(10):
             patch_kwargs["module_key"] = str(number*2+1)
-            set_model_patch_replace(model, patch_kwargs, ("middle", 0, index))
+            set_model_patch_replace(model, patch_kwargs, ("middle", 1, index))
             number += 1
 
     return (model, image)
