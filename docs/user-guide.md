@@ -1,45 +1,125 @@
-# User Guide
+# IP Adapter User Guide
 
-Quick introduction lorem ipsum dolor sit amet, consectetur adipiscing elit. In porttitor condimentum ullamcorper. Nullam mattis tellus ac quam commodo semper. Nullam posuere diam est, sit amet lacinia velit semper et. Proin eget lacinia dui. Nam aliquet porttitor mauris et aliquam. Proin vel egestas diam. Curabitur posuere aliquam porta.
+Welcome to IP Adapter User Guide.
 
-- [User Guide](#user-guide)
-  - [1. Quick Start](#1-quick-start)
-  - [2. IP Adapter Simple](#2-ip-adapter-simple)
-  - [3. IP Adapter Advanced](#3-ip-adapter-advanced)
-  - [4. IP Adapter Portrait (Style Transfer)](#4-ip-adapter-portrait-style-transfer)
-  - [5. IP Adapter: Models and Transformers](#5-ip-adapter-models-and-transformers)
-    - [5.1 IP Adapter with SD1.5](#51-ip-adapter-with-sd15)
-    - [5.2 IP Adapter with SDXL](#52-ip-adapter-with-sdxl)
-  - [6 FaceID: Models and Transformers](#6-faceid-models-and-transformers)
-    - [6.1 FaceID with SD1.5](#61-faceid-with-sd15)
-    - [6.2 FaceID with SDXL](#62-faceid-with-sdxl)
-  - [7 Community Models](#7-community-models)
+- [1. Quick Start](#1-quick-start)
+  - [1.1 Before You Begin](#11-before-you-begin)
+  - [1.2 Image Prompts](#12-image-prompts)
+  - [1.3 Noise Injection](#13-noise-injection)
+  - [1.4 Multimodal Input](#14-multimodal-input)
+  - [1.5 Nonsquare Reference](#15-nonsquare-reference)
+  - [1.6 Multi-Image Input](#16-multi-image-input)
+- [2. IP Adapter: Advanced Guide](#2-ip-adapter-advanced-guide)
+  - [2.1 IP Adapter Portrait (Style Transfer)](#21-ip-adapter-portrait-style-transfer)
+- [3. Models Reference Table](#3-models-reference-table)
 
-## 1. Quick Start
+# 1. Quick Start
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. In porttitor condimentum ullamcorper. Nullam mattis tellus ac quam commodo semper. Nullam posuere diam est, sit amet lacinia velit semper et. Proin eget lacinia dui. Nam aliquet porttitor mauris et aliquam. Proin vel egestas diam. Curabitur posuere aliquam porta.
+Anyone completely new to this should watch [How to use IPAdapter models in ComfyUI](https://www.youtube.com/watch?v=7m9ZZFU3HWo) on YouTube, by Matteo Spinelli.
 
-## 2. IP Adapter Simple
+> **IMPORTANT** As of this writing, over a year has passed since the video got published, and in that time IP Adapter nodes have undergone several major updates. For a number of reasons, including the changes in how the weights are calculated, reproducing exact outcomes as shown in the video are no longer possible.
 
-Cras convallis maximus euismod. Nullam id rutrum erat, id elementum purus. Pellentesque condimentum arcu id arcu sagittis blandit. Pellentesque euismod semper enim, nec faucibus velit hendrerit eu. Nam feugiat, tellus dignissim mollis vulputate, libero urna fermentum tortor, id ornare felis quam quis lectus. Aenean feugiat diam nisl, quis mattis turpis volutpat vel. Donec sagittis nunc tincidunt, varius elit vitae, venenatis leo. Aenean ac velit ut lectus dapibus cursus vel eget enim. Proin vel neque sit amet metus pellentesque efficitur. Mauris a lacinia elit, aliquet elementum ipsum. Nam vulputate, diam nec semper varius, neque quam interdum sapien, et commodo lorem tortor nec leo. Sed condimentum at lacus non interdum. Maecenas nec enim congue, molestie diam at, condimentum lorem. Sed porta erat vitae viverra vulputate. Curabitur sed mauris nec neque ullamcorper tempor.
+Below are the adapted workflows in more-or-less chronological order, which you can load into ComfyUI via drag-and-drop.
 
-![IP Adapter Simple Workflow](images/workflows/matteo/ipadapter_simple_wflow_thumb.png)
+## 1.1 Before You Begin
 
-## 3. IP Adapter Advanced
+To begin, you will need to:
 
-Nullam sagittis convallis scelerisque. Donec dui erat, tristique nec iaculis et, hendrerit a turpis. Suspendisse velit ipsum, varius in augue a, porttitor accumsan tellus. Suspendisse erat tellus, tincidunt id ullamcorper pretium, feugiat sed quam. Nunc rutrum eros neque, vel suscipit erat tempus at. Phasellus eu hendrerit nunc, a lobortis diam. Proin a ex massa. Pellentesque quis ex lacinia nibh blandit sagittis at eget elit.
+- Use Node Manager to download IP Adapter models (avoid depricated ones)
+- Download two ClipVision models using the same
+
+Optionally, if you wish to reproduce exact results as shown in workflows, you may wish to:
+
+- Download Lycon's Dreamshaper 8 checkpoint from Civitai (download [link](https://civitai.com/api/download/models/128713?type=Model&format=SafeTensor&size=pruned&fp=fp16)) and place the safetensor file in `~/ComfyUI/models/checkpoints`.
+- Download input images (download link) and place them in `~/ComfyUI/input`.
+
+Alternatively, you are welcome to use checkpoint and inputs of your choosing.
+
+## 1.2 Image Prompts
+
+Given that 'IP' in 'IP Adapter' stands for **I**mage **P**rompt, prompting using images is a reasonable place to start.
+
+Each adapter model must be matched with the corresponding ClipVision model (ViT-H/BigG), and and used with the correct checkpoint (SD1.5/SDXL). Detailed matchup is shown at the bottom of this document. However, IP Adapter now has **Unified Loader**, which automatically loads the correct ClipVision model.
+
+Below workflows show the use of reference image as a replacement for text prompt using 'standard' and 'plus' models. Note that 'Plus' model is stronger and will have greated impact on the output compared to regular one; whereas standard model describes reference image using only 4 tokens, Plus model uses 16 tokens.
+
+**Workflow with 'Standard' model:**
+
+![IP Adapter: Simple](images/workflows/01_ipadapter_sd15_thumb.png)
+
+**Workflow with 'Plus' model:**
+
+![IP Adapter: Simple](images/workflows/04_ipadapter_sd15_plus_thumb.png)
+
+## 1.3 Noise Injection
+
+**Workflow with 'Standard' model:**
+
+If **Apply IPAdapter** is no longer available, how are we to inject noise?
+
+![Apply IPAdapter](images/other/Apply_IP_Adapter_thumb.png)
+
+**Answer**: we use a node called **IPAdapter Noise**.
+
+IP Adapter now has a dedicated node for noise injection. However, if you wish to replicate noise injection that was previously available via **Apply IPAdapter** node, load IPAdapter Noise, connect it to the reference image and choose 'shuffle'. See below workflows.
+
+![Injecting Noise with Standard model](images/workflows/02_ipadapter_sd15_thumb.png)
+
+**Workflow with 'Plus' model:**
+
+![Injecting Noise with Plus model](images/workflows/05_ipadapter_sd15_plus_thumb.png)
+
+## 1.4 Multimodal Input
+
+If prompting with both image and text, weights on IP Adapter need to be reduced, as below workflows show.
+
+**Workflow with 'Standard' model:**
+
+![Workflow showing image prompt and text prompt](images/workflows/03_ipadapter_sd15_thumb.png)
+
+**Workflow with 'Plus' model:**
+
+![Image + Text + Noise Injection](images/workflows/06_ipadapter_sd15_plus_thumb.png)
+
+## 1.5 Nonsquare Reference
+
+If you are using nonsquare image as your input, CLIP image processor will make it a square by cropping it at the center.
+
+This is fine, if the centre of the image is the focus. For portraits of people, this will likely give unexpected results:
+
+![Nonsquare image as input](images/other/using_nonsquare_images_thumb.png)
+
+Unless, of course this is what you want, we need a way to tell ClipVision 'Hey! Eyes up here!'
+
+You can accomplish that using **Prep Image for ClipVision** node with `crop_position` set to `Top`:
+
+![prep image for ClipVision](images/other/eyes_up_here_thumb.png)
+
+You can, of course, crop the image manually into a square. The only alternative is to outpaint image sides until it is a square image. Either way, ClipVision will receive a square image in the end.
+
+## 1.6 Multi-Image Input
+
+You can use IP Adapter to make multiple images serve as input
+
+![alt text](images/workflows/07_batch_input_thumb.png)
+
+# 2. IP Adapter: Advanced Guide
+
+Lipsum bro, Nullam sagittis convallis scelerisque. Donec dui erat, tristique nec iaculis et, hendrerit a turpis. Suspendisse velit ipsum, varius in augue a, porttitor accumsan tellus. Suspendisse erat tellus, tincidunt id ullamcorper pretium, feugiat sed quam. Nunc rutrum eros neque, vel suscipit erat tempus at. Phasellus eu hendrerit nunc, a lobortis diam. Proin a ex massa. Pellentesque quis ex lacinia nibh blandit sagittis at eget elit.
 
 ![IP Adapter Advanced](images/workflows/matteo/ipadapter_advanced_thumb.png)
 
-## 4. IP Adapter Portrait (Style Transfer)
+## 2.1 IP Adapter Portrait (Style Transfer)
 
 Duis dapibus, enim vitae elementum egestas, libero ex gravida mi, at luctus tellus mauris vel lorem. Nulla tristique consectetur arcu, at sagittis diam viverra vitae. Suspendisse potenti. Nulla id lacus fermentum felis maximus lobortis. Mauris egestas diam mi, eget interdum mauris varius eu. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Aliquam erat volutpat. Vestibulum quis ex feugiat, cursus purus eget, commodo ligula. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Vestibulum at diam sit amet tellus dignissim viverra. Nulla placerat, sem sed tincidunt lobortis, quam turpis fermentum ligula, eu tincidunt ligula dolor non felis. Pellentesque erat quam, egestas sed lacinia venenatis, pulvinar quis justo. Etiam id pharetra urna. Curabitur tristique facilisis iaculis.
 
 ![ip_adapter_portrait](ipadapter_portrait_wflow_thumb.png)
 
-## 5. IP Adapter: Models and Transformers
+# 3. Models Reference Table
 
-### 5.1 IP Adapter with SD1.5
+Below tables show the matching of models with visual transformers, checkpoints and/or LoRAs.
+
+**IP Adapter with SD1.5**
 
 | IP Adapter                            | Matching Visual Transformer (ViT)              | Alias[^1]         |
 | ------------------------------------- | ---------------------------------------------- | ----------------- |
@@ -49,7 +129,7 @@ Duis dapibus, enim vitae elementum egestas, libero ex gravida mi, at luctus tell
 | ip-adapter-plus_sd15.safetensors      | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors    | PLUS              |
 | ip-adapter-plus-face_sd15.safetensors | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors    | PLUS FACE         |
 
-### 5.2 IP Adapter with SDXL
+**IP Adapter with SDXL**
 
 | IP Adapter                                  | Matching Visual Transformer (ViT)              | Alias[^1] |
 | ------------------------------------------- | ---------------------------------------------- | --------- |
@@ -58,9 +138,7 @@ Duis dapibus, enim vitae elementum egestas, libero ex gravida mi, at luctus tell
 | ip-adapter-plus_sdxl_vit-h.safetensors      | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors    | PLUS      |
 | ip-adapter-plus-face_sdxl_vit-h.safetensors | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors    | PLUS FACE |
 
-## 6 FaceID: Models and Transformers
-
-### 6.1 FaceID with SD1.5
+**FaceID with SD1.5**
 
 | IP Adapter                              | Matching Visual Transformer (ViT)           | LoRA                                           | Alias[^1]       |
 | --------------------------------------- | ------------------------------------------- | ---------------------------------------------- | --------------- |
@@ -68,7 +146,7 @@ Duis dapibus, enim vitae elementum egestas, libero ex gravida mi, at luctus tell
 | ip-adapter-faceid-plusv2_sd15.bin       | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors | ip-adapter-faceid-plusv2_sd15_lora.safetensors | FACEID PLUS V2  |
 | ip-adapter-faceid-portrait-v11_sd15.bin | CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors | None                                           | FACEID PORTRAIT |
 
-### 6.2 FaceID with SDXL
+**FaceID with SDXL**
 
 | IP Adapter                          | Matching Visual Transformer (ViT)           | LoRA                                           | Alias[^1]       |
 | ----------------------------------- | ------------------------------------------- | ---------------------------------------------- | --------------- |
@@ -79,7 +157,7 @@ Duis dapibus, enim vitae elementum egestas, libero ex gravida mi, at luctus tell
 [^1]: When using Unified Loader
 [^2]: Version 1 (`ip-adapter_sd15_light.safetensors`) is depricated. You need version v1.1.
 
-## 7 Community Models
+**Community Models**
 
 | IP Adapter                                 | Matching Visual Transformer (ViT)           | LoRA | Alias[^1]                          |
 | ------------------------------------------ | ------------------------------------------- | ---- | ---------------------------------- |
