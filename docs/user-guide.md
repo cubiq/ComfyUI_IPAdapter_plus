@@ -2,7 +2,6 @@
 
 Welcome to IP Adapter User Guide. Please note that this guide is very much work in progress at this stage.
 
-- [IP Adapter User Guide](#ip-adapter-user-guide)
 - [1. Quick Start](#1-quick-start)
   - [1.1 Before You Begin](#11-before-you-begin)
   - [1.2 Stable Diffusion 1.5](#12-stable-diffusion-15)
