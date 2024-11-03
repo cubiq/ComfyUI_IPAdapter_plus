@@ -1,16 +1,21 @@
 # IP Adapter User Guide
 
-Welcome to IP Adapter User Guide.
+Welcome to IP Adapter User Guide. Please note that this guide is very much work in progress at this stage.
 
+- [IP Adapter User Guide](#ip-adapter-user-guide)
 - [1. Quick Start](#1-quick-start)
   - [1.1 Before You Begin](#11-before-you-begin)
-  - [1.2 Image Prompts](#12-image-prompts)
-  - [1.3 Noise Injection](#13-noise-injection)
-  - [1.4 Multimodal Input](#14-multimodal-input)
-  - [1.5 Nonsquare Reference](#15-nonsquare-reference)
-  - [1.6 Multi-Image Input](#16-multi-image-input)
+  - [1.2 Stable Diffusion 1.5](#12-stable-diffusion-15)
+    - [1.2.1 Image-Only Prompts](#121-image-only-prompts)
+    - [1.2.2 Noise Injection](#122-noise-injection)
+  - [1.3 Multimodal Input](#13-multimodal-input)
+  - [1.4 Nonsquare Reference](#14-nonsquare-reference)
+  - [1.5 Multi-Image Input](#15-multi-image-input)
+  - [1.6 Plus Face Model](#16-plus-face-model)
+  - [1.7 SDXL Models](#17-sdxl-models)
+  - [1.8 Image-To-Image](#18-image-to-image)
+  - [1.9 Inpainting with IP Adapter](#19-inpainting-with-ip-adapter)
 - [2. IP Adapter: Advanced Guide](#2-ip-adapter-advanced-guide)
-  - [2.1 IP Adapter Portrait (Style Transfer)](#21-ip-adapter-portrait-style-transfer)
 - [3. Models Reference Table](#3-models-reference-table)
 
 # 1. Quick Start
@@ -31,11 +36,15 @@ To begin, you will need to:
 Optionally, if you wish to reproduce exact results as shown in workflows, you may wish to:
 
 - Download Lycon's Dreamshaper 8 checkpoint from Civitai (download [link](https://civitai.com/api/download/models/128713?type=Model&format=SafeTensor&size=pruned&fp=fp16)) and place the safetensor file in `~/ComfyUI/models/checkpoints`.
-- Download input images (download link) and place them in `~/ComfyUI/input`.
+- Download input images (download [link](assets/input_images.zip)) and place them in `~/ComfyUI/input`.
 
 Alternatively, you are welcome to use checkpoint and inputs of your choosing.
 
-## 1.2 Image Prompts
+You can drag-and-drop each workflow <u>directly from this page</u>, and ComfyUI will load it. However, should you wish to save them on your computer, you can download [workflows.zip](assets/workflows.zip).
+
+## 1.2 Stable Diffusion 1.5
+
+### 1.2.1 Image-Only Prompts
 
 Given that 'IP' in 'IP Adapter' stands for **I**mage **P**rompt, prompting using images is a reasonable place to start.
 
@@ -51,7 +60,7 @@ Below workflows show the use of reference image as a replacement for text prompt
 
 ![IP Adapter: Simple](images/workflows/04_ipadapter_sd15_plus_thumb.png)
 
-## 1.3 Noise Injection
+### 1.2.2 Noise Injection
 
 **Workflow with 'Standard' model:**
 
@@ -69,7 +78,7 @@ IP Adapter now has a dedicated node for noise injection. However, if you wish to
 
 ![Injecting Noise with Plus model](images/workflows/05_ipadapter_sd15_plus_thumb.png)
 
-## 1.4 Multimodal Input
+## 1.3 Multimodal Input
 
 If prompting with both image and text, weights on IP Adapter need to be reduced, as below workflows show.
 
@@ -81,7 +90,7 @@ If prompting with both image and text, weights on IP Adapter need to be reduced,
 
 ![Image + Text + Noise Injection](images/workflows/06_ipadapter_sd15_plus_thumb.png)
 
-## 1.5 Nonsquare Reference
+## 1.4 Nonsquare Reference
 
 If you are using nonsquare image as your input, CLIP image processor will make it a square by cropping it at the center.
 
@@ -97,23 +106,37 @@ You can accomplish that using **Prep Image for ClipVision** node with `crop_posi
 
 You can, of course, crop the image manually into a square. The only alternative is to outpaint image sides until it is a square image. Either way, ClipVision will receive a square image in the end.
 
-## 1.6 Multi-Image Input
+## 1.5 Multi-Image Input
 
 You can use IP Adapter to make multiple images serve as input
 
-![alt text](images/workflows/07_batch_input_thumb.png)
+![IP Adapter: Multi-Image Input](images/workflows/07_batch_input_thumb.png)
+
+## 1.6 Plus Face Model
+
+![IP Adapter: Plus Face](images/workflows/08_ipadapter_sd15_plus_face_thumb.png)
+
+## 1.7 SDXL Models
+
+SDXL 'Standard':
+
+![SDXL workflow](images/workflows/09_ipadapter_sdxl_thumb.png)
+
+SDXL 'Standard' with noise injection:
+
+![SDXL with noise injection](images/workflows/10_ipadapter_sdxl_noise_thumb.png)
+
+## 1.8 Image-To-Image
+
+![IP Adapter: Image-to-Image](images/workflows/11_ipadapter_img2img_thumb.png)
+
+## 1.9 Inpainting with IP Adapter
+
+![Inpainting with IP Adapter](images/workflows/12_ipadapter_inpaint_thumb.png)
 
 # 2. IP Adapter: Advanced Guide
 
-Lipsum bro, Nullam sagittis convallis scelerisque. Donec dui erat, tristique nec iaculis et, hendrerit a turpis. Suspendisse velit ipsum, varius in augue a, porttitor accumsan tellus. Suspendisse erat tellus, tincidunt id ullamcorper pretium, feugiat sed quam. Nunc rutrum eros neque, vel suscipit erat tempus at. Phasellus eu hendrerit nunc, a lobortis diam. Proin a ex massa. Pellentesque quis ex lacinia nibh blandit sagittis at eget elit.
-
-![IP Adapter Advanced](images/workflows/matteo/ipadapter_advanced_thumb.png)
-
-## 2.1 IP Adapter Portrait (Style Transfer)
-
-Duis dapibus, enim vitae elementum egestas, libero ex gravida mi, at luctus tellus mauris vel lorem. Nulla tristique consectetur arcu, at sagittis diam viverra vitae. Suspendisse potenti. Nulla id lacus fermentum felis maximus lobortis. Mauris egestas diam mi, eget interdum mauris varius eu. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Aliquam erat volutpat. Vestibulum quis ex feugiat, cursus purus eget, commodo ligula. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Vestibulum at diam sit amet tellus dignissim viverra. Nulla placerat, sem sed tincidunt lobortis, quam turpis fermentum ligula, eu tincidunt ligula dolor non felis. Pellentesque erat quam, egestas sed lacinia venenatis, pulvinar quis justo. Etiam id pharetra urna. Curabitur tristique facilisis iaculis.
-
-![ip_adapter_portrait](ipadapter_portrait_wflow_thumb.png)
+(To be continued...)
 
 # 3. Models Reference Table
 
