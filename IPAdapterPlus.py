@@ -537,7 +537,7 @@ class IPAdapterUnifiedLoader:
     def INPUT_TYPES(s):
         return {"required": {
             "model": ("MODEL", ),
-            "preset": (['LIGHT - SD1.5 only (low strength)', 'STANDARD (medium strength)', 'VIT-G (medium strength)', 'PLUS (high strength)', 'PLUS FACE (portraits)', 'FULL FACE - SD1.5 only (portraits stronger)'], ),
+            "preset": (['None', 'LIGHT - SD1.5 only (low strength)', 'STANDARD (medium strength)', 'VIT-G (medium strength)', 'PLUS (high strength)', 'PLUS FACE (portraits)', 'FULL FACE - SD1.5 only (portraits stronger)'], ),
         },
         "optional": {
             "ipadapter": ("IPADAPTER", ),
@@ -550,76 +550,80 @@ class IPAdapterUnifiedLoader:
 
     def load_models(self, model, preset, lora_strength=0.0, provider="CPU", ipadapter=None):
         pipeline = { "clipvision": { 'file': None, 'model': None }, "ipadapter": { 'file': None, 'model': None }, "insightface": { 'provider': None, 'model': None } }
-        if ipadapter is not None:
-            pipeline = ipadapter
 
-        # 1. Load the clipvision model
-        clipvision_file = get_clipvision_file(preset)
-        if clipvision_file is None:
-            raise Exception("ClipVision model not found.")
+        if preset == "None":
+            return (model, pipeline,)
+        else:        
+            if ipadapter is not None:
+                pipeline = ipadapter
 
-        if clipvision_file != self.clipvision['file']:
-            if clipvision_file != pipeline['clipvision']['file']:
-                self.clipvision['file'] = clipvision_file
-                self.clipvision['model'] = load_clip_vision(clipvision_file)
-                print(f"\033[33mINFO: Clip Vision model loaded from {clipvision_file}\033[0m")
-            else:
-                self.clipvision = pipeline['clipvision']
+            # 1. Load the clipvision model
+            clipvision_file = get_clipvision_file(preset)
+            if clipvision_file is None:
+                raise Exception("ClipVision model not found.")
 
-        # 2. Load the ipadapter model
-        is_sdxl = isinstance(model.model, (comfy.model_base.SDXL, comfy.model_base.SDXLRefiner, comfy.model_base.SDXL_instructpix2pix))
-        ipadapter_file, is_insightface, lora_pattern = get_ipadapter_file(preset, is_sdxl)
-        if ipadapter_file is None:
-            raise Exception("IPAdapter model not found.")
-
-        if ipadapter_file != self.ipadapter['file']:
-            if pipeline['ipadapter']['file'] != ipadapter_file:
-                self.ipadapter['file'] = ipadapter_file
-                self.ipadapter['model'] = ipadapter_model_loader(ipadapter_file)
-                print(f"\033[33mINFO: IPAdapter model loaded from {ipadapter_file}\033[0m")
-            else:
-                self.ipadapter = pipeline['ipadapter']
-
-        # 3. Load the lora model if needed
-        if lora_pattern is not None:
-            lora_file = get_lora_file(lora_pattern)
-            lora_model = None
-            if lora_file is None:
-                raise Exception("LoRA model not found.")
-
-            if self.lora is not None:
-                if lora_file == self.lora['file']:
-                    lora_model = self.lora['model']
+            if clipvision_file != self.clipvision['file']:
+                if clipvision_file != pipeline['clipvision']['file']:
+                    self.clipvision['file'] = clipvision_file
+                    self.clipvision['model'] = load_clip_vision(clipvision_file)
+                    print(f"\033[33mINFO: Clip Vision model loaded from {clipvision_file}\033[0m")
                 else:
-                    self.lora = None
-                    torch.cuda.empty_cache()
+                    self.clipvision = pipeline['clipvision']
+        
+            # 2. Load the ipadapter model
+            is_sdxl = isinstance(model.model, (comfy.model_base.SDXL, comfy.model_base.SDXLRefiner, comfy.model_base.SDXL_instructpix2pix))
+            ipadapter_file, is_insightface, lora_pattern = get_ipadapter_file(preset, is_sdxl)
+            if ipadapter_file is None:
+                raise Exception("IPAdapter model not found.")
 
-            if lora_model is None:
-                lora_model = comfy.utils.load_torch_file(lora_file, safe_load=True)
-                self.lora = { 'file': lora_file, 'model': lora_model }
-                print(f"\033[33mINFO: LoRA model loaded from {lora_file}\033[0m")
-
-            if lora_strength > 0:
-                model, _ = load_lora_for_models(model, None, lora_model, lora_strength, 0)
-
-        # 4. Load the insightface model if needed
-        if is_insightface:
-            if provider != self.insightface['provider']:
-                if pipeline['insightface']['provider'] != provider:
-                    self.insightface['provider'] = provider
-                    self.insightface['model'] = insightface_loader(provider)
-                    print(f"\033[33mINFO: InsightFace model loaded with {provider} provider\033[0m")
+            if ipadapter_file != self.ipadapter['file']:
+                if pipeline['ipadapter']['file'] != ipadapter_file:
+                    self.ipadapter['file'] = ipadapter_file
+                    self.ipadapter['model'] = ipadapter_model_loader(ipadapter_file)
+                    print(f"\033[33mINFO: IPAdapter model loaded from {ipadapter_file}\033[0m")
                 else:
-                    self.insightface = pipeline['insightface']
+                    self.ipadapter = pipeline['ipadapter']
 
-        return (model, { 'clipvision': self.clipvision, 'ipadapter': self.ipadapter, 'insightface': self.insightface }, )
+            # 3. Load the lora model if needed
+            if lora_pattern is not None:
+                lora_file = get_lora_file(lora_pattern)
+                lora_model = None
+                if lora_file is None:
+                    raise Exception("LoRA model not found.")
+
+                if self.lora is not None:
+                    if lora_file == self.lora['file']:
+                        lora_model = self.lora['model']
+                    else:
+                        self.lora = None
+                        torch.cuda.empty_cache()
+
+                if lora_model is None:
+                    lora_model = comfy.utils.load_torch_file(lora_file, safe_load=True)
+                    self.lora = { 'file': lora_file, 'model': lora_model }
+                    print(f"\033[33mINFO: LoRA model loaded from {lora_file}\033[0m")
+
+                if lora_strength > 0:
+                    model, _ = load_lora_for_models(model, None, lora_model, lora_strength, 0)
+
+            # 4. Load the insightface model if needed
+            if is_insightface:
+                if provider != self.insightface['provider']:
+                    if pipeline['insightface']['provider'] != provider:
+                        self.insightface['provider'] = provider
+                        self.insightface['model'] = insightface_loader(provider)
+                        print(f"\033[33mINFO: InsightFace model loaded with {provider} provider\033[0m")
+                    else:
+                        self.insightface = pipeline['insightface']
+
+            return (model, { 'clipvision': self.clipvision, 'ipadapter': self.ipadapter, 'insightface': self.insightface }, )
 
 class IPAdapterUnifiedLoaderFaceID(IPAdapterUnifiedLoader):
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
             "model": ("MODEL", ),
-            "preset": (['FACEID', 'FACEID PLUS - SD1.5 only', 'FACEID PLUS V2', 'FACEID PORTRAIT (style transfer)', 'FACEID PORTRAIT UNNORM - SDXL only (strong)'], ),
+            "preset": (['None', 'FACEID', 'FACEID PLUS - SD1.5 only', 'FACEID PLUS V2', 'FACEID PORTRAIT (style transfer)', 'FACEID PORTRAIT UNNORM - SDXL only (strong)'], ),
             "lora_strength": ("FLOAT", { "default": 0.6, "min": 0, "max": 1, "step": 0.01 }),
             "provider": (["CPU", "CUDA", "ROCM", "DirectML", "OpenVINO", "CoreML"], ),
         },
@@ -635,7 +639,7 @@ class IPAdapterUnifiedLoaderCommunity(IPAdapterUnifiedLoader):
     def INPUT_TYPES(s):
         return {"required": {
             "model": ("MODEL", ),
-            "preset": (['Composition', 'Kolors'], ),
+            "preset": (['None', 'Composition', 'Kolors'], ),
         },
         "optional": {
             "ipadapter": ("IPADAPTER", ),
@@ -722,8 +726,10 @@ class IPAdapterSimple:
             raise Exception("IPAdapter model not present in the pipeline. Please load the models with the IPAdapterUnifiedLoader node.")
         if 'clipvision' not in ipadapter:
             raise Exception("CLIPVision model not present in the pipeline. Please load the models with the IPAdapterUnifiedLoader node.")
-
-        return ipadapter_execute(model.clone(), ipadapter['ipadapter']['model'], ipadapter['clipvision']['model'], **ipa_args)
+        if ipadapter['ipadapter']['file'] == None or ipadapter['clipvision']['file'] == None:
+            return (model,)
+        else:
+            return ipadapter_execute(model.clone(), ipadapter['ipadapter']['model'], ipadapter['clipvision']['model'], **ipa_args)
 
 class IPAdapterAdvanced:
     def __init__(self):
@@ -757,72 +763,75 @@ class IPAdapterAdvanced:
     def apply_ipadapter(self, model, ipadapter, start_at=0.0, end_at=1.0, weight=1.0, weight_style=1.0, weight_composition=1.0, expand_style=False, weight_type="linear", combine_embeds="concat", weight_faceidv2=None, image=None, image_style=None, image_composition=None, image_negative=None, clip_vision=None, attn_mask=None, insightface=None, embeds_scaling='V only', layer_weights=None, ipadapter_params=None, encode_batch_size=0, style_boost=None, composition_boost=None, enhance_tiles=1, enhance_ratio=1.0, weight_kolors=1.0):
         is_sdxl = isinstance(model.model, (comfy.model_base.SDXL, comfy.model_base.SDXLRefiner, comfy.model_base.SDXL_instructpix2pix))
 
-        if 'ipadapter' in ipadapter:
-            ipadapter_model = ipadapter['ipadapter']['model']
-            clip_vision = clip_vision if clip_vision is not None else ipadapter['clipvision']['model']
+        if 'ipadapter' in ipadapter and ipadapter['ipadapter']['file'] == None:
+            return (model,)
         else:
-            ipadapter_model = ipadapter
+            if 'ipadapter' in ipadapter:
+                ipadapter_model = ipadapter['ipadapter']['model']
+                clip_vision = clip_vision if clip_vision is not None else ipadapter['clipvision']['model']
+            else:
+                ipadapter_model = ipadapter
 
-        if clip_vision is None:
-            raise Exception("Missing CLIPVision model.")
+            if clip_vision is None:
+                raise Exception("Missing CLIPVision model.")
 
-        if image_style is not None: # we are doing style + composition transfer
-            if not is_sdxl:
-                raise Exception("Style + Composition transfer is only available for SDXL models at the moment.") # TODO: check feasibility for SD1.5 models
+            if image_style is not None: # we are doing style + composition transfer
+                if not is_sdxl:
+                    raise Exception("Style + Composition transfer is only available for SDXL models at the moment.") # TODO: check feasibility for SD1.5 models
 
-            image = image_style
-            weight = weight_style
-            if image_composition is None:
-                image_composition = image_style
+                image = image_style
+                weight = weight_style
+                if image_composition is None:
+                    image_composition = image_style
 
-            weight_type = "strong style and composition" if expand_style else "style and composition"
-        if ipadapter_params is not None: # we are doing batch processing
-            image = ipadapter_params['image']
-            attn_mask = ipadapter_params['attn_mask']
-            weight = ipadapter_params['weight']
-            weight_type = ipadapter_params['weight_type']
-            start_at = ipadapter_params['start_at']
-            end_at = ipadapter_params['end_at']
-        else:
-            # at this point weight can be a list from the batch-weight or a single float
-            weight = [weight]
+                weight_type = "strong style and composition" if expand_style else "style and composition"
+            if ipadapter_params is not None: # we are doing batch processing
+                image = ipadapter_params['image']
+                attn_mask = ipadapter_params['attn_mask']
+                weight = ipadapter_params['weight']
+                weight_type = ipadapter_params['weight_type']
+                start_at = ipadapter_params['start_at']
+                end_at = ipadapter_params['end_at']
+            else:
+                # at this point weight can be a list from the batch-weight or a single float
+                weight = [weight]
 
-        image = image if isinstance(image, list) else [image]
+            image = image if isinstance(image, list) else [image]
 
-        work_model = model.clone()
+            work_model = model.clone()
 
-        for i in range(len(image)):
-            if image[i] is None:
-                continue
+            for i in range(len(image)):
+                if image[i] is None:
+                    continue
 
-            ipa_args = {
-                "image": image[i],
-                "image_composition": image_composition,
-                "image_negative": image_negative,
-                "weight": weight[i],
-                "weight_composition": weight_composition,
-                "weight_faceidv2": weight_faceidv2,
-                "weight_type": weight_type if not isinstance(weight_type, list) else weight_type[i],
-                "combine_embeds": combine_embeds,
-                "start_at": start_at if not isinstance(start_at, list) else start_at[i],
-                "end_at": end_at if not isinstance(end_at, list) else end_at[i],
-                "attn_mask": attn_mask if not isinstance(attn_mask, list) else attn_mask[i],
-                "unfold_batch": self.unfold_batch,
-                "embeds_scaling": embeds_scaling,
-                "insightface": insightface if insightface is not None else ipadapter['insightface']['model'] if 'insightface' in ipadapter else None,
-                "layer_weights": layer_weights,
-                "encode_batch_size": encode_batch_size,
-                "style_boost": style_boost,
-                "composition_boost": composition_boost,
-                "enhance_tiles": enhance_tiles,
-                "enhance_ratio": enhance_ratio,
-                "weight_kolors": weight_kolors,
-            }
+                ipa_args = {
+                    "image": image[i],
+                    "image_composition": image_composition,
+                    "image_negative": image_negative,
+                    "weight": weight[i],
+                    "weight_composition": weight_composition,
+                    "weight_faceidv2": weight_faceidv2,
+                    "weight_type": weight_type if not isinstance(weight_type, list) else weight_type[i],
+                    "combine_embeds": combine_embeds,
+                    "start_at": start_at if not isinstance(start_at, list) else start_at[i],
+                    "end_at": end_at if not isinstance(end_at, list) else end_at[i],
+                    "attn_mask": attn_mask if not isinstance(attn_mask, list) else attn_mask[i],
+                    "unfold_batch": self.unfold_batch,
+                    "embeds_scaling": embeds_scaling,
+                    "insightface": insightface if insightface is not None else ipadapter['insightface']['model'] if 'insightface' in ipadapter else None,
+                    "layer_weights": layer_weights,
+                    "encode_batch_size": encode_batch_size,
+                    "style_boost": style_boost,
+                    "composition_boost": composition_boost,
+                    "enhance_tiles": enhance_tiles,
+                    "enhance_ratio": enhance_ratio,
+                    "weight_kolors": weight_kolors,
+                }
 
-            work_model, face_image = ipadapter_execute(work_model, ipadapter_model, clip_vision, **ipa_args)
+                work_model, face_image = ipadapter_execute(work_model, ipadapter_model, clip_vision, **ipa_args)
 
-        del ipadapter
-        return (work_model, face_image, )
+            del ipadapter
+            return (work_model, face_image, )
 
 class IPAdapterBatch(IPAdapterAdvanced):
     def __init__(self):
@@ -994,109 +1003,113 @@ class IPAdapterTiled:
     CATEGORY = "ipadapter/tiled"
 
     def apply_tiled(self, model, ipadapter, image, weight, weight_type, start_at, end_at, sharpening, combine_embeds="concat", image_negative=None, attn_mask=None, clip_vision=None, embeds_scaling='V only', encode_batch_size=0):
-        # 1. Select the models
-        if 'ipadapter' in ipadapter:
-            ipadapter_model = ipadapter['ipadapter']['model']
-            clip_vision = clip_vision if clip_vision is not None else ipadapter['clipvision']['model']
+        
+        if 'ipadapter' in ipadapter and ipadapter['ipadapter']['file'] == None:
+            return (model,)
         else:
-            ipadapter_model = ipadapter
-            clip_vision = clip_vision
+            # 1. Select the models
+            if 'ipadapter' in ipadapter:
+                ipadapter_model = ipadapter['ipadapter']['model']
+                clip_vision = clip_vision if clip_vision is not None else ipadapter['clipvision']['model']
+            else:
+                ipadapter_model = ipadapter
+                clip_vision = clip_vision
 
-        if clip_vision is None:
-            raise Exception("Missing CLIPVision model.")
+            if clip_vision is None:
+                raise Exception("Missing CLIPVision model.")
 
-        del ipadapter
+            del ipadapter
 
-        # 2. Extract the tiles
-        tile_size = 256     # I'm using 256 instead of 224 as it is more likely divisible by the latent size, it will be downscaled to 224 by the clip vision encoder
-        _, oh, ow, _ = image.shape
-        if attn_mask is None:
-            attn_mask = torch.ones([1, oh, ow], dtype=image.dtype, device=image.device)
+            # 2. Extract the tiles
+            tile_size = 256     # I'm using 256 instead of 224 as it is more likely divisible by the latent size, it will be downscaled to 224 by the clip vision encoder
+            _, oh, ow, _ = image.shape
+            if attn_mask is None:
+                attn_mask = torch.ones([1, oh, ow], dtype=image.dtype, device=image.device)
 
-        image = image.permute([0,3,1,2])
-        attn_mask = attn_mask.unsqueeze(1)
-        # the mask should have the same proportions as the reference image and the latent
-        attn_mask = T.Resize((oh, ow), interpolation=T.InterpolationMode.BICUBIC, antialias=True)(attn_mask)
+            image = image.permute([0,3,1,2])
+            attn_mask = attn_mask.unsqueeze(1)
+            # the mask should have the same proportions as the reference image and the latent
+            attn_mask = T.Resize((oh, ow), interpolation=T.InterpolationMode.BICUBIC, antialias=True)(attn_mask)
 
-        # if the image is almost a square, we crop it to a square
-        if oh / ow > 0.75 and oh / ow < 1.33:
-            # crop the image to a square
-            image = T.CenterCrop(min(oh, ow))(image)
-            resize = (tile_size*2, tile_size*2)
+            # if the image is almost a square, we crop it to a square
+            if oh / ow > 0.75 and oh / ow < 1.33:
+                # crop the image to a square
+                image = T.CenterCrop(min(oh, ow))(image)
+                resize = (tile_size*2, tile_size*2)
 
-            attn_mask = T.CenterCrop(min(oh, ow))(attn_mask)
-        # otherwise resize the smallest side and the other proportionally
-        else:
-            resize = (int(tile_size * ow / oh), tile_size) if oh < ow else (tile_size, int(tile_size * oh / ow))
+                attn_mask = T.CenterCrop(min(oh, ow))(attn_mask)
+            # otherwise resize the smallest side and the other proportionally
+            else:
+                resize = (int(tile_size * ow / oh), tile_size) if oh < ow else (tile_size, int(tile_size * oh / ow))
 
-         # using PIL for better results
-        imgs = []
-        for img in image:
-            img = T.ToPILImage()(img)
-            img = img.resize(resize, resample=Image.Resampling['LANCZOS'])
-            imgs.append(T.ToTensor()(img))
-        image = torch.stack(imgs)
-        del imgs, img
+             # using PIL for better results
+            imgs = []
+            for img in image:
+                img = T.ToPILImage()(img)
+                img = img.resize(resize, resample=Image.Resampling['LANCZOS'])
+                imgs.append(T.ToTensor()(img))
+            image = torch.stack(imgs)
+            del imgs, img
 
-        # we don't need a high quality resize for the mask
-        attn_mask = T.Resize(resize[::-1], interpolation=T.InterpolationMode.BICUBIC, antialias=True)(attn_mask)
+            # we don't need a high quality resize for the mask
+            attn_mask = T.Resize(resize[::-1], interpolation=T.InterpolationMode.BICUBIC, antialias=True)(attn_mask)
 
-        # we allow a maximum of 4 tiles
-        if oh / ow > 4 or oh / ow < 0.25:
-            crop = (tile_size, tile_size*4) if oh < ow else (tile_size*4, tile_size)
-            image = T.CenterCrop(crop)(image)
-            attn_mask = T.CenterCrop(crop)(attn_mask)
+            # we allow a maximum of 4 tiles
+            if oh / ow > 4 or oh / ow < 0.25:
+                crop = (tile_size, tile_size*4) if oh < ow else (tile_size*4, tile_size)
+                image = T.CenterCrop(crop)(image)
+                attn_mask = T.CenterCrop(crop)(attn_mask)
 
-        attn_mask = attn_mask.squeeze(1)
+            attn_mask = attn_mask.squeeze(1)
 
-        if sharpening > 0:
-            image = contrast_adaptive_sharpening(image, sharpening)
+            if sharpening > 0:
+                image = contrast_adaptive_sharpening(image, sharpening)
 
-        image = image.permute([0,2,3,1])
+            image = image.permute([0,2,3,1])
 
-        _, oh, ow, _ = image.shape
+            _, oh, ow, _ = image.shape
 
-        # find the number of tiles for each side
-        tiles_x = math.ceil(ow / tile_size)
-        tiles_y = math.ceil(oh / tile_size)
-        overlap_x = max(0, (tiles_x * tile_size - ow) / (tiles_x - 1 if tiles_x > 1 else 1))
-        overlap_y = max(0, (tiles_y * tile_size - oh) / (tiles_y - 1 if tiles_y > 1 else 1))
+            # find the number of tiles for each side
+            tiles_x = math.ceil(ow / tile_size)
+            tiles_y = math.ceil(oh / tile_size)
+            overlap_x = max(0, (tiles_x * tile_size - ow) / (tiles_x - 1 if tiles_x > 1 else 1))
+            overlap_y = max(0, (tiles_y * tile_size - oh) / (tiles_y - 1 if tiles_y > 1 else 1))
 
-        base_mask = torch.zeros([attn_mask.shape[0], oh, ow], dtype=image.dtype, device=image.device)
+            base_mask = torch.zeros([attn_mask.shape[0], oh, ow], dtype=image.dtype, device=image.device)
 
-        # extract all the tiles from the image and create the masks
-        tiles = []
-        masks = []
-        for y in range(tiles_y):
-            for x in range(tiles_x):
-                start_x = int(x * (tile_size - overlap_x))
-                start_y = int(y * (tile_size - overlap_y))
-                tiles.append(image[:, start_y:start_y+tile_size, start_x:start_x+tile_size, :])
-                mask = base_mask.clone()
-                mask[:, start_y:start_y+tile_size, start_x:start_x+tile_size] = attn_mask[:, start_y:start_y+tile_size, start_x:start_x+tile_size]
-                masks.append(mask)
-        del mask
+            # extract all the tiles from the image and create the masks
+            tiles = []
+            masks = []
+            for y in range(tiles_y):
+                for x in range(tiles_x):
+                    start_x = int(x * (tile_size - overlap_x))
+                    start_y = int(y * (tile_size - overlap_y))
+                    tiles.append(image[:, start_y:start_y+tile_size, start_x:start_x+tile_size, :])
+                    mask = base_mask.clone()
+                    mask[:, start_y:start_y+tile_size, start_x:start_x+tile_size] = attn_mask[:, start_y:start_y+tile_size, start_x:start_x+tile_size]
+                    masks.append(mask)
+            del mask
 
-        # 3. Apply the ipadapter to each group of tiles
-        model = model.clone()
-        for i in range(len(tiles)):
-            ipa_args = {
-                "image": tiles[i],
-                "image_negative": image_negative,
-                "weight": weight,
-                "weight_type": weight_type,
-                "combine_embeds": combine_embeds,
-                "start_at": start_at,
-                "end_at": end_at,
-                "attn_mask": masks[i],
-                "unfold_batch": self.unfold_batch,
-                "embeds_scaling": embeds_scaling,
-                "encode_batch_size": encode_batch_size,
-            }
-            # apply the ipadapter to the model without cloning it
-            model, _ = ipadapter_execute(model, ipadapter_model, clip_vision, **ipa_args)
+            # 3. Apply the ipadapter to each group of tiles
+            model = model.clone()
+            for i in range(len(tiles)):
+                ipa_args = {
+                    "image": tiles[i],
+                    "image_negative": image_negative,
+                    "weight": weight,
+                    "weight_type": weight_type,
+                    "combine_embeds": combine_embeds,
+                    "start_at": start_at,
+                    "end_at": end_at,
+                    "attn_mask": masks[i],
+                    "unfold_batch": self.unfold_batch,
+                    "embeds_scaling": embeds_scaling,
+                    "encode_batch_size": encode_batch_size,
+                }
+                # apply the ipadapter to the model without cloning it
+                model, _ = ipadapter_execute(model, ipadapter_model, clip_vision, **ipa_args)
 
-        return (model, torch.cat(tiles), torch.cat(masks), )
+            return (model, torch.cat(tiles), torch.cat(masks), )
 
 class IPAdapterTiledBatch(IPAdapterTiled):
     def __init__(self):
@@ -1165,19 +1178,22 @@ class IPAdapterEmbeds:
             "unfold_batch": self.unfold_batch,
         }
 
-        if 'ipadapter' in ipadapter:
-            ipadapter_model = ipadapter['ipadapter']['model']
-            clip_vision = clip_vision if clip_vision is not None else ipadapter['clipvision']['model']
+        if 'ipadapter' in ipadapter and ipadapter['ipadapter']['file'] == None:
+            return (model,)
         else:
-            ipadapter_model = ipadapter
-            clip_vision = clip_vision
+            if 'ipadapter' in ipadapter:
+                ipadapter_model = ipadapter['ipadapter']['model']
+                clip_vision = clip_vision if clip_vision is not None else ipadapter['clipvision']['model']
+            else:
+                ipadapter_model = ipadapter
+                clip_vision = clip_vision
 
-        if clip_vision is None and neg_embed is None:
-            raise Exception("Missing CLIPVision model.")
+            if clip_vision is None and neg_embed is None:
+                raise Exception("Missing CLIPVision model.")
 
-        del ipadapter
+            del ipadapter
 
-        return ipadapter_execute(model.clone(), ipadapter_model, clip_vision, **ipa_args)
+            return ipadapter_execute(model.clone(), ipadapter_model, clip_vision, **ipa_args)
 
 class IPAdapterEmbedsBatch(IPAdapterEmbeds):
     def __init__(self):
@@ -1359,44 +1375,48 @@ class IPAdapterEncoder:
     CATEGORY = "ipadapter/embeds"
 
     def encode(self, ipadapter, image, weight, mask=None, clip_vision=None):
-        if 'ipadapter' in ipadapter:
-            ipadapter_model = ipadapter['ipadapter']['model']
-            clip_vision = clip_vision if clip_vision is not None else ipadapter['clipvision']['model']
+        
+        if 'ipadapter' in ipadapter and ipadapter['ipadapter']['file'] == None:
+            return (None, None,)
         else:
-            ipadapter_model = ipadapter
-            clip_vision = clip_vision
+            if 'ipadapter' in ipadapter:
+                ipadapter_model = ipadapter['ipadapter']['model']
+                clip_vision = clip_vision if clip_vision is not None else ipadapter['clipvision']['model']
+            else:
+                ipadapter_model = ipadapter
+                clip_vision = clip_vision
 
-        if clip_vision is None:
-            raise Exception("Missing CLIPVision model.")
+            if clip_vision is None:
+                raise Exception("Missing CLIPVision model.")
 
-        is_plus = "proj.3.weight" in ipadapter_model["image_proj"] or "latents" in ipadapter_model["image_proj"] or "perceiver_resampler.proj_in.weight" in ipadapter_model["image_proj"]
-        is_kwai_kolors = is_plus and "layers.0.0.to_out.weight" in ipadapter_model["image_proj"] and ipadapter_model["image_proj"]["layers.0.0.to_out.weight"].shape[0] == 2048
+            is_plus = "proj.3.weight" in ipadapter_model["image_proj"] or "latents" in ipadapter_model["image_proj"] or "perceiver_resampler.proj_in.weight" in ipadapter_model["image_proj"]
+            is_kwai_kolors = is_plus and "layers.0.0.to_out.weight" in ipadapter_model["image_proj"] and ipadapter_model["image_proj"]["layers.0.0.to_out.weight"].shape[0] == 2048
 
-        clipvision_size = 224 if not is_kwai_kolors else 336
+            clipvision_size = 224 if not is_kwai_kolors else 336
 
-        # resize and crop the mask to 224x224
-        if mask is not None and mask.shape[1:3] != torch.Size([clipvision_size, clipvision_size]):
-            mask = mask.unsqueeze(1)
-            transforms = T.Compose([
-                T.CenterCrop(min(mask.shape[2], mask.shape[3])),
-                T.Resize((clipvision_size, clipvision_size), interpolation=T.InterpolationMode.BICUBIC, antialias=True),
-            ])
-            mask = transforms(mask).squeeze(1)
-            #mask = T.Resize((image.shape[1], image.shape[2]), interpolation=T.InterpolationMode.BICUBIC, antialias=True)(mask.unsqueeze(1)).squeeze(1)
+            # resize and crop the mask to 224x224
+            if mask is not None and mask.shape[1:3] != torch.Size([clipvision_size, clipvision_size]):
+                mask = mask.unsqueeze(1)
+                transforms = T.Compose([
+                    T.CenterCrop(min(mask.shape[2], mask.shape[3])),
+                    T.Resize((clipvision_size, clipvision_size), interpolation=T.InterpolationMode.BICUBIC, antialias=True),
+                ])
+                mask = transforms(mask).squeeze(1)
+                #mask = T.Resize((image.shape[1], image.shape[2]), interpolation=T.InterpolationMode.BICUBIC, antialias=True)(mask.unsqueeze(1)).squeeze(1)
 
-        img_cond_embeds = encode_image_masked(clip_vision, image, mask, clipvision_size=clipvision_size)
+            img_cond_embeds = encode_image_masked(clip_vision, image, mask, clipvision_size=clipvision_size)
 
-        if is_plus:
-            img_cond_embeds = img_cond_embeds.penultimate_hidden_states
-            img_uncond_embeds = encode_image_masked(clip_vision, torch.zeros([1, clipvision_size, clipvision_size, 3]), clipvision_size=clipvision_size).penultimate_hidden_states
-        else:
-            img_cond_embeds = img_cond_embeds.image_embeds
-            img_uncond_embeds = torch.zeros_like(img_cond_embeds)
+            if is_plus:
+                img_cond_embeds = img_cond_embeds.penultimate_hidden_states
+                img_uncond_embeds = encode_image_masked(clip_vision, torch.zeros([1, clipvision_size, clipvision_size, 3]), clipvision_size=clipvision_size).penultimate_hidden_states
+            else:
+                img_cond_embeds = img_cond_embeds.image_embeds
+                img_uncond_embeds = torch.zeros_like(img_cond_embeds)
 
-        if weight != 1:
-            img_cond_embeds = img_cond_embeds * weight
+            if weight != 1:
+                img_cond_embeds = img_cond_embeds * weight
 
-        return (img_cond_embeds, img_uncond_embeds, )
+            return (img_cond_embeds, img_uncond_embeds, )
 
 class IPAdapterCombineEmbeds:
     @classmethod
