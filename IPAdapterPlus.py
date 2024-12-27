@@ -368,18 +368,18 @@ def ipadapter_execute(model,
     if image is not None:
         img_cond_embeds = encode_image_masked(clipvision, image, mask=style_image_mask, batch_size=encode_batch_size, tiles=enhance_tiles, ratio=enhance_ratio, clipvision_size=clipvision_size)
         if image_composition is not None:
-            img_comp_cond_embeds = encode_image_masked(clipvision, image_composition, mask=style_image_mask, batch_size=encode_batch_size, tiles=enhance_tiles, ratio=enhance_ratio, clipvision_size=clipvision_size)
+            img_comp_cond_embeds = encode_image_masked(clipvision, image_composition, batch_size=encode_batch_size, tiles=enhance_tiles, ratio=enhance_ratio, clipvision_size=clipvision_size)
 
         if is_plus:
             img_cond_embeds = img_cond_embeds.penultimate_hidden_states
             image_negative = image_negative if image_negative is not None else torch.zeros([1, clipvision_size, clipvision_size, 3])
-            img_uncond_embeds = encode_image_masked(clipvision, image_negative, mask=style_image_mask, batch_size=encode_batch_size, clipvision_size=clipvision_size).penultimate_hidden_states
+            img_uncond_embeds = encode_image_masked(clipvision, image_negative, batch_size=encode_batch_size, clipvision_size=clipvision_size).penultimate_hidden_states
             if image_composition is not None:
                 img_comp_cond_embeds = img_comp_cond_embeds.penultimate_hidden_states
         else:
             img_cond_embeds = img_cond_embeds.image_embeds if not is_faceid else face_cond_embeds
             if image_negative is not None and not is_faceid:
-                img_uncond_embeds = encode_image_masked(clipvision, image_negative, mask=style_image_mask, batch_size=encode_batch_size, clipvision_size=clipvision_size).image_embeds
+                img_uncond_embeds = encode_image_masked(clipvision, image_negative, batch_size=encode_batch_size, clipvision_size=clipvision_size).image_embeds
             else:
                 img_uncond_embeds = torch.zeros_like(img_cond_embeds)
             if image_composition is not None:
