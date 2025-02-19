@@ -2,6 +2,7 @@ import torch
 import os
 import math
 import folder_paths
+import copy
 
 import comfy.model_management as model_management
 from node_helpers import conditioning_set_values
@@ -70,6 +71,22 @@ class IPAdapter(nn.Module):
 
         self.image_proj_model.load_state_dict(ipadapter_model["image_proj"])
         self.ip_layers = To_KV(ipadapter_model["ip_adapter"], encoder_hid_proj=encoder_hid_proj, weight_kolors=weight_kolors)
+
+        self.multigpu_clones = {}
+
+    def create_multigpu_clone(self, device):
+        if device not in self.multigpu_clones:
+            orig_multigpu_clones = self.multigpu_clones
+            try:
+                self.multigpu_clones = {}
+                new_clone = copy.deepcopy(self)
+                new_clone = new_clone.to(device)
+                orig_multigpu_clones[device] = new_clone
+            finally:
+                self.multigpu_clones = orig_multigpu_clones
+
+    def get_multigpu_clone(self, device):
+        return self.multigpu_clones.get(device, self)
 
     def init_proj(self):
         image_proj_model = ImageProjModel(
