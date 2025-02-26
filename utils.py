@@ -13,7 +13,7 @@ except ImportError:
 def get_clipvision_file(preset):
     preset = preset.lower()
     clipvision_list = folder_paths.get_filename_list("clip_vision")
-
+    clipvision_list = [e for e in clipvision_list if not e.startswith('.')]
     if preset.startswith("vit-g"):
         pattern = r'(ViT.bigG.14.*39B.b160k|ipadapter.*sdxl|sdxl.*model)\.(bin|safetensors)'
     elif preset.startswith("kolors"):
@@ -29,6 +29,7 @@ def get_clipvision_file(preset):
 def get_ipadapter_file(preset, is_sdxl):
     preset = preset.lower()
     ipadapter_list = folder_paths.get_filename_list("ipadapter")
+    ipadapter_list = [e for e in ipadapter_list if not e.startswith('.')]
     is_insightface = False
     lora_pattern = None
 
@@ -121,7 +122,7 @@ def get_ipadapter_file(preset, is_sdxl):
 
 def get_lora_file(pattern):
     lora_list = folder_paths.get_filename_list("loras")
-    lora_file = [e for e in lora_list if re.search(pattern, e, re.IGNORECASE)]
+    lora_file = [e for e in lora_list if not e.startswith('.') and re.search(pattern, e, re.IGNORECASE)]
     lora_file = folder_paths.get_full_path("loras", lora_file[0]) if lora_file else None
 
     return lora_file
