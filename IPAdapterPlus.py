@@ -1544,6 +1544,8 @@ class PrepImageForClipVision:
     CATEGORY = "ipadapter/utils"
 
     def prep_image(self, image, interpolation="LANCZOS", crop_position="center", sharpening=0.0):
+        if 0 in image.shape:
+            return (image,)
         size = (224, 224)
         _, oh, ow, _ = image.shape
         output = image.permute([0,3,1,2])
