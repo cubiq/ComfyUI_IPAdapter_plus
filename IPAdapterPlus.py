@@ -309,10 +309,10 @@ def ipadapter_execute(model,
     elif weight_type == "composition":
         weight = { 3:weight } if is_sdxl else { 4:weight*0.25, 5:weight }
     elif weight_type == "strong style transfer":
-    if is_sdxl:
-        weight = { 4: weight*0.3, 5: weight*0.5, 8: weight*1.2, 9: weight*1.2, 10: weight*1.2 }
-    else:
-        weight = { 4: weight*0.2, 5: weight*0.4, 9: weight*1.1, 10: weight*1.1, 11: weight*1.1 }
+        if is_sdxl:
+            weight = { 4:weight*0.3, 5:weight*0.5, 8:weight*1.2, 9:weight*1.2, 10:weight*1.2 }
+        else:
+            weight = { 4:weight*0.2, 5:weight*0.4, 9:weight*1.1, 10:weight*1.1, 11:weight*1.1 }
     elif weight_type == "style and composition":
         if is_sdxl:
             weight = { 3:weight_composition, 6:weight }
