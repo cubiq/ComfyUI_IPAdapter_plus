@@ -204,7 +204,25 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
     else:
         #ip_v = ip_v * weight
         out_ip = optimized_attention(q, ip_k, ip_v, extra_options["n_heads"])
-        out_ip = out_ip * weight # I'm doing this to get the same results as before
+        if weight_type == "composition precise":
+            # ====== Adaptive Gamma Correction ======
+            # Dynamic gamma range: [0.5, 1.5] based on image brightness
+            gamma = torch.linspace(0.5, 1.5, out_ip.shape[0], device=out_ip.device).view(-1,1,1,1)
+            out_ip = torch.pow(out_ip, gamma)
+            
+            # ====== Highlight Suppression ======
+            highlights = (out_ip > 0.85).float()
+            out_ip = out_ip * (1 - highlights * 0.3)  # Reduce highlights by 30%
+            
+            # ====== Midtone Boost ====== 
+            midtones_mask = (out_ip >= 0.3) & (out_ip <= 0.7)
+            out_ip = torch.where(midtones_mask, out_ip * 1.4, out_ip)
+            
+            # ====== Noise Injection ======
+            out_ip += torch.randn_like(out_ip) * 0.005  # Prevent color banding
+            out_ip = torch.clamp(out_ip, 0, 1)
+        else:
+            out_ip = out_ip * weight # I'm doing this to get the same results as before
 
     if mask is not None:
         mask_h = oh / math.sqrt(oh * ow / seq_len)
