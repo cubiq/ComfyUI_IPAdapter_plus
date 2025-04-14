@@ -2,3 +2,6 @@
 /models/*.bin
 /models/*.safetensors
 .directory
+.pylintrc
+ComfyUI_IPAdapter_plus.code-workspace
+docs/.markdownlint.json
