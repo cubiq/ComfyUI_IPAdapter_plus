@@ -1458,7 +1458,7 @@ class IPAdapterCombineEmbeds:
         elif method == "average":
             embeds = torch.mean(embeds, dim=0).unsqueeze(0)
         elif method == "norm average":
-            embeds = torch.mean(embeds / torch.norm(embeds, dim=0, keepdim=True), dim=0).unsqueeze(0)
+            embeds = torch.mean(embeds / (torch.norm(embeds, dim=0, keepdim=True) + 1e-10), dim=0).unsqueeze(0)
         elif method == "max":
             embeds = torch.max(embeds, dim=0).values.unsqueeze(0)
         elif method == "min":
