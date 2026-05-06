@@ -92,7 +92,7 @@ if you know of other models please let me know and I will add them to the unifie
 
 There are many workflows included in the [examples](./examples/) directory. Please check them before asking for support.
 
-Usually it's a good idea to lower the `weight` to at least `0.8` and increase the number steps. To increase adherece to the prompt you may try to change the **weight type** in the `IPAdapter Advanced` node.
+Usually it's a good idea to lower the `weight` to at least `0.8` and increase the number steps. To increase adherence to the prompt you may try to change the **weight type** in the `IPAdapter Advanced` node.
 
 ## Troubleshooting
 
